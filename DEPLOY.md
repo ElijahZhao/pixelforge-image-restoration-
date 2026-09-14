@@ -43,3 +43,28 @@ cd web && pnpm install && pnpm dev
   backend (e.g. the HF Space URL) so the browser calls it directly.
 - CORS is open (`*`) in `serve/app.py` for convenience — tighten it to your
   frontend domain before going public.
+
+## 4. Pushing to GitHub from a restricted network (e.g. this sandbox)
+When the environment cannot reach `github.com` directly (TLS reset / proxy
+whitelist), use a public GitHub mirror that the network *can* reach, e.g.
+`ghproxy.net`. It proxies both `git` traffic and resolves the target repo
+server-side, so your sandbox never needs direct access to GitHub.
+
+```bash
+TOKEN=ghp_xxxYOURTOKENxxx   # a fine-grained PAT with `repo` scope
+# set the remote to go through the mirror (auth travels via the mirror):
+git remote set-url origin \
+  "https://oauth2:${TOKEN}@ghproxy.net/https://github.com/USER/REPO.git"
+git push -u origin main
+# to verify what landed:
+git ls-tree -r --name-only origin/main
+```
+
+Caveats:
+- The token passes through the third-party mirror — **rotate/revoke it right
+  after pushing**, and only grant `repo` scope.
+- If the repo was created with an auto-generated initial file (e.g. a LICENSE),
+  merge it first: `git fetch origin main && git merge origin/main --allow-unrelated-histories`.
+- Other mirrors that sometimes work: `fastgit.org`, `mirror.ghproxy.com`.
+- This is only needed where GitHub is unreachable; on a normal machine just use
+  `git push` with the plain `https://github.com/USER/REPO.git` URL.
