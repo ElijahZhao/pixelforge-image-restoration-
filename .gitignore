@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Data & model weights (large, not committed)
+data/div2k/
+data/lol/
+models/*.pth
+serve/models/*.pt
+results/*.csv
+
+# Node / Next.js
+node_modules/
+web/.next/
+web/out/
+web/.env.local
+web/vercel/
+
+# Misc
+.DS_Store
+*.log

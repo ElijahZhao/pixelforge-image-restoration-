@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-ink text-slate-100 antialiased;
+  background-image:
+    radial-gradient(60rem 60rem at 80% -10%, rgba(56, 189, 248, 0.12), transparent),
+    radial-gradient(50rem 50rem at -10% 20%, rgba(168, 85, 247, 0.10), transparent);
+  background-attachment: fixed;
+}
+
+.glass {
+  @apply bg-white/5 border border-white/10 backdrop-blur rounded-2xl;
+}

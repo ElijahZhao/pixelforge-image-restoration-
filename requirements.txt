@@ -1,0 +1,14 @@
+# ---- Training (run on Kaggle / Colab free GPU) ----
+torch>=2.0
+torchvision>=0.15
+numpy>=1.23
+Pillow>=9.0
+
+# ---- Inference service (FastAPI) ----
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.9
+# torch is shared with training
+
+# ---- Optional quick demo ----
+gradio>=4.0   # only needed for serve/gradio_demo.py

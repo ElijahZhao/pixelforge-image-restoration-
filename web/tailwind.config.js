@@ -1,0 +1,19 @@
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        ink: "#0b0f1a",
+        panel: "#121826",
+      },
+      fontFamily: {
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+    },
+  },
+  plugins: [],
+};
