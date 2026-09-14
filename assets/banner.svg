@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="55%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#3b0764"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="380" fill="url(#bg)"/>
+  <text x="80" y="140" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="80" font-weight="700" fill="#f8fafc">PixelForge</text>
+  <text x="82" y="195" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" fill="#cbd5e1">AI 图像复原 · 超分辨率 &amp; 低光增强</text>
+  <text x="82" y="238" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#94a3b8">计算机视觉作品集 · 自训 PyTorch 模型 · 面向研究生申请</text>
+  <g transform="translate(800,120)">
+    <rect width="150" height="120" rx="16" fill="#1e293b" stroke="#475569" stroke-width="2"/>
+    <text x="75" y="68" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#64748b">Before</text>
+    <text x="173" y="72" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="30" fill="#e2e8f0">→</text>
+    <rect x="196" width="150" height="120" rx="16" fill="url(#accent)" opacity="0.92"/>
+    <text x="271" y="68" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#0f172a" font-weight="700">After</text>
+  </g>
+  <text x="80" y="320" font-family="Helvetica, Arial, sans-serif" font-size="16" fill="#64748b">PyTorch · FastAPI · Next.js · TorchScript · 可复现</text>
+</svg>
