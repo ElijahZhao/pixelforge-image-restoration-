@@ -226,7 +226,9 @@ pnpm dev
 
 ## 本地测试
 
-无需 GPU，CPU 即可跑通训练侧单元测试：
+### 单元测试（CPU）
+
+无需 GPU，跑训练侧单元测试：
 
 ```bash
 python -m train.tests.run_tests
@@ -234,7 +236,18 @@ python -m train.tests.run_tests
 
 预期结果：`12/12 passed`。
 
-要重新生成 README 里的 demo 对比图：
+### E2E 浏览器测试
+
+启动前后端，用无头 Chromium 跑完整用户流程并截图：
+
+```bash
+pip install playwright && playwright install chromium
+python tests/e2e/e2e.py
+```
+
+会验证：上传图片 → 选任务 → 点 Enhance → 返回 before/after → 拖动对比滑块。截图存到 `tests/e2e/screenshots/`。
+
+### 重新生成 demo 图
 
 ```bash
 python scripts/make_demo.py

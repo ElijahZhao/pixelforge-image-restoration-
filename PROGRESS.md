@@ -100,8 +100,8 @@
 ### 🔵 P4 — 工程收尾（本地可完成）
 - [x] **收紧 CORS**：`serve/app.py` 已支持 `ALLOWED_ORIGINS` 环境变量；生产环境设置域名白名单，本地默认仍开放。
 - [x] **训练侧单元测试**：`train/tests/` 已覆盖模型 shape、PSNR/SSIM 正确性，12/12 通过。
-- [ ] **浏览器 E2E 测试**：用 `agent-browser` / `playwright-cli` 跑「上传→滑块→API」流程并截图留证。
-- [ ] 把 `pixelforge-source.zip`（未跟踪的大文件）移除或加入 `.gitignore`，避免误推。
+- [x] **浏览器 E2E 测试**：`tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程并截图留证；超分与低光两条链路均通过。
+- [x] **仓库清理**：删除 `pixelforge-source.zip`，`.gitignore` 增加 zip 包与 E2E 截图目录排除。
 
 ---
 

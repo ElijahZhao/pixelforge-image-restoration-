@@ -21,3 +21,11 @@ web/vercel/
 # Misc
 .DS_Store
 *.log
+
+# Packed source archives (avoid committing redundant zips)
+pixelforge-source.zip
+*.zip
+
+# E2E test artifacts
+tests/e2e/screenshots/
+tests/e2e/*.png
