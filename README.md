@@ -25,12 +25,14 @@
 - [项目进度与待办](#项目进度与待办)
 - [项目简介](#项目简介)
 - [在线演示](#在线演示)
+- [效果演示](#效果演示)
 - [项目亮点](#项目亮点)
 - [系统架构](#系统架构)
 - [功能特性](#功能特性)
 - [项目结构](#项目结构)
 - [技术栈](#技术栈)
 - [快速开始](#快速开始)
+- [本地测试](#本地测试)
 - [训练真实模型](#训练真实模型)
 - [评测指标](#评测指标)
 - [方法说明](#方法说明)
@@ -84,6 +86,24 @@ results/     训练日志 + 量化对比表
 
 > 当前 demo 默认运行**经典方法兜底**（Bicubic / 自适应伽马）。当你用自己的 GPU 训练出权重并放入 `serve/models/` 后，服务会自动切换到 **Trained PyTorch model** 模式。
 
+## 效果演示
+
+下面是 CPU 上直接跑出的真实前后对比（**尚未使用自训模型**）。训练完成后可替换为模型输出。
+
+### 超分辨率 4×：Bicubic 放大 → 经典锐化
+
+| 输入（128×128） | Before：Bicubic 4× | After：Bicubic + Unsharp |
+|---|---|---|
+| ![input](assets/sample_scene.png) | ![sr-before](assets/demo_sr_before.png) | ![sr-after](assets/demo_sr_after.png) |
+
+### 低光增强：暗光输入 → 自适应伽马
+
+| Before：暗光场景 | After：自适应伽马提亮 |
+|---|---|
+| ![ll-before](assets/demo_lowlight_before.png) | ![ll-after](assets/demo_lowlight_after.png) |
+
+> 这些样例由 `scripts/make_demo.py` 生成，运行 `python scripts/make_demo.py` 即可复现。
+
 ---
 
 ## 项目亮点
@@ -136,7 +156,10 @@ flowchart LR
 
 ```
 pixelforge-image-restoration/
-├── assets/            # 封面图等静态资源
+├── assets/            # 封面图、真实 demo 对比图
+│   ├── banner.svg
+│   ├── demo_*.png
+│   └── sample_*.png
 ├── data/              # 数据集（下载说明见 data/README.md）
 │   └── README.md
 ├── results/           # 训练日志 + 量化指标对比表
@@ -146,17 +169,20 @@ pixelforge-image-restoration/
 │   ├── datasets.py    # DIV2K / LOL 数据加载
 │   ├── metrics.py     # PSNR / SSIM
 │   ├── train.py       # 训练脚本
-│   └── export.py      # 导出 TorchScript
+│   ├── export.py      # 导出 TorchScript
+│   └── tests/         # 单元测试（CPU 可跑）
 ├── serve/             # 推理侧
 │   ├── app.py         # FastAPI 服务
 │   ├── classical.py   # 经典方法兜底
 │   ├── model_loader.py# 权重加载
 │   └── gradio_demo.py # Gradio 快速 demo
+├── scripts/           # 辅助脚本（生成 demo 图等）
 ├── web/               # 前端（Next.js + Tailwind）
 │   ├── app/
 │   ├── components/    # CompareSlider 等
 │   └── lib/
 ├── DEPLOY.md          # 部署与受限网络推送指南
+├── PROGRESS.md        # 项目进度与待办
 ├── TOOLS_CHECKLIST.md # 内置工具使用清单
 └── README.md
 ```
@@ -195,6 +221,24 @@ pnpm dev
 ```
 
 打开 http://localhost:3000，上传一张图片，选择任务，点击 **Enhance**，拖动滑块对比。
+
+---
+
+## 本地测试
+
+无需 GPU，CPU 即可跑通训练侧单元测试：
+
+```bash
+python -m train.tests.run_tests
+```
+
+预期结果：`12/12 passed`。
+
+要重新生成 README 里的 demo 对比图：
+
+```bash
+python scripts/make_demo.py
+```
 
 ---
 

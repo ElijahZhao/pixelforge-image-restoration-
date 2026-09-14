@@ -13,13 +13,14 @@
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | ✅ 已完成 | 100% | 无权重时自动走基线 |
 | 前端（Next.js 交互 Demo） | ✅ 已完成 | 100% | 本地 `next build` 已通过 |
 | 文档（README/DEPLOY/工具清单/LICENSE） | ✅ 已完成 | 100% | 中文美化版 README 已上线 |
-| 真实模型权重（自训 .pt） | ⏳ 待办 | 0% | **需用户在 GPU 环境训练** |
+| 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 12/12 通过；真实 demo 图已生成 |
+| 真实模型权重（自训 .pt） | 🚧 待办 | 0% | **需用户在 GPU 环境训练** |
 | 真实评测指标（PSNR/SSIM） | ⚠️ 占位 | 0% | 当前为占位示例值 |
 | 线上部署（Vercel + HF Spaces/VPS） | ⏳ 待办 | 0% | 尚未部署 |
 | 申请材料（SOP / CV / 报告） | ⏳ 待办 | 0% | 可用本地技能生成 |
 | 安全收尾（删除暴露的 token） | 🔴 必须 | — | **高危，需立即处理** |
 
-**一句话总结**：代码与文档端到端闭环已完成并本地跑通；**唯一硬性缺口是真实训练权重（必须靠 GPU）**，其余为部署、材料包装与安全收尾。
+**一句话总结**：代码、文档、本地测试与真实 demo 图已闭环完成并本地跑通；**唯一硬性缺口是真实训练权重（必须靠 GPU）**，其余为部署、申请材料包装与安全收尾（token 轮换）。
 
 ---
 
@@ -37,7 +38,7 @@
 ### 2.2 推理侧 `serve/`
 | 文件 | 内容 | 核查 |
 |---|---|---|
-| `app.py` | FastAPI：`/api/health`、`/api/predict`；**已修复**坏图→422、非法 task→422（原 500/200 错配）；导入 `JSONResponse` | ✅ |
+| `app.py` | FastAPI：`/api/health`、`/api/predict`；**已修复**坏图→422、非法 task→422（原 500/200 错配）；`JSONResponse` 导入；`classical/model_loader` 改为相对导入以匹配 `uvicorn serve.app:app` 启动方式 | ✅ |
 | `classical.py` | `run_classical(img, task, scale)`：Bicubic 超分 + **自适应伽马**低光基线（docstring 已从 "Retinex" 修正） | ✅ |
 | `model_loader.py` | `get_sr_model(scale)` / `get_lowlight_model()`：无 `serve/models/` 时返回 `None`，服务自动走基线 | ✅ |
 | `gradio_demo.py` | 一键 Gradio 演示入口 | ✅ |
@@ -61,6 +62,9 @@
 | `LICENSE` | MIT（ElijahZhao, 2025） | ✅ |
 | `data/README.md`、`results/README.md` | 数据集下载说明、结果说明（"Retinex"→"自适应伽马" 已修正） | ✅ |
 | GitHub 推送 | 31 个文件经 `ghproxy.net` 镜像推送至 `ElijahZhao/pixelforge-image-restoration-` | ✅ |
+| 真实 demo 图 | `scripts/make_demo.py` + `assets/demo_*.png`：CPU 直接跑经典方法生成前后对比 | ✅ |
+| 单元测试 | `train/tests/`：模型 shape、PSNR/SSIM 正确性，**12/12 通过** | ✅ |
+| CORS 收紧 | `serve/app.py`：`*` 改为可通过 `ALLOWED_ORIGINS` 配置，默认本地开发仍开放 | ✅ |
 
 ---
 
@@ -94,8 +98,9 @@
 - [ ] 用 `xlsx` 技能生成 PSNR/SSIM 对比表、训练超参记录表。
 
 ### 🔵 P4 — 工程收尾（本地可完成）
-- [ ] **收紧 CORS**：`serve/app.py` 当前为 `*`，上线前改为受信域名白名单。
-- [ ] **自动化 E2E 测试**：用 `agent-browser` / `playwright-cli` 跑「上传→滑块→API」流程并截图留证。
+- [x] **收紧 CORS**：`serve/app.py` 已支持 `ALLOWED_ORIGINS` 环境变量；生产环境设置域名白名单，本地默认仍开放。
+- [x] **训练侧单元测试**：`train/tests/` 已覆盖模型 shape、PSNR/SSIM 正确性，12/12 通过。
+- [ ] **浏览器 E2E 测试**：用 `agent-browser` / `playwright-cli` 跑「上传→滑块→API」流程并截图留证。
 - [ ] 把 `pixelforge-source.zip`（未跟踪的大文件）移除或加入 `.gitignore`，避免误推。
 
 ---
@@ -121,6 +126,7 @@
 | 推理 | FastAPI / 经典兜底 / 权重加载 | ✅ |
 | 前端 | Next.js Demo / 滑块 / 代理 | ✅ |
 | 文档 | README / DEPLOY / 工具清单 / LICENSE | ✅ |
+| 测试 / Demo | 单元测试 12/12 + 真实 demo 图 | ✅ |
 | 训练 | 真实权重（GPU） | 🚧 |
 | 评测 | 真实 PSNR/SSIM 数值 | ⚠️ |
 | 部署 | Vercel / HF Spaces | ⏳ |

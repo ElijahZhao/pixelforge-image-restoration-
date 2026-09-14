@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import base64
 import io
+import os
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, UploadFile
@@ -24,15 +25,22 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
-from classical import run_classical
-from model_loader import get_sr_model, get_lowlight_model, predict_sr, predict_lowlight
+from .classical import run_classical
+from .model_loader import get_sr_model, get_lowlight_model, predict_sr, predict_lowlight
 
 app = FastAPI(title="CV Restoration API", version="1.0.0")
 
+# Production: set ALLOWED_ORIGINS=https://your-domain.com,https://admin.your-domain.com
+# Multiple origins can be comma-separated. Defaults to wildcard for local dev.
+_ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
+ALLOWED_ORIGINS = [o.strip() for o in _ALLOWED_ORIGINS.split(",") if o.strip()]
+if not ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to your frontend domain in production
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
