@@ -130,12 +130,13 @@
   > 7. **更新文档 + 推送**：把 `README.md` / `results/README.md` 的 SR×4 17.20 改为新值，本文件标完成；push（建议先轮换 token，见 P0）。
 - [ ] **替换 README 占位指标**：已部分完成——SR×4（17.20/0.217）与 lowlight U-Net（19.26/0.74–0.78）真实值已填入 `README.md` 与 `results/README.md`；SRCNN 2× 未训练仍留 `TBD`。
 
-### 🟡 P2 — 部署与上线（方案 B 进行中）
-> 决策：GitHub Pages / Actions **托管不了 ML 后端**（纯静态 / 临时 job），故选 **方案 B：Gradio → Hugging Face Spaces**，一个公开链接全功能。
-- [x] **HF Spaces 部署包已就绪**：`deploy/hf_space/`（`app.py` 自包含入口 + `requirements.txt` + Space 元信息 `README.md` + `models/` 两权重），附 `DEPLOY_HF.md` 步骤说明。
-- [x] **沙箱实跑验证**：引擎 `SR ×4: ML · Low-light: ML`；SR×4 与低光在 100×100 / 1280×720 / 63×41 等任意尺寸均正常。
-- [x] **修复 U-Net 尺寸约束 bug**：低光 U-Net 要求边长 32 倍数，否则解码器拼接崩溃；已在 `deploy/hf_space/app.py` 与主仓库 `serve/model_loader.py` 加自适应补齐（pad→推理→裁回）。
-- [ ] **用户侧**：在 HF 新建 Space（SDK: Gradio, CPU basic, Public）并上传 `deploy/hf_space/` 全部内容 → 获得公开链接。
+### 🟡 P2 — 部署与上线（方案 B' — Streamlit Cloud）
+> 决策：GitHub Pages / Actions **托管不了 ML 后端**（纯静态 / 临时 job）。HF Spaces 自 2026-07 起跑计算的 Space 需付费（PRO），免费仅剩「2 个 ZeroGPU Gradio Space」且有每日 GPU 额度限制，对 CPU 即可跑的 demo 不划算。**改用 Streamlit Community Cloud：公开 app 免费、无额度、直接从 GitHub 仓库部署。**
+- [x] **Streamlit 部署包已就绪**：`deploy/streamlit/`（`streamlit_app.py` 自包含入口 + `requirements.txt` + `models/` 两权重），附 `DEPLOY_STREAMLIT.md` 步骤说明。
+- [x] **沙箱实跑验证**：`streamlit run` 启动 HTTP 200 无 Traceback；引擎 `SR4 = ML · LowLight = ML`；SR×4 与低光在 100×100 / 1280×720 / 63×41 等任意尺寸均正常。
+- [x] **修复 U-Net 尺寸约束 bug**：低光 U-Net 要求边长 32 倍数，否则解码器拼接崩溃；已在 `deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 与主仓库 `serve/model_loader.py` 加自适应补齐（pad→推理→裁回）。
+- [x] **HF Spaces 备选包**：`deploy/hf_space/` 亦保留（若后续开通 PRO 或申请 community grant 可用）。
+- [ ] **用户侧**：登录 https://share.streamlit.io → Create app → 选仓库 `ElijahZhao/pixelforge-image-restoration-`、main 分支、主文件 `deploy/streamlit/streamlit_app.py` → Deploy → 获得公开链接。
 - [ ] （可选）前端部署：Vercel 导入 `web/`，`NEXT_PUBLIC_API_URL` 指向后端。
 
 ### 🟢 P3 — 申请材料包装（重要 · 本地可完成）
