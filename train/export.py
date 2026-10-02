@@ -3,8 +3,8 @@
 Usage:
     python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
         --out serve/models/sr_generator_scale4.pt --task sr --scale 4
-    python train/export.py --checkpoint models/lowlight_generator_best.pth \
-        --out serve/models/lowlight.pt --task lowlight
+    python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
+        --out serve/models/lowlight.pt --task lowlight --scale 2
 """
 
 from __future__ import annotations

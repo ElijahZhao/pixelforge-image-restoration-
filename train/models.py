@@ -3,7 +3,9 @@
 Two tasks are supported:
   1. Single Image Super-Resolution (SR)  -> SRCNN (baseline) and a lightweight
      SRResNet/ESRGAN-style generator (advanced).
-  2. Low-Light Image Enhancement (LLIE)  -> a small U-Net style Retinex network.
+  2. Low-Light Image Enhancement (LLIE)  -> a small U-Net that directly learns a
+     low-light -> normal-light mapping (inspired by Retinex theory, but not a
+     Retinex decomposition model).
 
 All models are plain PyTorch (``torch.nn.Module``) so they can be trained on
 Kaggle/Colab free GPUs and exported for the FastAPI inference service.

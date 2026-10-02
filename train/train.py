@@ -17,7 +17,11 @@ Low-Light Enhancement:
 Outputs
 -------
   models/<task>_<model>_scale<scale>_best.pth   (best validation checkpoint)
-  results/train_log_<task>.csv                  (epoch, train_loss, val_psnr, val_ssim)
+  results/train_log_<task>_<model>.csv          (epoch, train_loss, val_psnr, val_ssim)
+
+Note: for low-light, ``<model>`` is whatever ``--model`` you passed (default
+``srcnn``), and ``<scale>`` is ``--scale`` (default 2), e.g.
+``models/lowlight_srcnn_scale2_best.pth``.
 """
 
 from __future__ import annotations

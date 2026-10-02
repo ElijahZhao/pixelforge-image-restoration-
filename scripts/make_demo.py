@@ -16,9 +16,16 @@ Run:  python scripts/make_demo.py
 from __future__ import annotations
 
 import os
+import sys
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
+
+# Allow running as `python scripts/make_demo.py` from the repository root
+# without setting PYTHONPATH manually.
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 from serve.classical import sr_classical, lowlight_classical
 

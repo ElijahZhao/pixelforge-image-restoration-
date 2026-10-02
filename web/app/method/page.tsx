@@ -47,9 +47,11 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
 
       <h2 className="text-xl font-semibold mt-8">Evaluation</h2>
       <p className="mt-3 text-slate-300">
-        Quantitative results use PSNR and SSIM on standard benchmarks. Below is
-        the comparison table (fill in with your own validation numbers after
-        training on DIV2K / LOL):
+        Quantitative results use PSNR and SSIM on standard benchmarks. The
+        comparison table below is populated <b>after training</b> on DIV2K /
+        LOL. Until real weights are trained, the &ldquo;ours&rdquo; rows are
+        honestly marked <b>TBD</b> — no placeholder numbers are shown as if they
+        were real results.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm glass">
@@ -67,40 +69,44 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
               <td className="p-2">Bicubic (baseline)</td>
               <td className="p-2">SR</td>
               <td className="p-2">2×</td>
-              <td className="p-2">28.40</td>
-              <td className="p-2">0.820</td>
+              <td className="p-2">33.66 *</td>
+              <td className="p-2">0.9299 *</td>
             </tr>
             <tr>
               <td className="p-2">SRCNN (ours)</td>
               <td className="p-2">SR</td>
               <td className="p-2">2×</td>
-              <td className="p-2">29.10</td>
-              <td className="p-2">0.845</td>
+              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2 text-slate-500">TBD</td>
             </tr>
             <tr>
               <td className="p-2">SRResNet (ours)</td>
               <td className="p-2">SR</td>
               <td className="p-2">4×</td>
-              <td className="p-2">27.80</td>
-              <td className="p-2">0.800</td>
+              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2 text-slate-500">TBD</td>
             </tr>
             <tr>
               <td className="p-2">Adaptive gamma (baseline)</td>
               <td className="p-2">LowLight</td>
               <td className="p-2">—</td>
-              <td className="p-2">16.20</td>
-              <td className="p-2">0.710</td>
+              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2 text-slate-500">TBD</td>
             </tr>
             <tr>
               <td className="p-2">LowLight-UNet (ours)</td>
               <td className="p-2">LowLight</td>
               <td className="p-2">—</td>
-              <td className="p-2">19.50</td>
-              <td className="p-2">0.820</td>
+              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2 text-slate-500">TBD</td>
             </tr>
           </tbody>
         </table>
       </div>
+      <p className="mt-2 text-xs text-slate-500">
+        * Set5 ×2 Bicubic reference value (Dong et al.). Replace every TBD with
+        your own measured metrics after training.
+      </p>
 
       <h2 className="text-xl font-semibold mt-8">Datasets</h2>
       <ul className="mt-3 space-y-2 text-slate-300 list-disc pl-5 text-sm">
@@ -124,7 +130,12 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
       <pre className="mt-3 glass p-4 text-xs overflow-x-auto text-slate-300">{`python train/train.py --task sr --model generator --scale 4 \\
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
 python train/export.py --checkpoint models/sr_generator_scale4_best.pth \\
-    --out serve/models/sr_generator_scale4.pt --task sr --scale 4`}</pre>
+    --out serve/models/sr_generator_scale4.pt --task sr --scale 4
+
+# low-light (default --model srcnn --scale 2)
+python train/train.py --task lowlight --data_root data --epochs 200
+python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \\
+    --out serve/models/lowlight.pt --task lowlight --scale 2`}</pre>
 
       <h2 className="text-xl font-semibold mt-8">Deployment</h2>
       <p className="mt-3 text-slate-300 text-sm">

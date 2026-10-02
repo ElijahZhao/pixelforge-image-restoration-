@@ -274,10 +274,13 @@ python train/train.py --task lowlight --data_root data \
     --epochs 200 --batch_size 8 --lr 2e-4
 
 # 导出为 TorchScript 供服务使用
+# 注意：checkpoint 文件名 = models/<task>_<model>_scale<scale>_best.pth
+#   SR 用 --model generator --scale 4 训练后 → models/sr_generator_scale4_best.pth
+#   低光默认 --model srcnn --scale 2     → models/lowlight_srcnn_scale2_best.pth
 python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
     --out serve/models/sr_generator_scale4.pt --task sr --scale 4
-python train/export.py --checkpoint models/lowlight_generator_best.pth \
-    --out serve/models/lowlight.pt --task lowlight
+python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
+    --out serve/models/lowlight.pt --task lowlight --scale 2
 ```
 
 把导出的 `.pt` 文件放进 `serve/models/`，服务会自动从经典基线切换到你的训练模型（访问 `/api/health` 可见当前引擎）。
@@ -286,22 +289,26 @@ python train/export.py --checkpoint models/lowlight_generator_best.pth \
 
 ## 评测指标
 
-> ⚠️ 下表中的 **PSNR / SSIM 为占位示例**，仅展示格式。训练完成后请替换为你在测试集（如 Set5 / Set14 / LOL-test）上跑出的**真实数值**。
+> ⚠️ **本仓库尚未训练模型**（无 GPU 权重），因此**所有「自训」行的数值一律为「待填」**，绝不以示例数字冒充结果。
+> 下表中 Bicubic 基线为文献常用参考值（标注 `*`），其余基线与自训行请在你自己的测试集上实测后替换。
+> 完整说明见 [results/README.md](results/README.md)。
 
-**超分辨率（Set5）**
+**超分辨率（Set5，Y 通道）**
 
 | 方法 | 缩放 | PSNR (dB) | SSIM |
 |---|---|---|---|
-| Bicubic（基线） | 2× | 33.66 | 0.929 |
+| Bicubic（基线） | 2× | 33.66 * | 0.9299 * |
 | **SRCNN**（自训） | 2× | _待填真实值_ | _待填_ |
 | **SRResNet + 感知损失**（自训） | 4× | _待填真实值_ | _待填_ |
 
-**低光增强（LOL）**
+**低光增强（LOL-test）**
 
 | 方法 | PSNR (dB) | SSIM |
 |---|---|---|
-| 自适应伽马（基线） | 16.20 | 0.710 |
+| 自适应伽马（基线） | _待填真实值_ | _待填_ |
 | **U-Net**（自训） | _待填真实值_ | _待填_ |
+
+> `*` = Set5 ×2 Bicubic 的文献常用参考值（Dong et al.）。低光基线请与自训模型在同一测试划分上实测，以保证公平对比。
 
 ---
 
