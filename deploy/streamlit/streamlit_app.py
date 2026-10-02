@@ -116,22 +116,145 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
 
 
 # --------------------------------------------------------------------------- #
-# Streamlit UI
+# Streamlit UI —— 复古像素 / 游戏风
 # --------------------------------------------------------------------------- #
-st.set_page_config(page_title="PixelForge · Image Restoration", page_icon="🖼️", layout="centered")
+st.set_page_config(page_title="PixelForge · Image Restoration",
+                   page_icon="👾", layout="centered")
 
-st.title("🖼️ PixelForge · Image Restoration")
-st.caption("Super-Resolution (超分) & Low-Light Enhancement (低光增强) · 由自训模型驱动")
+PIXEL_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  --pf-cyan: #22d3ee;
+  --pf-purple: #a855f7;
+  --pf-pink: #f472b6;
+  --pf-bg: #0b0a1f;
+  --pf-card: rgba(23, 19, 56, 0.72);
+  --pf-border: rgba(34, 211, 238, 0.35);
+}
+
+/* 全局等宽 + 轻微像素渲染 */
+html, body, [class*="css"] {
+  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.2px;
+}
+
+/* 深空背景 + 霓虹光晕 + 扫描线 */
+.stApp {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.22), transparent 42%),
+    radial-gradient(circle at 85% 25%, rgba(34, 211, 238, 0.18), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px),
+    var(--pf-bg);
+}
+
+/* 隐藏 Streamlit 框架元素，减少"框架感" */
+#MainMenu, header[data-testid="stHeader"], footer { visibility: hidden; }
+[data-testid="stToolbar"] { display: none; }
+
+/* 自定义 Hero 标题 */
+.pf-hero {
+  text-align: center;
+  padding: 30px 16px 24px;
+  margin-bottom: 20px;
+  border: 3px solid var(--pf-border);
+  border-radius: 4px;
+  background: linear-gradient(160deg, rgba(34,211,238,0.10), rgba(168,85,247,0.16));
+  box-shadow: 0 0 0 3px rgba(11,10,31,0.9), 0 0 24px rgba(168,85,247,0.35);
+  position: relative;
+  overflow: visible;
+}
+.pf-title {
+  font-family: 'Press Start 2P', "Courier New", monospace;
+  font-size: 28px;
+  line-height: 1.7;
+  color: #fff;
+  text-shadow: 3px 3px 0 #a855f7, 6px 6px 0 rgba(34,211,238,0.55);
+  margin: 0 0 16px;
+  letter-spacing: 2px;
+  word-spacing: 4px;
+}
+.pf-sub {
+  font-size: 13px;
+  color: var(--pf-cyan);
+  margin: 0;
+}
+.pf-badge {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 5px 12px;
+  font-size: 11px;
+  color: var(--pf-bg);
+  background: var(--pf-cyan);
+  border-radius: 3px;
+  font-weight: 700;
+}
+
+/* 像素风按钮 */
+.stButton > button, .stDownloadButton > button {
+  font-family: "Courier New", monospace;
+  font-weight: 700;
+  border: 2px solid var(--pf-cyan);
+  border-radius: 3px;
+  background: rgba(34, 211, 238, 0.10);
+  color: #eaffff;
+  transition: all 0.12s ease;
+  box-shadow: 3px 3px 0 rgba(168, 85, 247, 0.45);
+}
+.stButton > button:hover, .stDownloadButton > button:hover {
+  background: var(--pf-cyan);
+  color: var(--pf-bg);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(244, 114, 182, 0.6);
+}
+
+/* 侧栏 / 卡片容器统一暗紫描边 */
+[data-testid="stSidebar"] {
+  background: linear-gradient(180deg, #171338, #0f0c2b);
+  border-right: 2px solid rgba(168, 85, 247, 0.35);
+}
+[data-testid="stFileUploader"] {
+  border: 2px dashed var(--pf-border);
+  border-radius: 4px;
+  padding: 6px;
+}
+
+/* 图片容器加像素描边 */
+[data-testid="stImage"] img {
+  border: 3px solid rgba(34, 211, 238, 0.5);
+  border-radius: 3px;
+  box-shadow: 4px 4px 0 rgba(168, 85, 247, 0.35);
+}
+
+/* 提示条重着色 */
+[data-testid="stAlert"] {
+  border-radius: 3px;
+  border-left: 4px solid var(--pf-purple);
+}
+</style>
+"""
+
+st.markdown(PIXEL_CSS, unsafe_allow_html=True)
 
 sr4_ready = _load_sr(4) is not None
 low_ready = _load_lowlight() is not None
-st.info(
-    f"**当前引擎** — SR ×4: {'ML（自训模型）' if sr4_ready else 'classical 基线'} · "
-    f"Low-light: {'ML（自训模型）' if low_ready else 'classical 基线'}"
+sr4_tag = "ML 自训模型" if sr4_ready else "classical 基线"
+low_tag = "ML 自训模型" if low_ready else "classical 基线"
+
+st.markdown(
+    f"""
+    <div class="pf-hero">
+      <p class="pf-title">PIXELFORGE</p>
+      <p class="pf-sub">&gt; SUPER-RESOLUTION &amp; LOW-LIGHT ENHANCEMENT&lt;</p>
+      <p class="pf-badge">SR ×4 · {sr4_tag} ｜ LOW-LIGHT · {low_tag}</p>
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
 with st.sidebar:
-    st.header("参数")
+    st.header("👾 参数")
     task = st.radio("任务", ["超分辨率 (SR)", "低光增强 (Low-Light)"])
     scale = st.radio("SR 放大倍数", ["2", "4"], index=1,
                      help="×4 使用自训 SRResNet + 感知损失模型")
@@ -152,15 +275,15 @@ if uploaded is not None:
             out = predict_lowlight(img) or lowlight_classical(img)
 
     c1, c2 = st.columns(2)
-    c1.image(img, caption="Before", use_container_width=True)
-    c2.image(out, caption="After (enhanced)", use_container_width=True)
+    c1.image(img, caption="Before", width="stretch")
+    c2.image(out, caption="After (enhanced)", width="stretch")
 
     buf = io.BytesIO()
     out.save(buf, format="PNG")
     st.download_button("⬇️ 下载结果 PNG", buf.getvalue(),
                        file_name="pixelforge_after.png", mime="image/png")
 else:
-    st.info("请上传一张图片开始体验。低光任务建议用较暗的照片；超分建议用低分辨率图。")
+    st.info("👾 请上传一张图片开始体验。低光任务建议用较暗的照片；超分建议用低分辨率图。")
 
 st.divider()
-st.caption("PixelForge · focused on super-resolution & low-light enhancement")
+st.caption("PIXELFORGE · press start to restore your images")
