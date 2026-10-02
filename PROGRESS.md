@@ -97,7 +97,37 @@
   3. 已 `export.py` 导出 TorchScript 到 `serve/models/`：`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M)；
   4. **沙箱 CPU 已验证** `/api/health` → `sr_scale4:"ml"`、`lowlight:"ml"`（见 §2.5）。
 - [x] **决定权重是否进 git（`.gitignore` 决策）** —— **已选 B：权重放行进 git**。已移除 `.gitignore` 中 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随仓库提交，`git clone` 即得可运行项目（7MB 体积可接受）。
-- [ ] **（可选 · 重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。若希望"自训模型在 PSNR 上也胜基线"的卖点更硬，建议做；或训两份权重各标一行。
+- [ ] **（可选 · 重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。若希望"自训模型在 PSNR 上也胜基线"的卖点更硬，建议做。
+  > ⚠️ **关键**：`train.py` 的 CSV / checkpoint 文件名**不含 "perceptual"**（`results/train_log_sr_generator.csv`、`models/sr_generator_scale4_best.pth`）。重训会**直接覆盖**感知版产物，故必须先备份。
+  >
+  > **执行计划（全部在 AutoDL `/root/autodl-tmp/pixelforge` 操作）**：
+  > 1. **备份感知版**（终端 1）：
+  >    ```bash
+  >    cd /root/autodl-tmp/pixelforge
+  >    mkdir -p backups
+  >    cp models/sr_generator_scale4_best.pth  backups/sr_generator_scale4_perceptual_best.pth
+  >    cp results/train_log_sr_generator.csv  backups/train_log_sr_generator_perceptual.csv
+  >    cp serve/models/sr_generator_scale4.pt backups/sr_generator_scale4_perceptual.pt
+  >    ```
+  > 2. **无感知重训**（终端 1，`nohup`，只敲一次）：
+  >    ```bash
+  >    nohup python train/train.py --task sr --model generator --scale 4 \
+  >      --data_root data --epochs 200 --batch_size 8 --lr 1e-4 \
+  >      > train_sr_nopercep.log 2>&1 &
+  >    ```
+  > 3. **监控**（终端 2/3，注意日志文件名不同）：
+  >    ```bash
+  >    tail -f /root/autodl-tmp/pixelforge/train_sr_nopercep.log
+  >    tail -3 /root/autodl-tmp/pixelforge/results/train_log_sr_generator.csv
+  >    ```
+  > 4. **等约 75 分钟**跑完，日志末尾出现 `Training finished. Best val PSNR: ...`（预期 26+）。
+  > 5. **导出**（终端 1，会覆盖现有 `.pt`，已备份无妨）：
+  >    ```bash
+  >    python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
+  >      --out serve/models/sr_generator_scale4.pt --task sr --scale 4
+  >    ```
+  > 6. **传回本地 / 沙箱**：下载 `serve/models/sr_generator_scale4.pt` 覆盖旧的，起服务 `curl localhost:8000/api/health` 应仍 `sr_scale4:"ml"`。
+  > 7. **更新文档 + 推送**：把 `README.md` / `results/README.md` 的 SR×4 17.20 改为新值，本文件标完成；push（建议先轮换 token，见 P0）。
 - [ ] **替换 README 占位指标**：已部分完成——SR×4（17.20/0.217）与 lowlight U-Net（19.26/0.74–0.78）真实值已填入 `README.md` 与 `results/README.md`；SRCNN 2× 未训练仍留 `TBD`。
 
 ### 🟡 P2 — 部署与上线
@@ -126,7 +156,7 @@
 | 🔴 暴露的 Token | 见 P0；必须轮换，否则仓库推送权限可被他人滥用 |
 | ⚠️ 无真实权重（历史） | 沙箱仅有 CPU 无法训练；**但已通过用户 AutoDL 训练 + 上传 .pt 补全真实权重**，沙箱已验证加载（见 §2.5） |
 | ⚠️ SR 感知损失取舍 | SR×4 用 `--perceptual`（VGG 感知损失主导），**刻意牺牲像素精度换观感**，故 PSNR 17.20 低于 bicubic 基线（x4 ~26–28 dB）。是配置选择非 bug；若需 PSNR 达标可重训去 `--perceptual`，或在 README 透明说明"主打肉眼对比" |
-| ⚠️ 权重不进 git | `.gitignore` 忽略 `serve/models/*.pt`，自训权重目前未进仓库；需决定 A 本地分发 / B 放行进 git（见 P1） |
+| ℹ️ 权重已进 git | 已选 B：`.gitignore` 移除 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随 `bb3ee81` 提交进仓库，`git clone` 即得可运行项目 |
 | ℹ️ 经典基线定位 | Bicubic / 自适应伽马仅为"开箱即用兜底 + 对比基线"，招生委员会看重的是自训模型对比基线后的指标提升（lowlight 已验证胜出） |
 | ℹ️ 受限网络推送 | 沙箱直连 GitHub 被 egress 白名单拦截，已用 `ghproxy.net` 镜像解决（见 `DEPLOY.md` §4） |
 
