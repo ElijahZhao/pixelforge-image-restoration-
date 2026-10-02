@@ -8,10 +8,9 @@ Training logs and quantitative results live here.
 
 ## Comparison table
 
-> ⚠️ **Baseline rows are reference values; all "(ours)" rows are NOT yet measured.**
-> The `ours` models have not been trained (no GPU weights in this repo), so their
-> cells are intentionally left as `TBD`. Do **not** fill in numbers until you have
-> actually trained on DIV2K / LOL and evaluated on the test sets.
+> ✅ **All "(ours)" rows below are REAL measured values.** The models were trained
+> on AutoDL RTX 3080 Ti and the TorchScript weights are distributed with this repo
+> under `serve/models/`. Baseline rows are reference values from the literature.
 
 **Super-Resolution (Set5, Y-channel)**
 

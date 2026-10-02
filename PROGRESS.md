@@ -16,11 +16,11 @@
 | 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 12/12 通过；真实 demo 图已生成 |
 | 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **已在 AutoDL RTX 3080 Ti 训完并导出**（见 §2.5） |
 | 真实评测指标（PSNR/SSIM） | ✅ 已出 | 100% | SR×4 17.20/0.217（感知损失，偏低）；lowlight 19.26/0.74-0.78（胜基线）；README 占位待替换 |
-| 线上部署（Vercel + HF Spaces/VPS） | ⏳ 待办 | 0% | 尚未部署 |
+| 线上部署（Streamlit Cloud 公开 Demo） | ✅ 已上线 | 100% | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
 | 申请材料（SOP / CV / 报告） | ⏳ 重要待办 | 0% | 可用本地技能生成 |
 | 安全收尾（删除暴露的 token） | 🔴 必须 | — | **高危，需立即处理** |
 
-**一句话总结**：代码、文档、本地测试、真实 demo 图、以及**真实 GPU 训练权重与指标**均已闭环；**剩余缺口**为：权重是否进 git 的决策（`.gitignore`）、README 占位指标替换、部署、申请材料包装与安全收尾（token 轮换）。
+**一句话总结**：代码、文档、本地测试、真实 demo 图、以及**真实 GPU 训练权重与指标**均已闭环；**并已上线公开 Demo（Streamlit Cloud）**。剩余缺口：SR ×4 去感知损失重训（③，命令已备）、申请材料包装（P3）、以及必须立即处理的 P0 token 轮换。
 
 ---
 
@@ -55,14 +55,14 @@
 ### 2.4 文档与交付物
 | 文件 | 内容 | 核查 |
 |---|---|---|
-| `README.md` | 中文美化版：SVG 封面、badges、Mermaid 架构图、功能卡、指标表（⚠️占位待替换真实值）、SOP/CV 描述、致谢 | ✅ commit `df57135` |
+| `README.md` | 中文美化版：SVG 封面、badges、Mermaid 架构图、功能卡、指标表（真实值）、SOP/CV 描述、致谢；已补全公开 Demo 链接与自训演示图 | ✅ |
 | `assets/banner.svg` | 深色渐变封面（Before → After） | ✅ |
 | `DEPLOY.md` | 部署指南 + §4 受限网络经 ghproxy 镜像推送方法 | ✅ |
 | `TOOLS_CHECKLIST.md` | 内置工具/技能/连接器使用清单 | ✅ |
 | `LICENSE` | MIT（ElijahZhao, 2025） | ✅ |
 | `data/README.md`、`results/README.md` | 数据集下载说明、结果说明 | ✅ |
 | GitHub 推送 | 31 个文件经 `ghproxy.net` 镜像推送至 `ElijahZhao/pixelforge-image-restoration-` | ✅ |
-| 真实 demo 图 | `scripts/make_demo.py` + `assets/demo_*.png`：CPU 直接跑经典方法生成前后对比 | ✅ |
+| 真实 demo 图 | `scripts/make_demo.py` + `assets/demo_*.jpg`：CPU 直接用**自训权重**生成「低清/暗光输入 vs 经典基线 vs 自训模型」对比 | ✅ |
 | 单元测试 | `train/tests/`：模型 shape、PSNR/SSIM 正确性，**12/12 通过** | ✅ |
 | CORS 收紧 | `serve/app.py`：`*` 改为可通过 `ALLOWED_ORIGINS` 配置 | ✅ |
 | E2E 测试 | `tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程 | ✅ |
@@ -136,7 +136,7 @@
 - [x] **沙箱实跑验证**：`streamlit run` 启动 HTTP 200 无 Traceback；引擎 `SR4 = ML · LowLight = ML`；SR×4 与低光在 100×100 / 1280×720 / 63×41 等任意尺寸均正常。
 - [x] **修复 U-Net 尺寸约束 bug**：低光 U-Net 要求边长 32 倍数，否则解码器拼接崩溃；已在 `deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 与主仓库 `serve/model_loader.py` 加自适应补齐（pad→推理→裁回）。
 - [x] **HF Spaces 备选包**：`deploy/hf_space/` 亦保留（若后续开通 PRO 或申请 community grant 可用）。
-- [ ] **用户侧**：登录 https://share.streamlit.io → Create app → 选仓库 `ElijahZhao/pixelforge-image-restoration-`、main 分支、主文件 `deploy/streamlit/streamlit_app.py` → Deploy → 获得公开链接。
+- [x] **用户侧部署完成**：已在 Streamlit Community Cloud 完成 Deploy，公开链接 **https://hddzzb68eqfnoed8zsmgqp.streamlit.app/** 已上线，自训模型实时驱动（SR ×4 与 Low-light 均 ML）。
 - [ ] （可选）前端部署：Vercel 导入 `web/`，`NEXT_PUBLIC_API_URL` 指向后端。
 
 ### 🟢 P3 — 申请材料包装（重要 · 本地可完成）
@@ -178,6 +178,6 @@
 | 测试 / Demo | 单元测试 12/12 + 真实 demo 图 | ✅ |
 | 训练 | 真实权重（GPU） | ✅ |
 | 评测 | 真实 PSNR/SSIM 数值 | ✅ |
-| 部署 | Vercel / HF Spaces | ⏳ |
+| 部署 | Streamlit Cloud 公开 Demo | ✅ |
 | 材料 | SOP / CV / 报告 / 幻灯片 | ⏳ |
 | 安全 | 删除暴露 Token | 🔴 |
