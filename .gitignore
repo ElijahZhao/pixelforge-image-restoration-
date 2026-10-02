@@ -4,11 +4,14 @@ __pycache__/
 .venv/
 venv/
 
-# Data & model weights (large, not committed)
+# Data & model weights
 data/div2k/
 data/lol/
 models/*.pth
-serve/models/*.pt
+# NOTE: serve/models/*.pt ARE tracked on purpose (plan B).
+# The trained TorchScript weights (sr_generator_scale4.pt, lowlight.pt)
+# are committed so `git clone` gives a runnable project out of the box.
+# See PROGRESS.md P1 for the rationale.
 results/*.csv
 
 # Node / Next.js
