@@ -15,7 +15,7 @@ import os
 from pathlib import Path
 
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 import torchvision.transforms.functional as TF
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
@@ -63,11 +63,28 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image:
     return out.resize((img.width * scale, img.height * scale), Image.BICUBIC)
 
 
+def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
+    """Pad right/bottom so both sides are multiples of ``m``.
+
+    The low-light U-Net downsamples by 2 several times, so it requires input
+    sides divisible by 32; otherwise the decoder concatenation fails with
+    "Sizes of tensors must match". We pad, run, then crop back to the original
+    size so any user-supplied image works.
+    """
+    w, h = img.size
+    pw, ph = (-w) % m, (-h) % m
+    if pw or ph:
+        img = ImageOps.expand(img, border=(0, 0, pw, ph), fill=0)
+    return img, (w, h)
+
+
 @torch.no_grad()
 def predict_lowlight(img: Image.Image) -> Image.Image:
     model = get_lowlight_model()
     if model is None:
         return None
-    x = TF.to_tensor(img).unsqueeze(0).to(DEVICE)
+    padded, (w, h) = _pad_to_multiple(img, 32)
+    x = TF.to_tensor(padded).unsqueeze(0).to(DEVICE)
     out = model(x).clamp(0, 1)
-    return TF.to_pil_image(out.squeeze(0).cpu())
+    out = TF.to_pil_image(out.squeeze(0).cpu())
+    return out.crop((0, 0, w, h))

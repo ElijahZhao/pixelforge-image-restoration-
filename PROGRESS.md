@@ -17,7 +17,7 @@
 | 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **已在 AutoDL RTX 3080 Ti 训完并导出**（见 §2.5） |
 | 真实评测指标（PSNR/SSIM） | ✅ 已出 | 100% | SR×4 17.20/0.217（感知损失，偏低）；lowlight 19.26/0.74-0.78（胜基线）；README 占位待替换 |
 | 线上部署（Vercel + HF Spaces/VPS） | ⏳ 待办 | 0% | 尚未部署 |
-| 申请材料（SOP / CV / 报告） | ⏳ 待办 | 0% | 可用本地技能生成 |
+| 申请材料（SOP / CV / 报告） | ⏳ 重要待办 | 0% | 可用本地技能生成 |
 | 安全收尾（删除暴露的 token） | 🔴 必须 | — | **高危，需立即处理** |
 
 **一句话总结**：代码、文档、本地测试、真实 demo 图、以及**真实 GPU 训练权重与指标**均已闭环；**剩余缺口**为：权重是否进 git 的决策（`.gitignore`）、README 占位指标替换、部署、申请材料包装与安全收尾（token 轮换）。
@@ -97,7 +97,7 @@
   3. 已 `export.py` 导出 TorchScript 到 `serve/models/`：`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M)；
   4. **沙箱 CPU 已验证** `/api/health` → `sr_scale4:"ml"`、`lowlight:"ml"`（见 §2.5）。
 - [x] **决定权重是否进 git（`.gitignore` 决策）** —— **已选 B：权重放行进 git**。已移除 `.gitignore` 中 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随仓库提交，`git clone` 即得可运行项目（7MB 体积可接受）。
-- [ ] **（可选 · 重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。若希望"自训模型在 PSNR 上也胜基线"的卖点更硬，建议做。
+- [ ] **（重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。若希望"自训模型在 PSNR 上也胜基线"的卖点更硬，建议做。详见下方命令清单。
   > ⚠️ **关键**：`train.py` 的 CSV / checkpoint 文件名**不含 "perceptual"**（`results/train_log_sr_generator.csv`、`models/sr_generator_scale4_best.pth`）。重训会**直接覆盖**感知版产物，故必须先备份。
   >
   > **执行计划（全部在 AutoDL `/root/autodl-tmp/pixelforge` 操作）**：
@@ -130,12 +130,15 @@
   > 7. **更新文档 + 推送**：把 `README.md` / `results/README.md` 的 SR×4 17.20 改为新值，本文件标完成；push（建议先轮换 token，见 P0）。
 - [ ] **替换 README 占位指标**：已部分完成——SR×4（17.20/0.217）与 lowlight U-Net（19.26/0.74–0.78）真实值已填入 `README.md` 与 `results/README.md`；SRCNN 2× 未训练仍留 `TBD`。
 
-### 🟡 P2 — 部署与上线
-- [ ] **前端部署**：Vercel 导入 `web/`，环境变量 `NEXT_PUBLIC_API_URL` 指向后端。
-- [ ] **后端部署**：Hugging Face Spaces（`gradio_demo.py` 或 `app.py` 部署到小 VPS）。
-- [ ] （可选）用「发布为应用」技能生成公开分享链接，方便导师直接打开 demo。
+### 🟡 P2 — 部署与上线（方案 B 进行中）
+> 决策：GitHub Pages / Actions **托管不了 ML 后端**（纯静态 / 临时 job），故选 **方案 B：Gradio → Hugging Face Spaces**，一个公开链接全功能。
+- [x] **HF Spaces 部署包已就绪**：`deploy/hf_space/`（`app.py` 自包含入口 + `requirements.txt` + Space 元信息 `README.md` + `models/` 两权重），附 `DEPLOY_HF.md` 步骤说明。
+- [x] **沙箱实跑验证**：引擎 `SR ×4: ML · Low-light: ML`；SR×4 与低光在 100×100 / 1280×720 / 63×41 等任意尺寸均正常。
+- [x] **修复 U-Net 尺寸约束 bug**：低光 U-Net 要求边长 32 倍数，否则解码器拼接崩溃；已在 `deploy/hf_space/app.py` 与主仓库 `serve/model_loader.py` 加自适应补齐（pad→推理→裁回）。
+- [ ] **用户侧**：在 HF 新建 Space（SDK: Gradio, CPU basic, Public）并上传 `deploy/hf_space/` 全部内容 → 获得公开链接。
+- [ ] （可选）前端部署：Vercel 导入 `web/`，`NEXT_PUBLIC_API_URL` 指向后端。
 
-### 🟢 P3 — 申请材料包装（本地可完成）
+### 🟢 P3 — 申请材料包装（重要 · 本地可完成）
 - [ ] 用 `docx` / `pdf` 技能生成英文 **SOP / CV / 项目报告**（README 含可直接改编的中文项目描述）。
 - [ ] 用 `pptx` 技能生成**项目答辩 / 面试幻灯片**。
 - [ ] 用 `humanizer` 技能把 AI 味的英文表述润色为自然表达。
