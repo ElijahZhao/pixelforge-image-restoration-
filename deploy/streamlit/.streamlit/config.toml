@@ -1,5 +1,5 @@
 # PixelForge · 复古像素 / 游戏风主题（Streamlit 官方主题层）
-# 配合 streamlit_app.py 注入的 CSS 使用，形成"像素街机"整体观感。
+# 只保留官方支持的 [theme] 段，避免 Cloud 环境对 client/browser 段的兼容问题。
 
 [theme]
 base = "dark"
@@ -8,9 +8,3 @@ backgroundColor = "#0b0a1f"         # 深空紫背景
 secondaryBackgroundColor = "#171338" # 卡片 / 侧栏
 textColor = "#e8e6ff"
 font = "monospace"                   # 全局等宽字体，像素感基座
-
-[client]
-toolbarMode = "minimal"              # 收起右上角工具栏，减少框架感
-
-[browser]
-gatherUsageStats = false

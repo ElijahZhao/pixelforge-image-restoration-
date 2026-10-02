@@ -123,8 +123,6 @@ st.set_page_config(page_title="PixelForge · Image Restoration",
 
 PIXEL_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
 :root {
   --pf-cyan: #22d3ee;
   --pf-purple: #a855f7;
@@ -132,11 +130,12 @@ PIXEL_CSS = """
   --pf-bg: #0b0a1f;
   --pf-card: rgba(23, 19, 56, 0.72);
   --pf-border: rgba(34, 211, 238, 0.35);
+  --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 /* 全局等宽 + 轻微像素渲染 */
 html, body, [class*="css"] {
-  font-family: "Courier New", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--pf-font);
   letter-spacing: 0.2px;
 }
 
@@ -166,8 +165,9 @@ html, body, [class*="css"] {
   overflow: visible;
 }
 .pf-title {
-  font-family: 'Press Start 2P', "Courier New", monospace;
+  font-family: var(--pf-font);
   font-size: 28px;
+  font-weight: 700;
   line-height: 1.7;
   color: #fff;
   text-shadow: 3px 3px 0 #a855f7, 6px 6px 0 rgba(34,211,238,0.55);
