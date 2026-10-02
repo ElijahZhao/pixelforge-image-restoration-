@@ -21,12 +21,20 @@ from pathlib import Path
 
 import numpy as np
 import streamlit as st
-import torch
-import torchvision.transforms.functional as TF
 from PIL import Image, ImageFilter, ImageOps
 
+# NOTE: torch / torchvision are imported LAZILY (inside the functions below) to
+# minimise the memory footprint on Streamlit Community Cloud's free tier. Importing
+# torch eagerly at module load can push a ~1 GB instance over its limit and get the
+# process OOM-killed (which shows up as a bare "Oh no." page with no traceback).
+
 MODELS_DIR = Path(__file__).resolve().parent / "models"
-DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def _device() -> str:
+    import torch
+
+    return "cuda" if torch.cuda.is_available() else "cpu"
 
 
 # --------------------------------------------------------------------------- #
@@ -60,21 +68,42 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
 
 # --------------------------------------------------------------------------- #
 # TorchScript model loading (mirror of serve/model_loader.py, with size fix)
+#
+# IMPORTANT: on Streamlit Community Cloud the free tier ships ~1 GB RAM. Importing
+# torch + loading TorchScript weights is memory-hungry, so we:
+#   * only PROBE file existence when rendering (never torch.jit.load at render time)
+#   * load lazily on the first actual inference, and
+#   * fail soft -- if loading raises (e.g. OOM), fall back to the classical baseline
+#     instead of crashing the whole app.
 # --------------------------------------------------------------------------- #
-@st.cache_resource(show_spinner=False)
-def _load_sr(scale: int):
+def _sr_weight_path(scale: int):
     matches = sorted(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
-    if not matches:
-        return None
-    return torch.jit.load(str(matches[0]), map_location=DEVICE).eval()
+    return matches[0] if matches else None
+
+
+def _lowlight_weight_path():
+    p = MODELS_DIR / "lowlight.pt"
+    return p if p.exists() else None
 
 
 @st.cache_resource(show_spinner=False)
-def _load_lowlight():
-    p = MODELS_DIR / "lowlight.pt"
-    if not p.exists():
+def _load_sr(path_str: str):
+    try:
+        import torch
+
+        return torch.jit.load(path_str, map_location=_device()).eval()
+    except Exception:  # noqa: BLE001 - never let model loading take down the app
         return None
-    return torch.jit.load(str(p), map_location=DEVICE).eval()
+
+
+@st.cache_resource(show_spinner=False)
+def _load_lowlight(path_str: str):
+    try:
+        import torch
+
+        return torch.jit.load(path_str, map_location=_device()).eval()
+    except Exception:  # noqa: BLE001
+        return None
 
 
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
@@ -91,27 +120,39 @@ def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[
     return img, (w, h)
 
 
-@torch.no_grad()
 def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
-    model = _load_sr(scale)
+    path = _sr_weight_path(scale)
+    if path is None:
+        return None
+    model = _load_sr(str(path))
     if model is None:
         return None
-    lr = img.resize((max(1, img.width // scale), max(1, img.height // scale)), Image.BICUBIC)
-    x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
-    out = model(x).clamp(0, 1)
-    out = TF.to_pil_image(out.squeeze(0).cpu())
+    import torch
+    import torchvision.transforms.functional as TF
+
+    with torch.no_grad():
+        lr = img.resize((max(1, img.width // scale), max(1, img.height // scale)), Image.BICUBIC)
+        x = TF.to_tensor(lr).unsqueeze(0).to(_device())
+        out = model(x).clamp(0, 1)
+        out = TF.to_pil_image(out.squeeze(0).cpu())
     return out.resize((img.width * scale, img.height * scale), Image.BICUBIC)
 
 
-@torch.no_grad()
 def predict_lowlight(img: Image.Image) -> Image.Image | None:
-    model = _load_lowlight()
+    path = _lowlight_weight_path()
+    if path is None:
+        return None
+    model = _load_lowlight(str(path))
     if model is None:
         return None
+    import torch
+    import torchvision.transforms.functional as TF
+
     padded, (w, h) = _pad_to_multiple(img, 32)
-    x = TF.to_tensor(padded).unsqueeze(0).to(DEVICE)
-    out = model(x).clamp(0, 1)
-    out = TF.to_pil_image(out.squeeze(0).cpu())
+    with torch.no_grad():
+        x = TF.to_tensor(padded).unsqueeze(0).to(_device())
+        out = model(x).clamp(0, 1)
+        out = TF.to_pil_image(out.squeeze(0).cpu())
     return out.crop((0, 0, w, h))
 
 
@@ -237,8 +278,10 @@ html, body, [class*="css"] {
 
 st.markdown(PIXEL_CSS, unsafe_allow_html=True)
 
-sr4_ready = _load_sr(4) is not None
-low_ready = _load_lowlight() is not None
+# Render-time engine probe: check the weight FILES only (no torch.jit.load),
+# so merely opening the page never allocates model memory.
+sr4_ready = _sr_weight_path(4) is not None
+low_ready = _lowlight_weight_path() is not None
 sr4_tag = "ML 自训模型" if sr4_ready else "classical 基线"
 low_tag = "ML 自训模型" if low_ready else "classical 基线"
 
