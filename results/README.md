@@ -8,9 +8,13 @@ Training logs and quantitative results live here.
 
 ## Comparison table
 
-> ✅ **All "(ours)" rows below are REAL measured values.** The models were trained
-> on AutoDL RTX 3080 Ti and the TorchScript weights are distributed with this repo
-> under `serve/models/`. Baseline rows are reference values from the literature.
+> ⚠️ **These numbers are reported by the training runs, but are NOT yet
+> independently reproducible from this repo** — no training log CSV or
+> measurement script is committed here. Treat them as *pending verification*
+> until an `eval_on_testset.py` + logs are added (see `PIXELFORGE_FIX_PLAN.md`,
+> item F6). The TorchScript weights themselves are real (trained on AutoDL);
+> only the *numbers* lack a reproducible path.
+> Baseline rows are reference values from the literature.
 
 **Super-Resolution (Set5, Y-channel)**
 
@@ -28,5 +32,8 @@ Training logs and quantitative results live here.
 | LowLight U-Net (ours)           | LowLight | —     | 19.26     | 0.74-0.78 |
 
 > `*` = widely-cited reference value for Bicubic ×2 on Set5 (Dong et al., 2016).
-> `†` = typical reference range for classical adaptive-gamma low-light enhancement on LOL (~15-17 dB), **not measured on this project's test split**; our trained U-Net (19.26 dB) already exceeds it.
-> SR×4 (17.20 dB) uses VGG perceptual loss and is intentionally below the Bicubic baseline on PSNR (trades pixel fidelity for perceptual quality). Remaining `TBD`s (e.g. SRCNN 2×, which was not trained) can be filled if trained later.
+> `†` = typical reference range for classical adaptive-gamma low-light enhancement on LOL (~15-17 dB), **not measured on this project's test split**.
+> ⚠️ **Corrections (see DIAGNOSIS_ROUND1/3/10/11/18):**
+> - SR×4 (17.20 dB) being below Bicubic is **not** an intentional trade-off. The perceptual loss had two implementation defects (VGG input not ImageNet-normalized; pixel term erased by a `0.01` factor). It is a *bug, now identified and fixed in code* — a re-train is needed to realize the improvement.
+> - The U-Net's 19.26 dB is compared against a **literature reference band that was never measured on this project's own split**, and a controlled comparison on this repo's own sample showed the classical gamma baseline closer to ground truth. **Do not claim "beats baseline"** until F6 (reproducible eval) is done.
+> - Remaining `TBD`s (e.g. SRCNN 2×, which was not trained) can be filled if trained later.

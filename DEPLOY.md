@@ -1,5 +1,11 @@
 # Deployment
 
+> ⚠️ **本文档描述的是历史/备选方案（Vercel + Hugging Face Spaces）。**
+> **当前实际上线的公开 Demo 走的是 Streamlit Community Cloud**，权威步骤见
+> [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
+> 之所以保留本文档：受限网络下的镜像推送方法（第 4 节）仍然有用。
+> 若你只是想部署 Demo，请直接看 `deploy/streamlit/DEPLOY_STREAMLIT.md`。
+
 ## 1. Frontend (Next.js) → Vercel
 ```bash
 cd web

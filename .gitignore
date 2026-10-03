@@ -13,6 +13,10 @@ models/*.pth
 # are committed so `git clone` gives a runnable project out of the box.
 # See PROGRESS.md P1 for the rationale.
 results/*.csv
+# Exception: the two full training logs ARE committed — they make the reported
+# PSNR/SSIM reproducible (F6). See PIXELFORGE_RETRAIN_RESULTS.md.
+!results/train_log_sr_generator.csv
+!results/train_log_lowlight_srcnn.csv
 
 # Node / Next.js
 node_modules/
@@ -24,6 +28,9 @@ web/vercel/
 # Misc
 .DS_Store
 *.log
+# Exception: retrain evidence logs ARE committed on purpose — they are the
+# raw proof behind the reported metrics (see PIXELFORGE_RETRAIN_RESULTS.md).
+!docs/retrain_journey/*.log
 
 # Packed source archives (avoid committing redundant zips)
 pixelforge-source.zip

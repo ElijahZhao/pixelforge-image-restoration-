@@ -13,9 +13,9 @@
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | ✅ 已完成 | 100% | 无权重时自动走基线；有权重自动切 ML |
 | 前端（Next.js 交互 Demo） | ✅ 已完成 | 100% | 本地 `next build` 已通过 |
 | 文档（README/DEPLOY/工具清单/LICENSE） | ✅ 已完成 | 100% | 中文美化版 README 已上线 |
-| 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 12/12 通过；真实 demo 图已生成 |
+| 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 20/20 通过（含 8 个正确性测试）；真实 demo 图已生成 |
 | 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **已在 AutoDL RTX 3080 Ti 训完并导出**（见 §2.5） |
-| 真实评测指标（PSNR/SSIM） | ✅ 已出 | 100% | SR×4 17.20/0.217（感知损失，偏低）；lowlight 19.26/0.74-0.78（胜基线）；README 占位待替换 |
+| 真实评测指标（PSNR/SSIM） | ⚠️ 部分完成 | 训练时报告值已记录，但仓库内不可复现、且含 TBD/待修正表述；见 F6 |
 | 线上部署（Streamlit Cloud 公开 Demo） | ✅ 已上线 | 100% | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
 | 申请材料（SOP / CV / 报告） | ⏳ 重要待办 | 0% | 可用本地技能生成 |
 | 安全收尾（删除暴露的 token） | 🔴 必须 | — | **高危，需立即处理** |
@@ -63,7 +63,7 @@
 | `data/README.md`、`results/README.md` | 数据集下载说明、结果说明 | ✅ |
 | GitHub 推送 | 31 个文件经 `ghproxy.net` 镜像推送至 `ElijahZhao/pixelforge-image-restoration-` | ✅ |
 | 真实 demo 图 | `scripts/make_demo.py` + `assets/demo_*.jpg`：CPU 直接用**自训权重**生成「低清/暗光输入 vs 经典基线 vs 自训模型」对比 | ✅ |
-| 单元测试 | `train/tests/`：模型 shape、PSNR/SSIM 正确性，**12/12 通过** | ✅ |
+| 单元测试 | `train/tests/`：模型 shape + PSNR/SSIM + **正确性测试**（归一化/权重/尺寸契约/配对），**20/20 通过** | ✅ |
 | CORS 收紧 | `serve/app.py`：`*` 改为可通过 `ALLOWED_ORIGINS` 配置 | ✅ |
 | E2E 测试 | `tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程 | ✅ |
 
@@ -76,9 +76,9 @@
 > **加载验证（沙箱 CPU 环境）**：将两权重放入 `serve/models/` 后启动 `uvicorn serve.app:app`，`GET /api/health` 返回
 > `{"engines":{"sr_scale2":"classical","sr_scale4":"ml","lowlight":"ml"}}` —— 证明自训模型已被服务正确加载并切换（scale2 仍走基线，因未训 scale2 SR，符合预期）。
 
-> **指标解读**：
-> - Lowlight 19.26 dB **明显胜经典自适应伽马基线**（LOL 上约 15–17 dB），项目"自训模型提升指标"的卖点成立。
-> - SR×4 17.20 dB **低于 bicubic 基线**（x4 在 DIV2K 约 26–28 dB），原因是 `--perceptual`（VGG 感知损失主导）**刻意牺牲像素精度换观感**——这是配置选择而非 bug。如需 PSNR 达标可重训去掉 `--perceptual`，或在 README 透明说明"主打肉眼对比"。
+> **指标解读（已按审计修正）**：
+> - Lowlight 19.26 dB 是训练时报告的取值，但与**未在本项目划分上自测的文献参考带**（LOL 约 15–17 dB）比较；本项目自带样本的对照实验反而显示经典伽马基线更接近真值。**在补交可复现评测前，不应宣称"胜基线"。**
+> - SR×4 17.20 dB **低于 bicubic 基线**，成因已定位为感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项被 `0.01` 系数抹除），**属待修复问题而非"刻意取舍"**。代码已修复，需重训才能体现提升。
 
 ---
 
@@ -97,7 +97,7 @@
   3. 已 `export.py` 导出 TorchScript 到 `serve/models/`：`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M)；
   4. **沙箱 CPU 已验证** `/api/health` → `sr_scale4:"ml"`、`lowlight:"ml"`（见 §2.5）。
 - [x] **决定权重是否进 git（`.gitignore` 决策）** —— **已选 B：权重放行进 git**。已移除 `.gitignore` 中 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随仓库提交，`git clone` 即得可运行项目（7MB 体积可接受）。
-- [ ] **（重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。若希望"自训模型在 PSNR 上也胜基线"的卖点更硬，建议做。详见下方命令清单。
+- [ ] **（重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。**注意：更根本的修复已在代码中完成**（VGG 归一化 + 显式权重）；无论是否去感知损失，都应重训一次以体现修复效果。详见下方命令清单。
   > ⚠️ **关键**：`train.py` 的 CSV / checkpoint 文件名**不含 "perceptual"**（`results/train_log_sr_generator.csv`、`models/sr_generator_scale4_best.pth`）。重训会**直接覆盖**感知版产物，故必须先备份。
   >
   > **执行计划（全部在 AutoDL `/root/autodl-tmp/pixelforge` 操作）**：
@@ -147,7 +147,7 @@
 
 ### 🔵 P4 — 工程收尾（本地可完成）
 - [x] **收紧 CORS**：`serve/app.py` 已支持 `ALLOWED_ORIGINS` 环境变量；生产环境设置域名白名单，本地默认仍开放。
-- [x] **训练侧单元测试**：`train/tests/` 已覆盖模型 shape、PSNR/SSIM 正确性，12/12 通过。
+- [x] **训练侧单元测试**：`train/tests/` 覆盖模型 shape、PSNR/SSIM，并新增**正确性测试**（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性），20/20 通过。
 - [x] **浏览器 E2E 测试**：`tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程并截图留证；超分与低光两条链路均通过。
 - [x] **仓库清理**：删除 `pixelforge-source.zip`，`.gitignore` 增加 zip 包与 E2E 截图目录排除。
 
@@ -159,9 +159,9 @@
 |---|---|
 | 🔴 暴露的 Token | 见 P0；必须轮换，否则仓库推送权限可被他人滥用 |
 | ⚠️ 无真实权重（历史） | 沙箱仅有 CPU 无法训练；**但已通过用户 AutoDL 训练 + 上传 .pt 补全真实权重**，沙箱已验证加载（见 §2.5） |
-| ⚠️ SR 感知损失取舍 | SR×4 用 `--perceptual`（VGG 感知损失主导），**刻意牺牲像素精度换观感**，故 PSNR 17.20 低于 bicubic 基线（x4 ~26–28 dB）。是配置选择非 bug；若需 PSNR 达标可重训去 `--perceptual`，或在 README 透明说明"主打肉眼对比" |
-| ℹ️ 权重已进 git | 已选 B：`.gitignore` 移除 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随 `bb3ee81` 提交进仓库，`git clone` 即得可运行项目 |
-| ℹ️ 经典基线定位 | Bicubic / 自适应伽马仅为"开箱即用兜底 + 对比基线"，招生委员会看重的是自训模型对比基线后的指标提升（lowlight 已验证胜出） |
+| ⚠️ SR 感知损失缺陷 | SR×4 用 `--perceptual`，但原实现有缺陷：VGG 输入未做 ImageNet 归一化、像素项被 `0.01` 系数抹除。**已在代码中修复**（`train/train.py`），需重训才体现。**不是"配置选择"，是已定位的实现问题。** |
+| ℹ️ 权重已进 git | 已选 B：`.gitignore` 移除 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt` / `lowlight.pt` 随仓库提交，`git clone` 即得可运行项目 |
+| ℹ️ 经典基线定位 | Bicubic / 自适应伽马为"开箱即用兜底 + 对比基线"。**当前自训模型尚未在可复现划分上证明优于基线**（见 F6） |
 | ℹ️ 受限网络推送 | 沙箱直连 GitHub 被 egress 白名单拦截，已用 `ghproxy.net` 镜像解决（见 `DEPLOY.md` §4） |
 
 ---
@@ -175,9 +175,9 @@
 | 推理 | FastAPI / 经典兜底 / 权重加载 | ✅ |
 | 前端 | Next.js Demo / 滑块 / 代理 | ✅ |
 | 文档 | README / DEPLOY / 工具清单 / LICENSE | ✅ |
-| 测试 / Demo | 单元测试 12/12 + 真实 demo 图 | ✅ |
+| 测试 / Demo | 单元测试 20/20 + 真实 demo 图 | ✅ |
 | 训练 | 真实权重（GPU） | ✅ |
-| 评测 | 真实 PSNR/SSIM 数值 | ✅ |
+| 评测 | 真实 PSNR/SSIM 数值 | ⚠️ |
 | 部署 | Streamlit Cloud 公开 Demo | ✅ |
 | 材料 | SOP / CV / 报告 / 幻灯片 | ⏳ |
 | 安全 | 删除暴露 Token | 🔴 |
