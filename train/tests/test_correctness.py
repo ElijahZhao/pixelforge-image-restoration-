@@ -25,7 +25,7 @@ from PIL import Image
 
 sys.path.insert(0, "./train")
 
-from metrics import psnr, ssim  # noqa: E402
+from metrics import psnr  # noqa: E402
 from datasets import LowLightDataset  # noqa: E402
 
 

@@ -40,7 +40,7 @@ def test_ssim_decreases_with_noise():
     y = torch.clamp(x + 0.2 * torch.rand_like(x), 0, 1)
     val = ssim(x, y).item()
     assert val < 0.98, f"SSIM should drop with noise, got {val}"
-    assert val < ssim(x, x).item(), f"SSIM with noise should be lower than identical-image SSIM"
+    assert val < ssim(x, x).item(), "SSIM with noise should be lower than identical-image SSIM"
 
 
 def test_evaluate_batch_keys():

@@ -9,10 +9,7 @@ ready. Reuses the same classical + ML inference logic as ``app.py``.
 
 from __future__ import annotations
 
-import io
-
 import gradio as gr
-from PIL import Image
 
 from classical import run_classical
 from model_loader import predict_sr, predict_lowlight

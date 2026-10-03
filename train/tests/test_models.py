@@ -13,7 +13,6 @@ import sys
 import traceback
 
 import torch
-import torch.nn.functional as F
 
 sys.path.insert(0, "./train")
 from models import SRCNN, SRGenerator, LowLightUNet, build_model

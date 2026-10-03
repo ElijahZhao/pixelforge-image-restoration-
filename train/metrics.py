@@ -19,7 +19,6 @@ def psnr(pred: torch.Tensor, target: torch.Tensor, max_val: float = 1.0) -> torc
 
 
 def _gaussian_window(size: int, sigma: float, channels: int, device, dtype) -> torch.Tensor:
-    import math
     coords = torch.arange(size, dtype=dtype, device=device) - (size - 1) / 2.0
     g = torch.exp(-(coords ** 2) / (2 * sigma ** 2))
     g = g / g.sum()

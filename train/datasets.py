@@ -24,9 +24,7 @@ You can download these datasets for free:
 
 from __future__ import annotations
 
-import os
 from pathlib import Path
-from typing import Callable, Optional
 
 import torch
 from torch.utils.data import Dataset
