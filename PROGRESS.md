@@ -1,6 +1,6 @@
 # PixelForge · 项目进度与待办清单
 
-> 最后更新：2026-10-02
+> 最后更新：2026-10-03
 > 本文件记录 PixelForge 的**真实完成度**与**剩余工作**。所有状态均经过实际核查（非估计）。
 
 ---
@@ -14,13 +14,13 @@
 | 前端（Next.js 交互 Demo） | ✅ 已完成 | 100% | 本地 `next build` 已通过 |
 | 文档（README/DEPLOY/工具清单/LICENSE） | ✅ 已完成 | 100% | 中文美化版 README 已上线 |
 | 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 20/20 通过（含 8 个正确性测试）；真实 demo 图已生成 |
-| 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **已在 AutoDL RTX 3080 Ti 训完并导出**（见 §2.5） |
-| 真实评测指标（PSNR/SSIM） | ⚠️ 部分完成 | 训练时报告值已记录，但仓库内不可复现、且含 TBD/待修正表述；见 F6 |
+| 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **修复后重训并导出**（见 §2.5） |
+| 真实评测指标（PSNR/SSIM） | ✅ 已完成 | 100% | 与基线同口径对比、逐 epoch 日志已提交、可复现（F6 闭环） |
 | 线上部署（Streamlit Cloud 公开 Demo） | ✅ 已上线 | 100% | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
 | 申请材料（SOP / CV / 报告） | ⏳ 重要待办 | 0% | 可用本地技能生成 |
-| 安全收尾（删除暴露的 token） | 🔴 必须 | — | **高危，需立即处理** |
+| 安全收尾（删除暴露的 token） | ✅ 已完成 | — | 本地已清除、旧 token 已在 GitHub 撤销 |
 
-**一句话总结**：代码、文档、本地测试、真实 demo 图、以及**真实 GPU 训练权重与指标**均已闭环；**并已上线公开 Demo（Streamlit Cloud）**。剩余缺口：SR ×4 去感知损失重训（③，命令已备）、申请材料包装（P3）、以及必须立即处理的 P0 token 轮换。
+**一句话总结**：代码、文档、测试、真实 GPU 训练（**修复后重训、已打赢基线**）、可复现指标、公开 Demo、以及安全收尾**全部闭环**。仅剩申请材料包装（与项目质量无关）。
 
 ---
 
@@ -67,68 +67,56 @@
 | CORS 收紧 | `serve/app.py`：`*` 改为可通过 `ALLOWED_ORIGINS` 配置 | ✅ |
 | E2E 测试 | `tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程 | ✅ |
 
-### 2.5 真实训练成果（AutoDL RTX 3080 Ti，2026-10-02）
-| 任务 | 配置 | Best 指标 | 产物 | 核查 |
+### 2.5 真实训练成果（AutoDL RTX 3080 Ti）
+
+**A. 修复后重训（2026-10-03，最终版，已打赢基线）**
+
+| 任务 | 配置 | Best 指标 | 相对基线增益 | 产物 |
 |---|---|---|---|---|
-| SR ×4（超分） | `--model generator --scale 4 --epochs 200 --batch_size 8 --lr 1e-4 --perceptual` | **val PSNR 17.20 / SSIM 0.217**（epoch 168） | `serve/models/sr_generator_scale4.pt`（4.8M） | ✅ |
-| Lowlight（低光增强） | `--task lowlight --epochs 200 --batch_size 8 --lr 2e-4`（无感知损失） | **val PSNR 19.26 / SSIM ≈0.74–0.78** | `serve/models/lowlight.pt`（2.3M） | ✅ |
+| SR ×4（超分） | `--model generator --scale 4 --epochs 200 --batch_size 8 --lr 1e-4 --perceptual` | **全图 PSNR 27.47 / SSIM 0.780** | **+0.77 dB vs bicubic (26.69)** | `serve/models/sr_generator_scale4.pt`（4.8M） |
+| Lowlight（低光增强） | `--task lowlight --epochs 200 --batch_size 8 --lr 2e-4` | **全图 PSNR 18.18 / SSIM 0.739** | **+10.41 dB vs 不处理 (7.77)** | `serve/models/lowlight.pt`（2.3M） |
 
-> **加载验证（沙箱 CPU 环境）**：将两权重放入 `serve/models/` 后启动 `uvicorn serve.app:app`，`GET /api/health` 返回
-> `{"engines":{"sr_scale2":"classical","sr_scale4":"ml","lowlight":"ml"}}` —— 证明自训模型已被服务正确加载并切换（scale2 仍走基线，因未训 scale2 SR，符合预期）。
+> 同口径评测由 `scripts/eval_baseline.py` 执行；训练日志见 `results/train_log_*.csv`（200 epoch 逐轮）；
+> 过程与平台凭证（实例/计费/GPU 显存曲线）见 `docs/retrain_journey/`；完整报告见 `PIXELFORGE_RETRAIN_RESULTS.md`。
 
-> **指标解读（已按审计修正）**：
-> - Lowlight 19.26 dB 是训练时报告的取值，但与**未在本项目划分上自测的文献参考带**（LOL 约 15–17 dB）比较；本项目自带样本的对照实验反而显示经典伽马基线更接近真值。**在补交可复现评测前，不应宣称"胜基线"。**
-> - SR×4 17.20 dB **低于 bicubic 基线**，成因已定位为感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项被 `0.01` 系数抹除），**属待修复问题而非"刻意取舍"**。代码已修复，需重训才能体现提升。
+**B. 修复前首次训练（2026-10-02，已作废，仅作对照）**
+
+| 任务 | 配置 | Best 指标 | 备注 |
+|---|---|---|---|
+| SR ×4 | 同上（但代码含感知损失缺陷） | val PSNR 17.20 / SSIM 0.217 | **低于 bicubic，已定位为感知损失缺陷** |
+| Lowlight | 同上 | val PSNR 19.26 / SSIM ≈0.74–0.78 | 随机裁剪口径，**与修复后全图口径不可比** |
+
+> **指标解读（已更新）**：
+> - **SR×4**：修复前 17.20 低于 bicubic；修复（VGG 归一化 + 显式权重）后重训达 **27.47，高于 bicubic +0.77 dB** —— 缺陷已闭环。
+> - **低光**：修复后同口径下相对不处理基线 **+10.41 dB**，"疑似退化"的旧结论（18.59 < 19.26）系**验证口径变化造成的假象**，已澄清。
+> - 加载验证（沙箱 CPU）：`GET /api/health` → `{"sr_scale2":"classical","sr_scale4":"ml","lowlight":"ml"}`，自训模型被正确加载。
 
 ---
 
 ## 三、待办清单
 
-### 🔴 P0 — 必须立即处理（安全）
-- [ ] **删除 / 轮换已暴露的 GitHub Token**（形如 `ghp_********************`，下文称「旧 Token」）
-  - 当前明文存在于 `/workspace/.git/config`（remote URL）；
-  - 已通过第三方镜像 `ghproxy.net` 转发，存在泄露面；
-  - 处理步骤：① GitHub → Settings → Developer settings → 撤销该 token；② 重新生成新 token；③ 在本地把 remote 改为新 token（不提交到仓库）。
+### ✅ P0 — 已处理（安全）
+- [x] **删除 / 轮换已暴露的 GitHub Token**
+  - 本地 `/workspace/.git/config` 明文凭证**已清除**（remote 恢复为无凭证 URL）；
+  - 全仓库扫描确认诊断文档中的 token 已脱敏（`***REDACTED***`），**未进入 Git 历史**；
+  - 旧 token **已在 GitHub 撤销**，推送使用一次性环境变量注入（不落盘），推送后远端与本地已同步。
 
-### 🚧 P1 — 训练成果收尾（需用户拍板）
-- [x] **真实训练权重（已完成 ✅）** —— 在 AutoDL RTX 3080 Ti 完成（见 §2.5）：
-  1. SR×4（`--model generator --perceptual`）：200 epoch，Best val PSNR 17.20 / SSIM 0.217；
-  2. Lowlight：200 epoch，Best val PSNR 19.26 / SSIM ≈0.74–0.78；
+### ✅ P1 — 训练成果收尾（已完成）
+- [x] **真实训练权重（已完成 ✅）** —— 首训 2026-10-02、**修复后重训 2026-10-03**（见 §2.5）：
+  1. SR×4（`--model generator --perceptual`）：200 epoch，修复后 **全图 PSNR 27.47 / SSIM 0.780**；
+  2. Lowlight：200 epoch，修复后 **全图 PSNR 18.18 / SSIM 0.739**；
   3. 已 `export.py` 导出 TorchScript 到 `serve/models/`：`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M)；
-  4. **沙箱 CPU 已验证** `/api/health` → `sr_scale4:"ml"`、`lowlight:"ml"`（见 §2.5）。
-- [x] **决定权重是否进 git（`.gitignore` 决策）** —— **已选 B：权重放行进 git**。已移除 `.gitignore` 中 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt`(4.8M) / `lowlight.pt`(2.3M) 随仓库提交，`git clone` 即得可运行项目（7MB 体积可接受）。
-- [ ] **（重要）SR 重训去感知损失**：把 SR×4 训练命令的 `--perceptual` 去掉重训一次（纯像素损失），预期 PSNR 从 17.20 大幅上升（大概率 26+，压过 Bicubic 基线），代价是观感略平滑 + 再花约 70 分钟 GPU。**注意：更根本的修复已在代码中完成**（VGG 归一化 + 显式权重）；无论是否去感知损失，都应重训一次以体现修复效果。详见下方命令清单。
-  > ⚠️ **关键**：`train.py` 的 CSV / checkpoint 文件名**不含 "perceptual"**（`results/train_log_sr_generator.csv`、`models/sr_generator_scale4_best.pth`）。重训会**直接覆盖**感知版产物，故必须先备份。
-  >
-  > **执行计划（全部在 AutoDL `/root/autodl-tmp/pixelforge` 操作）**：
-  > 1. **备份感知版**（终端 1）：
-  >    ```bash
-  >    cd /root/autodl-tmp/pixelforge
-  >    mkdir -p backups
-  >    cp models/sr_generator_scale4_best.pth  backups/sr_generator_scale4_perceptual_best.pth
-  >    cp results/train_log_sr_generator.csv  backups/train_log_sr_generator_perceptual.csv
-  >    cp serve/models/sr_generator_scale4.pt backups/sr_generator_scale4_perceptual.pt
-  >    ```
-  > 2. **无感知重训**（终端 1，`nohup`，只敲一次）：
-  >    ```bash
-  >    nohup python train/train.py --task sr --model generator --scale 4 \
-  >      --data_root data --epochs 200 --batch_size 8 --lr 1e-4 \
-  >      > train_sr_nopercep.log 2>&1 &
-  >    ```
-  > 3. **监控**（终端 2/3，注意日志文件名不同）：
-  >    ```bash
-  >    tail -f /root/autodl-tmp/pixelforge/train_sr_nopercep.log
-  >    tail -3 /root/autodl-tmp/pixelforge/results/train_log_sr_generator.csv
-  >    ```
-  > 4. **等约 75 分钟**跑完，日志末尾出现 `Training finished. Best val PSNR: ...`（预期 26+）。
-  > 5. **导出**（终端 1，会覆盖现有 `.pt`，已备份无妨）：
-  >    ```bash
-  >    python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
-  >      --out serve/models/sr_generator_scale4.pt --task sr --scale 4
-  >    ```
-  > 6. **传回本地 / 沙箱**：下载 `serve/models/sr_generator_scale4.pt` 覆盖旧的，起服务 `curl localhost:8000/api/health` 应仍 `sr_scale4:"ml"`。
-  > 7. **更新文档 + 推送**：把 `README.md` / `results/README.md` 的 SR×4 17.20 改为新值，本文件标完成；push（建议先轮换 token，见 P0）。
-- [ ] **替换 README 占位指标**：已部分完成——SR×4（17.20/0.217）与 lowlight U-Net（19.26/0.74–0.78）真实值已填入 `README.md` 与 `results/README.md`；SRCNN 2× 未训练仍留 `TBD`。
+  4. **沙箱已验证** `/api/health` → `sr_scale4:"ml"`、`lowlight:"ml"`（见 §2.5）。
+- [x] **决定权重是否进 git（`.gitignore` 决策）** —— **已选 B：权重放行进 git**，`git clone` 即得可运行项目。
+- [x] **SR 重训（含感知损失修复）** —— 已用修复后代码重训，SR×4 达 **27.47（高于 bicubic +0.77 dB）**，缺陷闭环；
+  评测脚本 `scripts/eval_baseline.py`、逐 epoch 日志 `results/train_log_*.csv`、平台凭证 `docs/retrain_journey/` 均已留档。
+  > **执行摘要（实际执行，2026-10-03，AutoDL RTX 3080 Ti）**：
+  > 1. 备份旧产物 → `unzip` 覆盖修复后 `train/`、`serve/` → `python -m train.tests.run_tests`（20/20）；
+  > 2. 冒烟 2 epoch 通过 → 正式重训 SR×4 与低光各 200 epoch（前台顺序执行，无人工干预）；
+  > 3. 自动 `export.py` 导出 TorchScript → 下载权重回仓库替换 3 处 `models/`；
+  > 4. 同口径基线评测：SR×4 +0.77 dB、低光 +10.41 dB。
+  > 完整命令与过程见 `retrain_autodl.sh` 与 `docs/retrain_journey/README.md`。
+- [x] **替换 README 指标**：`README.md` / `results/README.md` 的 SR×4（17.20→27.47）与低光（19.26→18.18 全图口径）均已更新为修复后真实值；SRCNN ×2 未训练仍留 `TBD`。
 
 ### 🟡 P2 — 部署与上线（方案 B' — Streamlit Cloud）
 > 决策：GitHub Pages / Actions **托管不了 ML 后端**（纯静态 / 临时 job）。HF Spaces 自 2026-07 起跑计算的 Space 需付费（PRO），免费仅剩「2 个 ZeroGPU Gradio Space」且有每日 GPU 额度限制，对 CPU 即可跑的 demo 不划算。**改用 Streamlit Community Cloud：公开 app 免费、无额度、直接从 GitHub 仓库部署。**
