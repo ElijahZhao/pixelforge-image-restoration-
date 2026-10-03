@@ -358,6 +358,40 @@ header[data-testid="stHeader"] { background: transparent; }
   border-radius: 3px;
   border-left: 4px solid var(--pf-purple);
 }
+
+/* --- Light-theme readability fixes ---------------------------------------
+   Streamlit-native widgets (captions, info boxes, sidebar labels, the
+   file-uploader text, radio labels, dividers) use Streamlit's own colours,
+   which stayed light-grey on our light background -> unreadable. We force a
+   dark text colour for those only when the app is in light mode. The body /
+   main text also needs an explicit dark colour because our .stApp background
+   is overridden. */
+html[data-pf-theme="light"] .stApp,
+html[data-pf-theme="light"] [data-testid="stAppViewContainer"],
+html[data-pf-theme="light"] [data-testid="stSidebar"],
+html[data-pf-theme="light"] [data-testid="stSidebar"] * {
+  color: var(--pf-text);
+}
+html[data-pf-theme="light"] [data-testid="stCaptionContainer"],
+html[data-pf-theme="light"] small,
+html[data-pf-theme="light"] .stMarkdown p,
+html[data-pf-theme="light"] [data-testid="stWidgetLabel"] p,
+html[data-pf-theme="light"] [data-testid="stFileUploader"] span,
+html[data-pf-theme="light"] [data-testid="stFileUploader"] small {
+  color: var(--pf-text-muted) !important;
+}
+html[data-pf-theme="light"] [data-testid="stFileUploader"] {
+  background: #ffffff;
+  color: var(--pf-text-muted);
+}
+html[data-pf-theme="light"] [data-testid="stAlert"] {
+  background: #eef2ff;
+  color: var(--pf-text);
+}
+html[data-pf-theme="light"] [data-testid="stAlert"] * {
+  color: var(--pf-text) !important;
+}
+html[data-pf-theme="light"] hr { border-color: rgba(15, 23, 42, 0.15); }
 </style>
 """
 
@@ -395,29 +429,33 @@ _CSS_VARS_DARK = """
 _CSS_VARS_LIGHT = """
 <style>
 :root {
-  --pf-cyan: #0891b2;
-  --pf-purple: #7c3aed;
-  --pf-pink: #db2777;
+  --pf-cyan: #0e7490;
+  --pf-purple: #6d28d9;
+  --pf-pink: #be185d;
   --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --pf-app-bg:
-    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.10), transparent 42%),
-    radial-gradient(circle at 85% 25%, rgba(8, 145, 178, 0.10), transparent 40%),
+    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.08), transparent 42%),
+    radial-gradient(circle at 85% 25%, rgba(8, 145, 178, 0.08), transparent 40%),
     #f5f7fb;
-  --pf-border: rgba(8, 145, 178, 0.45);
-  --pf-hero-bg: linear-gradient(160deg, rgba(8,145,178,0.08), rgba(124,58,237,0.10));
-  --pf-hero-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 0 18px rgba(124,58,237,0.18);
+  --pf-border: rgba(8, 145, 178, 0.5);
+  --pf-hero-bg: linear-gradient(160deg, rgba(8,145,178,0.10), rgba(124,58,237,0.12));
+  --pf-hero-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 0 18px rgba(124,58,237,0.20);
   --pf-title-color: #1e1b4b;
   --pf-title-shadow: 3px 3px 0 rgba(124,58,237,0.35), 6px 6px 0 rgba(8,145,178,0.25);
   --pf-accent-text: #0e7490;
   --pf-badge-fg: #ffffff;
-  --pf-btn-bg: rgba(8, 145, 178, 0.08);
+  --pf-btn-bg: rgba(8, 145, 178, 0.10);
   --pf-btn-fg: #0e7490;
   --pf-btn-shadow: rgba(124, 58, 237, 0.30);
   --pf-btn-shadow-hover: rgba(219, 39, 119, 0.4);
   --pf-sidebar-bg: linear-gradient(180deg, #eef2ff, #e0e7ff);
   --pf-sidebar-border: rgba(124, 58, 237, 0.25);
-  --pf-img-border: rgba(8, 145, 178, 0.5);
+  --pf-img-border: rgba(8, 145, 178, 0.55);
   --pf-img-shadow: rgba(124, 58, 237, 0.22);
+  /* Streamlit-native text colours for the light theme (fixes low-contrast
+     grey-on-white on captions / info boxes / sidebar labels / uploader). */
+  --pf-text: #0f172a;
+  --pf-text-muted: #334155;
 }
 </style>
 """
@@ -426,34 +464,61 @@ _CSS_VARS_LIGHT = """
 st.session_state.setdefault("lang", "en")      # English by default
 st.session_state.setdefault("theme", "dark")   # dark by default
 
-st.markdown(_CSS_VARS_DARK if st.session_state.theme == "dark" else _CSS_VARS_LIGHT,
-            unsafe_allow_html=True)
+# Inject BOTH variable sheets ONCE, scoped by a data-attribute on <html>, plus
+# the common sheet. Switching theme then only flips that one attribute via a
+# tiny JS hop instead of re-emitting ~3 KB of CSS on every rerun and forcing
+# the browser to re-parse the whole stylesheet (which caused the lag).
+_SCOPED_VARS = f"""
+<style>
+{_CSS_VARS_DARK[len("<style>") : _CSS_VARS_DARK.rfind("</style>")].replace(":root {", 'html[data-pf-theme="dark"] {')}
+{_CSS_VARS_LIGHT[len("<style>") : _CSS_VARS_LIGHT.rfind("</style>")].replace(":root {", 'html[data-pf-theme="light"] {')}
+</style>
+"""
+st.markdown(_SCOPED_VARS, unsafe_allow_html=True)
 st.markdown(_CSS_COMMON, unsafe_allow_html=True)
 
+# Apply the active theme by setting one attribute on <html>. This is what makes
+# the toggle feel instant: no re-layout of the injected CSS, no rerun needed.
+st.markdown(
+    f"""
+    <script>
+    (function() {{
+      var t = "{st.session_state.theme}";
+      document.documentElement.setAttribute("data-pf-theme", t);
+    }})();
+    </script>
+    """,
+    unsafe_allow_html=True,
+)
+
 # --- sidebar controls (language + theme first, then task/scale) -------------
+# Widgets are bound directly to session_state via `key=`. The earlier version
+# set both `index=` AND then overwrote session_state by hand — the classic
+# Streamlit anti-pattern that makes the widget and the state disagree and
+# triggers an extra, janky rerun on every change. With `key=` there is exactly
+# one rerun per click and the state stays authoritative.
 with st.sidebar:
-    lang_choice = st.radio(
-        "Language / 语言", ["English", "中文"],
-        index=0 if st.session_state.lang == "en" else 1,
-        horizontal=True,
+    st.radio(
+        "Language / 语言", ["en", "zh"],
+        format_func=lambda k: "English" if k == "en" else "中文",
+        horizontal=True, key="lang",
     )
-    st.session_state.lang = "en" if lang_choice == "English" else "zh"
     T = TEXTS[st.session_state.lang]
 
-    theme_choice = st.radio(
-        T["theme_label"], [T["theme_dark"], T["theme_light"]],
-        index=0 if st.session_state.theme == "dark" else 1,
-        horizontal=True,
+    st.radio(
+        T["theme_label"], ["dark", "light"],
+        format_func=lambda k: T["theme_dark"] if k == "dark" else T["theme_light"],
+        horizontal=True, key="theme",
     )
-    st.session_state.theme = "dark" if theme_choice == T["theme_dark"] else "light"
 
     st.divider()
     st.header(T["sidebar_header"])
     # NOTE: option VALUES are fixed ("sr"/"lowlight"); only the LABELS are
     # translated via format_func, so task routing never depends on language.
-    task = st.radio(T["task_label"], ["sr", "lowlight"],
-                    format_func=lambda k: T["task_sr"] if k == "sr" else T["task_lowlight"])
-    scale = st.radio(T["scale_label"], ["2", "4"], index=1, help=T["scale_help"])
+    st.radio(T["task_label"], ["sr", "lowlight"],
+             format_func=lambda k: T["task_sr"] if k == "sr" else T["task_lowlight"],
+             key="task")
+    st.radio(T["scale_label"], ["2", "4"], index=1, help=T["scale_help"], key="scale")
     st.divider()
     st.caption(T["trained_caption"])
 
@@ -480,7 +545,8 @@ st.markdown(
 
 if uploaded is not None:
     img = Image.open(uploaded).convert("RGB")
-    use_sr = task == "sr"
+    use_sr = st.session_state.task == "sr"
+    scale = st.session_state.scale
 
     sr_pair = None
     ml_lr = None
