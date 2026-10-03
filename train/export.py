@@ -18,7 +18,11 @@ from models import build_model
 
 
 def export(checkpoint: str, out: str, task: str, scale: int):
-    os.makedirs(os.path.dirname(out), exist_ok=True)
+    # `os.path.dirname("model.pt")` is "" — and `os.makedirs("")` raises
+    # FileNotFoundError. Guard the no-directory case so `--out model.pt` works.
+    out_dir = os.path.dirname(out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     ckpt = torch.load(checkpoint, map_location="cpu")
     model_name = ckpt.get("model", "srcnn" if task == "sr" else "generator")
     scale = ckpt.get("scale", scale)

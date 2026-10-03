@@ -17,6 +17,7 @@ classical baselines keep the demo fully usable.
 from __future__ import annotations
 
 from pathlib import Path
+import threading
 
 import gradio as gr
 import numpy as np
@@ -60,8 +61,16 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
 # --------------------------------------------------------------------------- #
 # TorchScript model loading (mirror of serve/model_loader.py — keep in sync)
 # --------------------------------------------------------------------------- #
+# Gradio serves requests from a thread pool, so the check-then-act caches below
+# are hit concurrently. The lock guarantees a cold start loads each weight once
+# instead of once per in-flight request.
+_MODEL_LOCK = threading.Lock()
 _sr_cache: dict = {}
-_lowlight_model = None
+# Sentinel: distinct from a *successful-but-None* load. Using bare None meant a
+# corrupt lowlight.pt was re-loaded (and re-warned) on every single request,
+# because `_lowlight_model is None` stayed true after the failed load.
+_LOWLIGHT_UNSET = object()
+_lowlight_model = _LOWLIGHT_UNSET
 
 
 def _load(path: str):
@@ -81,18 +90,24 @@ def _load(path: str):
 def get_sr_model(scale: int):
     key = f"sr_{scale}"
     if key not in _sr_cache:
-        matches = list(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
-        if matches:
-            _sr_cache[key] = _load(str(matches[0]))
+        with _MODEL_LOCK:
+            if key not in _sr_cache:
+                matches = list(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
+                # Cache the miss too, so a missing weight doesn't re-glob the
+                # filesystem on every request.
+                _sr_cache[key] = _load(str(matches[0])) if matches else None
     return _sr_cache.get(key)
 
 
 def get_lowlight_model():
     global _lowlight_model
-    if _lowlight_model is None:
-        p = MODELS_DIR / "lowlight.pt"
-        if p.exists():
-            _lowlight_model = _load(str(p))
+    if _lowlight_model is _LOWLIGHT_UNSET:
+        with _MODEL_LOCK:
+            if _lowlight_model is _LOWLIGHT_UNSET:
+                p = MODELS_DIR / "lowlight.pt"
+                # Either branch replaces the sentinel (including a failed load
+                # returning None), so a broken weight is not reloaded per request.
+                _lowlight_model = _load(str(p)) if p.exists() else None
     return _lowlight_model
 
 

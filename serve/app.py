@@ -20,6 +20,7 @@ import io
 import os
 
 from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
@@ -44,6 +45,12 @@ app = FastAPI(title="CV Restoration API", version="1.0.0")
 # ---------------------------------------------------------------------------
 MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))   # 10 MB
 MAX_INPUT_PIXELS = int(os.getenv("MAX_INPUT_PIXELS", str(4_000_000)))          # ~4 MP
+
+# Align PIL's own decompression-bomb ceiling with our pixel cap, so an image
+# whose header understates its real dimensions still trips PIL's guard rather
+# than allocating unbounded memory on decode. PIL warns at *this* value and
+# raises at 2x it.
+Image.MAX_IMAGE_PIXELS = MAX_INPUT_PIXELS
 
 # Production: set ALLOWED_ORIGINS=https://your-domain.com,https://admin.your-domain.com
 # Multiple origins can be comma-separated. Defaults to wildcard for local dev.
@@ -84,6 +91,20 @@ async def predict(
     task: str = Form("sr"),
     scale: int = Form(2),
 ):
+    # NOTE (ROUND 22): this handler is `async` only so it can `await image.read()`.
+    # The inference below is CPU-bound and can take seconds; running it directly
+    # in the event loop would stall every other request (including /api/health).
+    # We therefore hand the heavy work to a worker thread via run_in_threadpool.
+    return await run_in_threadpool(
+        _predict_sync,
+        await image.read(),
+        task,
+        scale,
+    )
+
+
+def _predict_sync(raw: bytes, task: str, scale: int):
+    """Blocking inference body — runs in a worker thread (see `predict`)."""
     if task not in ("sr", "lowlight"):
         return JSONResponse(
             status_code=422, content={"error": "task must be 'sr' or 'lowlight'"}
@@ -92,29 +113,53 @@ async def predict(
         scale = 2
 
     # F13: reject oversized uploads before decoding them.
-    raw = await image.read()
     if len(raw) > MAX_UPLOAD_BYTES:
         return JSONResponse(
             status_code=413,
             content={"error": f"upload too large (>{MAX_UPLOAD_BYTES} bytes)"},
         )
 
+    # F13 (ROUND 22): validate the PIXEL COUNT from the header *before* decoding.
+    # A byte-size cap alone does not bound memory: a 61 KB PNG can declare
+    # 8000x8000 = 64 MP, and `.convert("RGB")` allocates ~385 MB to decode it
+    # (measured). Repeating that request is a trivial OOM/DoS. PIL exposes
+    # `.size` from the header without decoding, so we reject on dimensions
+    # first and only then pay for the decode. `Image.MAX_IMAGE_PIXELS` (set to
+    # our cap above) makes PIL raise during `open()` for oversized headers;
+    # we surface that as 413 so the message matches the real reason.
     try:
-        original = Image.open(io.BytesIO(raw)).convert("RGB")
+        probe = Image.open(io.BytesIO(raw))
+        pw, ph = probe.size
+    except Image.DecompressionBombError:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"image too large (limit {MAX_INPUT_PIXELS} pixels); "
+                              f"downscale it first."},
+        )
     except Exception:
-        # Catches malformed images AND PIL DecompressionBombError (the default
-        # MAX_IMAGE_PIXELS ~89M guard). We surface it as 422 rather than 500;
-        # the 4MP cap above is the first line of defence, this is the backstop.
         return JSONResponse(
             status_code=422, content={"error": "uploaded file is not a valid image"}
         )
-
-    # F13: bound the work by input pixel count.
-    if original.width * original.height > MAX_INPUT_PIXELS:
+    if pw * ph > MAX_INPUT_PIXELS:
         return JSONResponse(
             status_code=413,
-            content={"error": f"image too large (>{MAX_INPUT_PIXELS} pixels); "
+            content={"error": f"image too large ({pw}x{ph} = {pw * ph} pixels; "
+                              f"limit {MAX_INPUT_PIXELS}); downscale it first."},
+        )
+
+    try:
+        original = probe.convert("RGB")
+    except Image.DecompressionBombError:
+        # Header understated the true size; PIL trips during decode.
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"image too large (limit {MAX_INPUT_PIXELS} pixels); "
                               f"downscale it first."},
+        )
+    except Exception:
+        # Backstop for any other decode failure. 422 rather than 500.
+        return JSONResponse(
+            status_code=422, content={"error": "uploaded file is not a valid image"}
         )
 
     lr_display = None

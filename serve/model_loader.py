@@ -11,6 +11,7 @@ When a weight file is missing, the corresponding task silently falls back to
 
 from __future__ import annotations
 
+import threading
 import warnings
 from pathlib import Path
 
@@ -21,8 +22,21 @@ import torchvision.transforms.functional as TF
 MODELS_DIR = Path(__file__).resolve().parent / "models"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
+# Inference runs in FastAPI's threadpool (see app.py), so two requests can hit
+# these caches concurrently. Without a lock the check-then-act below is a race:
+# N simultaneous cold-start requests each run `torch.jit.load`, transiently
+# holding N full copies of the network in memory (measured: 8 threads -> 8 loads)
+# -- exactly the duplicate work the cache exists to prevent. One module-level
+# lock makes the first load happen once and every other thread wait for it.
+_MODEL_LOCK = threading.Lock()
+
 _sr_cache: dict = {}
-_lowlight_model = None
+# Sentinel so a FAILED low-light load (corrupt/incompatible .pt) is cached too.
+# Previously _lowlight_model stayed None on failure, so every request re-ran a
+# full torch.jit.load + raised again -- measured 3 load attempts for 3 calls.
+# SR already cached its miss via _sr_cache[key] = None; this matches it.
+_LOWLIGHT_UNSET = object()
+_lowlight_model = _LOWLIGHT_UNSET
 
 
 def _load(path: str):
@@ -47,19 +61,32 @@ def _load(path: str):
 def get_sr_model(scale: int):
     key = f"sr_{scale}"
     if key not in _sr_cache:
-        matches = list(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
-        if matches:
-            # May cache None on load failure (see _load).
-            _sr_cache[key] = _load(str(matches[0]))
+        with _MODEL_LOCK:
+            # Re-check under the lock: another thread may have loaded it while we
+            # waited, in which case we must NOT load it a second time.
+            if key not in _sr_cache:
+                matches = list(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
+                if matches:
+                    # May cache None on load failure (see _load).
+                    _sr_cache[key] = _load(str(matches[0]))
+                else:
+                    _sr_cache[key] = None
     return _sr_cache.get(key)
 
 
 def get_lowlight_model():
     global _lowlight_model
-    if _lowlight_model is None:
-        p = MODELS_DIR / "lowlight.pt"
-        if p.exists():
-            _lowlight_model = _load(str(p))
+    if _lowlight_model is _LOWLIGHT_UNSET:
+        with _MODEL_LOCK:
+            if _lowlight_model is _LOWLIGHT_UNSET:
+                p = MODELS_DIR / "lowlight.pt"
+                if p.exists():
+                    # May cache None on load failure (see _load) -- the sentinel
+                    # is replaced either way, so a broken weight is not reloaded
+                    # per request.
+                    _lowlight_model = _load(str(p))
+                else:
+                    _lowlight_model = None
     return _lowlight_model
 
 

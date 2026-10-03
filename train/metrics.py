@@ -11,10 +11,20 @@ import torch.nn.functional as F
 
 
 def psnr(pred: torch.Tensor, target: torch.Tensor, max_val: float = 1.0) -> torch.Tensor:
-    """Peak Signal-to-Noise Ratio (dB), averaged over the batch."""
+    """Peak Signal-to-Noise Ratio (dB), averaged over the batch.
+
+    Returns ``+inf`` only if every pixel matches exactly (MSE == 0), which is the
+    mathematically correct limit — and, importantly, a value the caller can still
+    *compare* (``inf > best_psnr`` works). We must not silently substitute a huge
+    finite number.
+    """
     mse = F.mse_loss(pred, target, reduction="mean")
-    if mse == 0:
-        return torch.tensor(float("inf"))
+    # `if mse == 0` on a tensor yields a 0-dim BOOL TENSOR; `if` on it happens to
+    # work only because the tensor is single-element, and it silently forces a
+    # device sync inside the training/validation loop. Compare as a Python bool
+    # via .item() so the intent is explicit and there is no tensor-boolean trap.
+    if mse.item() == 0.0:
+        return torch.tensor(float("inf"), device=pred.device)
     return 10.0 * torch.log10(max_val * max_val / mse)
 
 

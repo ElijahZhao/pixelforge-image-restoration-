@@ -24,6 +24,21 @@ export default function Home() {
     setError(null);
   };
 
+  // Switching task (or SR scale) invalidates any result on screen: it was
+  // produced by a different configuration, and leaving it up would relabel an SR
+  // output as "Low-light" (or vice versa). Clear it so the UI never shows a
+  // result whose badge/labels no longer match how it was generated.
+  const pickTask = (t: Task) => {
+    setTask(t);
+    setResult(null);
+    setError(null);
+  };
+  const pickScale = (s: number) => {
+    setScale(s);
+    setResult(null);
+    setError(null);
+  };
+
   // R4: revoke the previous blob URL when a new one is created or on unmount,
   // otherwise repeated uploads leak blob memory.
   useEffect(() => {
@@ -72,7 +87,7 @@ export default function Home() {
             {(["sr", "lowlight"] as Task[]).map((t) => (
               <button
                 key={t}
-                onClick={() => setTask(t)}
+                onClick={() => pickTask(t)}
                 className={`px-4 py-2 text-sm ${
                   task === t ? "bg-sky-500/20 text-white" : "text-slate-300"
                 }`}
@@ -87,7 +102,7 @@ export default function Home() {
               {[2, 4].map((s) => (
                 <button
                   key={s}
-                  onClick={() => setScale(s)}
+                  onClick={() => pickScale(s)}
                   className={`px-3 py-2 text-sm ${
                     scale === s ? "bg-sky-500/20 text-white" : "text-slate-300"
                   }`}

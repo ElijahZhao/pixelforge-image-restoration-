@@ -10,7 +10,15 @@ type Props = {
 };
 
 // Interactive before/after image comparison slider.
-// Uses clip-path so both layers stay perfectly aligned regardless of size.
+//
+// Alignment: the "after" layer is `block w-full` and therefore sizes the
+// container via its intrinsic aspect ratio. The "before" overlay must occupy
+// exactly the same box, or dragging the handle would compare pixels from
+// different places. `object-cover` does NOT guarantee that — when the two images
+// have different aspect ratios it CROPS the overlay, so an aligned comparison
+// silently becomes an apples-to-oranges one. The backend already forces before
+// and after to the same size, so we mirror that here with `object-fill` (and
+// explicit inset-0) to make the overlay's box identical to the base layer's.
 export default function CompareSlider({
   before,
   after,
@@ -29,23 +37,33 @@ export default function CompareSlider({
     setPos(Math.max(0, Math.min(100, p)));
   };
 
+  const stopDrag = () => {
+    dragging.current = false;
+  };
+
   return (
     <div
       ref={ref}
-      className="relative select-none overflow-hidden rounded-xl border border-white/10"
+      className="relative select-none overflow-hidden rounded-xl border border-white/10 touch-none"
       onPointerDown={(e) => {
         dragging.current = true;
         (e.target as HTMLElement).setPointerCapture(e.pointerId);
         updateFromClientX(e.clientX);
       }}
       onPointerMove={(e) => dragging.current && updateFromClientX(e.clientX)}
-      onPointerUp={() => (dragging.current = false)}
+      onPointerUp={stopDrag}
+      // Without these, releasing the pointer outside the element (or the browser
+      // cancelling the gesture, e.g. a touch scroll takes over) leaves
+      // `dragging` stuck true and the handle keeps following the cursor.
+      onPointerCancel={stopDrag}
+      onPointerLeave={stopDrag}
+      onLostPointerCapture={stopDrag}
     >
-      {/* After (base layer) */}
+      {/* After (base layer) — sizes the container via its aspect ratio */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`data:image/png;base64,${after}`} alt="After" className="block w-full" />
 
-      {/* Before (clipped overlay) */}
+      {/* Before (clipped overlay) — MUST match the base layer's box exactly */}
       <div
         className="absolute inset-0"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}
@@ -54,7 +72,7 @@ export default function CompareSlider({
         <img
           src={`data:image/png;base64,${before}`}
           alt="Before"
-          className="absolute inset-0 h-full w-full object-cover"
+          className="absolute inset-0 h-full w-full object-fill"
         />
       </div>
 

@@ -24,8 +24,10 @@ You can download these datasets for free:
 
 from __future__ import annotations
 
+import random
 from pathlib import Path
 
+import numpy as np
 import torch
 from torch.utils.data import Dataset
 from PIL import Image
@@ -177,15 +179,41 @@ class LowLightDataset(Dataset):
         return TF.to_tensor(low), TF.to_tensor(high)
 
 
+def _seed_worker(worker_id: int) -> None:
+    """Give every DataLoader worker a deterministic, distinct RNG state.
+
+    PyTorch seeds each worker by deriving from the base seed, but ``numpy`` and
+    the stdlib ``random`` module inside the worker are NOT reseeded by default —
+    and our augmentation uses ``torch.rand``. Seeding all three here (plus making
+    the base seed come from a fixed ``generator``) is what actually removes the
+    run-to-run divergence.
+    """
+    worker_seed = torch.initial_seed() % (2 ** 32)
+    np.random.seed(worker_seed)
+    random.seed(worker_seed)
+
+
 def get_dataloader(task: str, data_root: str, split: str, batch_size: int = 16,
-                   scale: int = 2, num_workers: int = 4):
+                   scale: int = 2, num_workers: int = 4, seed: int | None = None):
     if task == "sr":
         ds = SuperResolutionDataset(f"{data_root}/div2k", split, scale=scale)
     elif task == "lowlight":
         ds = LowLightDataset(f"{data_root}/lol", split)
     else:
         raise ValueError(task)
+
+    # When a seed is given, the shuffle order and worker RNGs become reproducible.
+    # `pin_memory` is only meaningful (and only legal without warnings) when CUDA
+    # is actually available; on a CPU-only box it just prints a warning per epoch.
+    generator = None
+    if seed is not None:
+        generator = torch.Generator()
+        generator.manual_seed(seed)
+
     return torch.utils.data.DataLoader(
         ds, batch_size=batch_size, shuffle=(split == "train"),
-        num_workers=num_workers, pin_memory=True, drop_last=(split == "train"),
+        num_workers=num_workers, pin_memory=torch.cuda.is_available(),
+        drop_last=(split == "train"),
+        generator=generator,
+        worker_init_fn=_seed_worker if seed is not None else None,
     )

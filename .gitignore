@@ -43,3 +43,6 @@ tests/e2e/*.png
 
 # Local scratch / preview renders (not part of the repo)
 .preview/
+
+# TypeScript incremental build cache
+*.tsbuildinfo

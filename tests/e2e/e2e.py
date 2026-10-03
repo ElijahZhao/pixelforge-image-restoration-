@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-import shutil
 import signal
 import subprocess
 import sys
@@ -79,33 +78,42 @@ def _cleanup() -> None:
 
 def main() -> int:
     try:
-        import requests  # noqa: F401
-    except ImportError:
-        _log("requests not available; installing not attempted. Aborting.")
+        import requests
+        from playwright.sync_api import sync_playwright
+    except ImportError as e:
+        _log(f"missing dependency ({e}); run: pip install playwright requests "
+             f"&& playwright install chromium. Aborting.")
         return 1
-
-    import requests
-    from playwright.sync_api import sync_playwright
 
     SCREENS.mkdir(parents=True, exist_ok=True)
 
+    # NOTE: the body below is wrapped by `_run()` so `_cleanup()` runs on EVERY
+    # exit path — including an unexpected exception. Previously a thrown error
+    # would orphan the uvicorn and pnpm child processes.
+    try:
+        return _run(requests, sync_playwright)
+    finally:
+        _cleanup()
+
+
+def _run(requests, sync_playwright) -> int:
     # ---- Boot servers ----
-    backend = _start(
+    # `backend`/`frontend` are registered in SHUTDOWN by `_start` for teardown;
+    # the local names are intentionally unused here.
+    _start(
         [sys.executable, "-m", "uvicorn", "serve.app:app", "--port", "8000"],
         ROOT, "backend",
     )
-    frontend = _start(["pnpm", "dev"], WEB, "frontend")
+    _start(["pnpm", "dev"], WEB, "frontend")
 
     _log("waiting for backend /api/health ...")
     if not _wait_get(f"{BACKEND_URL}/api/health", timeout=120):
         _log("backend did not come up")
-        _cleanup()
         return 1
 
     _log("waiting for frontend http://localhost:3000 ...")
     if not _wait_get(FRONTEND_URL, timeout=180):
         _log("frontend did not come up")
-        _cleanup()
         return 1
 
     failures = []
@@ -139,15 +147,20 @@ def main() -> int:
                 page.wait_for_selector('img[alt="After"]', timeout=60000)
             except Exception as e:
                 failures.append(f"{label}: result image not shown ({e})")
-                browser.close()
                 return
 
             after_src = page.get_attribute('img[alt="After"]', "src") or ""
-            assert after_src.startswith("data:image/png;base64,") and len(after_src) > 200, \
-                f"{label}: after image missing/empty"
             before_src = page.get_attribute('img[alt="Before"]', "src") or ""
-            assert before_src.startswith("data:image/png;base64,") and len(before_src) > 200, \
-                f"{label}: before image missing/empty"
+            # Record failures in the list rather than `assert`-ing: an AssertionError
+            # raised here would escape past `_cleanup()`, leaving uvicorn (8000) and
+            # pnpm (3000) holding their ports. It would also be silently disabled
+            # under `python -O`. Both are avoided by appending and returning.
+            if not (after_src.startswith("data:image/png;base64,") and len(after_src) > 200):
+                failures.append(f"{label}: after image missing/empty")
+                return
+            if not (before_src.startswith("data:image/png;base64,") and len(before_src) > 200):
+                failures.append(f"{label}: before image missing/empty")
+                return
 
             # engine badge (classical now, ml once weights are trained)
             badge = page.locator("span.rounded-full").first.inner_text()
@@ -173,12 +186,12 @@ def main() -> int:
             _log(f"backend health engines: {health['engines']}")
 
         run_flow("sr", ROOT / "assets" / "sample_scene.png", "Super-Resolution", scale=4)
-        if not failures:
-            run_flow("lowlight", ROOT / "assets" / "sample_dark.png", "Low-Light")
+        # Run low-light UNCONDITIONALLY. The old `if not failures:` guard meant a
+        # single SR failure silently skipped this flow — i.e. the low-light path
+        # went untested exactly when something was already wrong.
+        run_flow("lowlight", ROOT / "assets" / "sample_dark.png", "Low-Light")
 
         browser.close()
-
-    _cleanup()
 
     if failures:
         _log("FAILURES:")

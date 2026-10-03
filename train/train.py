@@ -29,18 +29,36 @@ from __future__ import annotations
 import argparse
 import csv
 import os
+import random
 import time
 
+import numpy as np
 import torch
 from torch import nn
 from torch.cuda.amp import autocast, GradScaler
 from torchvision import models
+from torchvision.models import VGG16_Weights
 
 from models import build_model
 from datasets import get_dataloader
 from metrics import evaluate_batch
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+
+# Single seed for the whole run. `torch.manual_seed` alone is NOT enough: the
+# dataset's random crop / flip augmentation calls `torch.rand` inside DataLoader
+# worker processes (whose seeds are derived per worker), and numpy/random are
+# used elsewhere. Seeding all four sources + wiring a `generator`/`worker_init_fn`
+# into the loaders (see `seed_everything` + `get_dataloader`'s `seed` arg) is what
+# makes a run reproducible. Without this, two runs with identical flags diverge.
+SEED = 42
+
+
+def seed_everything(seed: int = SEED) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
 
 
 # ImageNet normalization stats — REQUIRED for ImageNet-pretrained VGG features.
@@ -61,7 +79,10 @@ class VGGPerceptualLoss(nn.Module):
 
     def __init__(self):
         super().__init__()
-        vgg = models.vgg16(pretrained=True).features[:30].eval().to(DEVICE)
+        # `pretrained=True` is the legacy API (deprecated since torchvision 0.13,
+        # removed in 0.15+). Use the explicit weights enum, which is the supported
+        # interface and pins the exact ImageNet checkpoint we normalize for.
+        vgg = models.vgg16(weights=VGG16_Weights.IMAGENET1K_V1).features[:30].eval().to(DEVICE)
         for p in vgg.parameters():
             p.requires_grad = False
         self.vgg = vgg
@@ -94,7 +115,7 @@ def l1_charbonnier(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-3):
 
 
 def train(args):
-    torch.manual_seed(42)
+    seed_everything(SEED)
     os.makedirs("models", exist_ok=True)
     os.makedirs("results", exist_ok=True)
 
@@ -103,8 +124,11 @@ def train(args):
     n_params = sum(p.numel() for p in model.parameters())
     print(f"[{args.task}/{args.model}] params={n_params/1e6:.2f}M device={DEVICE}")
 
+    # `seed=SEED` gives the shuffle order and every augmentation RNG a fixed
+    # starting point, so re-running with the same flags reproduces the run.
     train_loader = get_dataloader(args.task, args.data_root, "train",
-                                  batch_size=args.batch_size, scale=args.scale)
+                                  batch_size=args.batch_size, scale=args.scale,
+                                  seed=SEED)
     val_loader = get_dataloader(args.task, args.data_root, "val",
                                 batch_size=args.batch_size, scale=args.scale)
 
