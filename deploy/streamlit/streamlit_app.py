@@ -277,17 +277,32 @@ html, body, [class*="css"] {
   letter-spacing: 0.2px;
 }
 .stApp { background: var(--pf-app-bg); }
-/* Hide only the "chrome" (menu / deploy button / footer), NOT the header
-   itself. The sidebar's re-open control (stSidebarCollapsedControl, the «
-   button shown after collapsing) lives INSIDE the header — hiding
-   header[data-testid="stHeader"] made a collapsed sidebar impossible to
-   re-open. This is the fix for that bug. */
-#MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"],
-[data-testid="stStatusWidget"], footer { visibility: hidden; }
+/* Hide ONLY leaf "chrome" elements, never the containers that host the
+   sidebar collapse/expand control. Streamlit moves that control around
+   between versions — in new versions it lives inside [data-testid="stToolbar"]
+   / stDecoration — so hiding those whole containers removed the button
+   entirely (the bug the user hit: no way to open the sidebar at all).
+   We therefore target the specific decorative children instead.
+   The deploy-button container is `stAppDeployButton` in current releases
+   (verified against the live DOM, not guessed). */
+#MainMenu { visibility: hidden; }
+[data-testid="stAppDeployButton"],
+[data-testid="stToolbar"] [data-testid="stMainMenu"],
+[data-testid="stStatusWidget"],
+[data-testid="stDecoration"] { visibility: hidden; }
+footer { visibility: hidden; }
 header[data-testid="stHeader"] { background: transparent; }
-/* Keep the collapsed-sidebar re-open button visible and clickable. */
+/* Belt-and-braces: whatever wrapper Streamlit uses this release, keep every
+   known sidebar toggle visible and clickable. Streamlit's test-id for the
+   expand control changed across versions: newer releases use
+   `stExpandSidebarButton` (verified against the live DOM), older ones
+   `stSidebarCollapsedControl`. Cover both, plus the in-sidebar collapse one. */
+[data-testid="stExpandSidebarButton"],
+[data-testid="stExpandSidebarButton"] *,
 [data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarCollapsedControl"] button { visibility: visible; }
+[data-testid="stSidebarCollapsedControl"] *,
+[data-testid="stSidebarCollapseButton"],
+[data-testid="stSidebarCollapseButton"] * { visibility: visible !important; opacity: 1 !important; }
 
 .pf-hero {
   text-align: center;
