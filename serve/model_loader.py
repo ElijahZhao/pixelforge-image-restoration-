@@ -111,16 +111,30 @@ def predict_lowlight(img: Image.Image) -> Image.Image:
     return out.crop((0, 0, w, h))
 
 
-# --- exposure gate (see DIAGNOSIS_ROUND20 & the Streamlit copy) ------------- #
-# The low-light U-Net is trained on LOL-v1 = real night PHOTOS. On a bright or
-# synthetic image (e.g. a game screenshot) it still applies its learned
-# illumination correction, but with no true underexposure to recover it crushes
-# the shadows and the picture gets DARKER (measured: median luminance
-# 0.26 -> 0.06). We require BOTH a dark 10th percentile and a dark mean so a
-# normal photo with a few shadows (bright subject on a dark background) is not
-# mistaken for an underexposed shot.
+# --- exposure gate + output guard (see DIAGNOSIS_ROUND20/21) ---------------- #
+# The low-light U-Net is trained on LOL-v1 = real night PHOTOS. On synthetic art
+# or an already-bright image it still applies its learned illumination
+# correction, but with no true underexposure to recover it crushes the shadows
+# and the picture gets DARKER (measured: median luminance 0.26 -> 0.06).
+#
+# Two guards, applied in order:
+#   1. INPUT gate  -- only run the model on something plausibly underexposed.
+#      Cheap but NOT sufficient: dark artwork also looks dark.
+#   2. OUTPUT guard -- after running, verify the model actually HELPED. An
+#      "enhancement" that darkens its input is wrong by definition, so we
+#      discard it. Self-validating: a real night photo brightens by +0.47 mean
+#      luminance, while every failing case darkens (-0.02 .. -0.08).
 LOWLIGHT_DARK_P10 = 0.22
 LOWLIGHT_DARK_MEAN = 0.36
+LOWLIGHT_MIN_GAIN = 0.005
+
+
+def mean_luminance(img: Image.Image) -> float:
+    import numpy as np
+
+    arr = np.asarray(img.convert("RGB"), dtype="float32") / 255.0
+    lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+    return float(lum.mean())
 
 
 def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:

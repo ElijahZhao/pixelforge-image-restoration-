@@ -31,6 +31,8 @@ from .model_loader import (
     predict_sr,
     predict_lowlight,
     looks_underexposed,
+    mean_luminance,
+    LOWLIGHT_MIN_GAIN,
 )
 
 app = FastAPI(title="CV Restoration API", version="1.0.0")
@@ -141,13 +143,30 @@ async def predict(
     else:  # lowlight
         is_dark, _stats = looks_underexposed(original)
         ml_result = predict_lowlight(original) if is_dark else None
+        guard_rejected = False
+        if ml_result is not None:
+            # OUTPUT guard: an enhancement that DARKENS its input is wrong by
+            # definition -> discard it. Catches dark synthetic art, which passes
+            # the input gate because it genuinely is dark.
+            gain = mean_luminance(ml_result) - mean_luminance(original)
+            if gain < LOWLIGHT_MIN_GAIN:
+                ml_result = None
+                guard_rejected = True
         engine = "ml" if ml_result is not None else "classical"
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
         before = original
 
     # F8: when no trained weight exists for the chosen task/scale, say so
     # explicitly instead of silently falling back to a classical baseline.
-    if engine == "classical" and task == "lowlight":
+    if engine == "classical" and task == "lowlight" and guard_rejected:
+        note = ("Classical adaptive-gamma baseline. The self-trained low-light "
+                "U-Net was tried and DISCARDED because its output was DARKER "
+                "than the input -- an 'enhancement' that darkens is wrong by "
+                "definition. This happens when the image is dark but is not an "
+                "underexposed photograph (e.g. night-scene artwork or a game "
+                "screenshot): the model is trained on LOL-v1 real night photos "
+                "and crushes shadows outside that domain.")
+    elif engine == "classical" and task == "lowlight":
         note = ("Classical adaptive-gamma baseline. This image is not a low-light "
                 "PHOTO, so the self-trained low-light U-Net was skipped: it is "
                 "trained on LOL-v1 (real night photographs) and only helps a "

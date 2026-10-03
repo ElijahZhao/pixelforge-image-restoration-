@@ -77,6 +77,16 @@ TEXTS = {
             "seeing the **classical adaptive-gamma baseline**, which brightens. "
             "Upload a genuinely dark **photograph** to exercise the model."
         ),
+        "note_ll_darkened": (
+            "**The self-trained U-Net was tried and discarded** — it produced a "
+            "**darker** image than the input, so it was rejected automatically "
+            "(a low-light *enhancement* that darkens its input is wrong by "
+            "definition). This happens when the image is dark but is **not an "
+            "underexposed photograph** — e.g. night-scene artwork or a game "
+            "screenshot. The model is trained on LOL-v1 (real night photos) and "
+            "crushes the shadows on anything outside that domain. You are "
+            "seeing the **classical adaptive-gamma baseline**, which brightens."
+        ),
         "info_ll_3panel": (
             "**How to read these three panels**: ① your input, ② the classical "
             "adaptive-gamma baseline, ③ the self-trained U-Net. Where ③ is "
@@ -137,6 +147,14 @@ TEXTS = {
             "使画面更暗**（实测游戏截图：亮度中位数 0.26 → 0.06）。"
             "你现在看到的是 **classical 自适应伽马基线**，它是正常提亮的。"
             "想真正测试该模型，请上传一张确实很暗的**照片**。"
+        ),
+        "note_ll_darkened": (
+            "**自训 U-Net 已尝试但被自动丢弃**——它的输出比输入**更暗**，"
+            "因此被自动拒绝（一个叫「低光增强」的功能却把图变暗，本身就不成立）。"
+            "这通常发生在「图像确实很暗，但它并不是一张欠曝照片」的情况下，"
+            "例如夜景插画或游戏截图。该模型在 LOL-v1（真实夜间照片）上训练，"
+            "遇到训练域外的图像会压死暗部。你现在看到的是 "
+            "**classical 自适应伽马基线**，它是正常提亮的。"
         ),
         "info_ll_3panel": (
             "**怎么看这三张图**：① 你的输入，② classical 自适应伽马基线，"
@@ -303,16 +321,31 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
 
 # --- is-this-actually-a-low-light-photo? ------------------------------------ #
 # The low-light U-Net is trained on LOL-v1: real night PHOTOS, where "low light"
-# means photon-starved sensor data with a specific noise/gamma signature. Fed a
-# synthetic bright image (e.g. a game screenshot), it still applies its learned
-# illumination correction, but with no real underexposure to recover it just
-# crushes the shadows and amplifies compression artefacts -- i.e. the picture
-# gets DARKER, not brighter (verified: median luminance 0.26 -> 0.06 on a real
-# screenshot). So we gate the model on a simple exposure check and fall back to
-# the (correctly brightening) classical gamma baseline when the image is not
-# actually underexposed.
+# means photon-starved sensor data with a specific noise/gamma signature. Fed
+# synthetic art or an already-bright image, it still applies its learned
+# illumination correction; with no real underexposure to recover it just crushes
+# the shadows and amplifies compression artefacts -- i.e. the picture gets
+# DARKER, not brighter.
+#
+# Two guards, applied in order (see DIAGNOSIS_ROUND20/21):
+#   1. INPUT gate  -- only bother running the model on something that is at
+#      least plausibly underexposed. Cheap, but NOT sufficient on its own:
+#      dark artwork (e.g. a night-scene game screenshot) also looks dark.
+#   2. OUTPUT guard -- after running, verify the model actually HELPED. For a
+#      task called *enhancement* an output that is darker than its input is
+#      self-evidently wrong, so we discard it and use the classical baseline.
+#      This is self-validating and cannot be fooled by input classification:
+#      measured, a real night photo brightens by +0.47 mean luminance while
+#      every failing case darkens (-0.02 .. -0.08).
 LOWLIGHT_DARK_P10 = 0.22   # a real night photo has a very dark 10th percentile
 LOWLIGHT_DARK_MEAN = 0.36  # ...and a low overall mean luminance
+LOWLIGHT_MIN_GAIN = 0.005  # model output must not be darker than its input
+
+
+def _mean_luminance(img: Image.Image) -> float:
+    arr = _to_array(img)
+    lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+    return float(lum.mean())
 
 
 def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
@@ -741,6 +774,7 @@ if uploaded is not None:
     ll_triple = None          # (original, classical, model) for the 3-panel view
     ll_used_model = False
     ll_notdark = False
+    ll_guard_reject = False
     with st.spinner(T["spinner"]):
         if use_sr:
             scale_i = int(scale)
@@ -756,14 +790,27 @@ if uploaded is not None:
             classical_out = lowlight_classical(img)
             is_dark, _stats = looks_underexposed(img)
             ml_out = predict_lowlight(img) if is_dark else None
+            # OUTPUT guard: a "low-light enhancement" that DARKENS its input is
+            # self-evidently wrong (the model is applying its illumination
+            # correction to something it was not trained on). Discard it. This
+            # catches dark synthetic art, which passes the input gate because it
+            # genuinely is dark.
+            if ml_out is not None:
+                gain = _mean_luminance(ml_out) - _mean_luminance(img)
+                if gain < LOWLIGHT_MIN_GAIN:
+                    ml_out = None
+                    ll_guard_reject = True
             if ml_out is None:
-                # Either no weight, or the image is not actually underexposed.
+                # Either no weight, not dark enough, or the guard rejected it.
                 out = classical_out
                 if _lowlight_weight_path() is None:
                     st.warning(T["warn_ll_no_weight"])
                 else:
                     ll_notdark = True
-                    st.info(T["note_ll_notdark"])
+                    if ll_guard_reject:
+                        st.info(T["note_ll_darkened"])
+                    else:
+                        st.info(T["note_ll_notdark"])
             else:
                 ll_used_model = True
                 out = ml_out
