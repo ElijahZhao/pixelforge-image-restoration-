@@ -277,8 +277,17 @@ html, body, [class*="css"] {
   letter-spacing: 0.2px;
 }
 .stApp { background: var(--pf-app-bg); }
-#MainMenu, header[data-testid="stHeader"], footer { visibility: hidden; }
-[data-testid="stToolbar"] { display: none; }
+/* Hide only the "chrome" (menu / deploy button / footer), NOT the header
+   itself. The sidebar's re-open control (stSidebarCollapsedControl, the «
+   button shown after collapsing) lives INSIDE the header — hiding
+   header[data-testid="stHeader"] made a collapsed sidebar impossible to
+   re-open. This is the fix for that bug. */
+#MainMenu, [data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"], footer { visibility: hidden; }
+header[data-testid="stHeader"] { background: transparent; }
+/* Keep the collapsed-sidebar re-open button visible and clickable. */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarCollapsedControl"] button { visibility: visible; }
 
 .pf-hero {
   text-align: center;
