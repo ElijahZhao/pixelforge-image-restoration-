@@ -117,4 +117,4 @@ python scripts/eval_baseline.py --task lowlight
 3. **粘贴大段代码会损坏脚本**，改用文件上传；
 4. **口径不一致会造成"假退化"**，任何新旧对比必须同口径。
 
-详细分析见仓库根目录 [`PIXELFORGE_RETRAIN_RESULTS.md`](../PIXELFORGE_RETRAIN_RESULTS.md)。
+详细分析见仓库归档目录 [`PIXELFORGE_RETRAIN_RESULTS.md`](../history/PIXELFORGE_RETRAIN_RESULTS.md)。

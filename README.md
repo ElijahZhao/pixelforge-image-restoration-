@@ -84,7 +84,7 @@ results/     训练日志 + 量化对比表
 
 ## 成果亮点（修复后重训，已打赢基线）
 
-> 完整报告见 [`PIXELFORGE_RETRAIN_RESULTS.md`](PIXELFORGE_RETRAIN_RESULTS.md)，过程与平台凭证见 [`docs/retrain_journey/`](docs/retrain_journey/)。
+> 完整报告见 [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md)，过程与平台凭证见 [`docs/retrain_journey/`](docs/retrain_journey/)。
 
 | 任务 | 基线 | 自训模型 | 增益 | 结论 |
 |---|---|---|---|---|
@@ -126,7 +126,7 @@ results/     训练日志 + 量化对比表
 > 自训 U-Net 在同口径下 PSNR 提升 **+10.41 dB**、SSIM **+0.547**，亮度恢复与结构保留均明显优于伽马基线。
 
 > 上述对比图与样例均由 `scripts/make_demo.py` 用仓库内真实权重生成，运行即可复现。
-> **说明**：SR ×4 早期版本因感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项权重被 `0.01` 系数抹除）曾低于 Bicubic 基线；**该缺陷已修复并用修复后代码重训**——现 SR ×4 相对 bicubic **+0.77 dB**、低光相对不处理基线 **+10.41 dB**（同口径评测，见 [`PIXELFORGE_RETRAIN_RESULTS.md`](PIXELFORGE_RETRAIN_RESULTS.md)）。
+> **说明**：SR ×4 早期版本因感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项权重被 `0.01` 系数抹除）曾低于 Bicubic 基线；**该缺陷已修复并用修复后代码重训**——现 SR ×4 相对 bicubic **+0.77 dB**、低光相对不处理基线 **+10.41 dB**（同口径评测，见 [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md)）。
 
 ---
 
@@ -211,7 +211,6 @@ pixelforge-image-restoration/
 ├── tests/             # E2E 浏览器测试
 ├── DEPLOY.md          # 部署与受限网络推送指南
 ├── PROGRESS.md        # 项目进度与分级待办
-├── TOOLS_CHECKLIST.md # 内置工具使用清单
 └── README.md
 ```
 

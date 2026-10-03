@@ -90,5 +90,5 @@ python scripts/eval_baseline.py --task lowlight
 # 重训命令见 retrain_autodl.sh
 ```
 
-详细成果见 [`PIXELFORGE_RETRAIN_RESULTS.md`](PIXELFORGE_RETRAIN_RESULTS.md)，
-诊断全过程见 `DIAGNOSIS_ROUND*.md`。
+详细成果见 [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md)，
+诊断全过程见 `docs/history/DIAGNOSIS_ROUND*.md`。

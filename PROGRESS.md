@@ -1,6 +1,6 @@
 # PixelForge · 项目进度与待办清单
 
-> 最后更新：2026-10-03
+> 最后更新：2026-10-04（ROUND22/23 全项目审计 · pytest CI 固化 · 诊断文档归档至 docs/history/）
 > 本文件记录 PixelForge 的**真实完成度**与**剩余工作**。所有状态均经过实际核查（非估计）。
 
 ---
@@ -13,14 +13,14 @@
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | ✅ 已完成 | 100% | 无权重时自动走基线；有权重自动切 ML |
 | 前端（Next.js 交互 Demo） | ✅ 已完成 | 100% | 本地 `next build` 已通过 |
 | 文档（README/DEPLOY/工具清单/LICENSE） | ✅ 已完成 | 100% | 中文美化版 README 已上线 |
-| 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | train/ 单元测试 20/20 通过（含 8 个正确性测试）；真实 demo 图已生成 |
+| 本地测试与 demo 图（CPU 可跑） | ✅ 已完成 | 100% | pytest 全绿 28/28（20 训练单测 + 8 API 冒烟，CPU 可跑）；真实 demo 图已生成 |
 | 真实模型权重（自训 .pt） | ✅ 已完成 | 100% | **修复后重训并导出**（见 §2.5） |
 | 真实评测指标（PSNR/SSIM） | ✅ 已完成 | 100% | 与基线同口径对比、逐 epoch 日志已提交、可复现（F6 闭环） |
 | 线上部署（Streamlit Cloud 公开 Demo） | ✅ 已上线 | 100% | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
 | 申请材料（SOP / CV / 报告） | ⏳ 重要待办 | 0% | 可用本地技能生成 |
-| 安全收尾（删除暴露的 token） | ✅ 已完成 | — | 本地已清除、旧 token 已在 GitHub 撤销 |
+| 安全收尾（撤销暴露的 token） | 🔴 待办 | — | 旧 token **撤销状态未核实**：对话中多次提示其经 `ghproxy.net` 明文使用且早已暴露，**请立即到 GitHub 吊销并轮换**（见 §四） |
 
-**一句话总结**：代码、文档、测试、真实 GPU 训练（**修复后重训、已打赢基线**）、可复现指标、公开 Demo、以及安全收尾**全部闭环**。仅剩申请材料包装（与项目质量无关）。
+**一句话总结**：代码、文档、测试、真实 GPU 训练（**修复后重训、已打赢基线**）、可复现指标、公开 Demo **已全部闭环**；仅剩（1）申请材料包装（与项目质量无关）、（2）**撤销已暴露的 GitHub Token**（见 §四，务必手动处理）。
 
 ---
 
@@ -58,12 +58,11 @@
 | `README.md` | 中文美化版：SVG 封面、badges、Mermaid 架构图、功能卡、指标表（真实值）、SOP/CV 描述、致谢；已补全公开 Demo 链接与自训演示图 | ✅ |
 | `assets/banner.svg` | 深色渐变封面（Before → After） | ✅ |
 | `DEPLOY.md` | 部署指南 + §4 受限网络经 ghproxy 镜像推送方法 | ✅ |
-| `TOOLS_CHECKLIST.md` | 内置工具/技能/连接器使用清单 | ✅ |
 | `LICENSE` | MIT（ElijahZhao, 2025） | ✅ |
 | `data/README.md`、`results/README.md` | 数据集下载说明、结果说明 | ✅ |
-| GitHub 推送 | 31 个文件经 `ghproxy.net` 镜像推送至 `ElijahZhao/pixelforge-image-restoration-` | ✅ |
+| GitHub 推送 | 经 `ghproxy.net` 镜像推送至 `ElijahZhao/pixelforge-image-restoration-`（含后续 ROUND22/23 审计、低光修复、pytest CI 与依赖 lock；2026-10-04 再次推送） | ✅ |
 | 真实 demo 图 | `scripts/make_demo.py` + `assets/demo_*.jpg`：CPU 直接用**自训权重**生成「低清/暗光输入 vs 经典基线 vs 自训模型」对比 | ✅ |
-| 单元测试 | `train/tests/`：模型 shape + PSNR/SSIM + **正确性测试**（归一化/权重/尺寸契约/配对），**20/20 通过** | ✅ |
+| 单元测试 + API 冒烟 | `train/tests/`（20）+ `tests/test_api_smoke.py`（8）：模型 shape / PSNR·SSIM / 正确性测试（归一化·权重·尺寸契约·配对）+ `/api/health`·`/api/predict` 全路径守卫；**pytest 全绿 28/28** | ✅ |
 | CORS 收紧 | `serve/app.py`：`*` 改为可通过 `ALLOWED_ORIGINS` 配置 | ✅ |
 | E2E 测试 | `tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程 | ✅ |
 
@@ -77,7 +76,7 @@
 | Lowlight（低光增强） | `--task lowlight --epochs 200 --batch_size 8 --lr 2e-4` | **全图 PSNR 18.18 / SSIM 0.739** | **+10.41 dB vs 不处理 (7.77)** | `serve/models/lowlight.pt`（2.3M） |
 
 > 同口径评测由 `scripts/eval_baseline.py` 执行；训练日志见 `results/train_log_*.csv`（200 epoch 逐轮）；
-> 过程与平台凭证（实例/计费/GPU 显存曲线）见 `docs/retrain_journey/`；完整报告见 `PIXELFORGE_RETRAIN_RESULTS.md`。
+> 过程与平台凭证（实例/计费/GPU 显存曲线）见 `docs/retrain_journey/`；完整报告见 `docs/history/PIXELFORGE_RETRAIN_RESULTS.md`。
 
 **B. 修复前首次训练（2026-10-02，已作废，仅作对照）**
 
@@ -96,10 +95,11 @@
 ## 三、待办清单
 
 ### ✅ P0 — 已处理（安全）
-- [x] **删除 / 轮换已暴露的 GitHub Token**
+- [ ] **🔴 撤销 / 轮换已暴露的 GitHub Token（尚未确认完成）**
   - 本地 `/workspace/.git/config` 明文凭证**已清除**（remote 恢复为无凭证 URL）；
   - 全仓库扫描确认诊断文档中的 token 已脱敏（`***REDACTED***`），**未进入 Git 历史**；
-  - 旧 token **已在 GitHub 撤销**，推送使用一次性环境变量注入（不落盘），推送后远端与本地已同步。
+  - ⚠️ 旧 token **是否已在 GitHub 撤销并未核实**——其在对话中多次出现、并曾（及 2026-10-04 本轮）经 `ghproxy.net` 明文用于推送，**应视为已泄露，务必立即吊销并换新**；
+  - 后续推送改用一次性凭据助手注入（不落盘），推送后远端与本地已同步。
 
 ### ✅ P1 — 训练成果收尾（已完成）
 - [x] **真实训练权重（已完成 ✅）** —— 首训 2026-10-02、**修复后重训 2026-10-03**（见 §2.5）：
@@ -135,9 +135,11 @@
 
 ### 🔵 P4 — 工程收尾（本地可完成）
 - [x] **收紧 CORS**：`serve/app.py` 已支持 `ALLOWED_ORIGINS` 环境变量；生产环境设置域名白名单，本地默认仍开放。
-- [x] **训练侧单元测试**：`train/tests/` 覆盖模型 shape、PSNR/SSIM，并新增**正确性测试**（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性），20/20 通过。
+- [x] **训练侧单元测试 + API 冒烟**：`train/tests/` 覆盖模型 shape、PSNR/SSIM，并新增**正确性测试**（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）；新增 `tests/test_api_smoke.py` 用 FastAPI `TestClient` 覆盖 `/api/health` 与 `/api/predict` 全路径（坏 task / 非图像 / 超字节 / 超尺寸守卫）；**pytest 全绿 28/28**（已固化进 CI）。
 - [x] **浏览器 E2E 测试**：`tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程并截图留证；超分与低光两条链路均通过。
-- [x] **仓库清理**：删除 `pixelforge-source.zip`，`.gitignore` 增加 zip 包与 E2E 截图目录排除。
+- [x] **全项目审计（ROUND22 / ROUND23）**：安全/并发/复现性/边界缺陷（11 项）+ 部署依赖契约/测试有效性「假通过」/死代码（7 项），全部修缮并实测回归通过（归档见 `docs/history/`）。
+- [x] **pytest CI 固化 + 依赖 lock**：新增 `pyproject.toml`（pytest 配置）、`tests/test_api_smoke.py`、`requirements*.lock.txt`（pip-tools 固定传递依赖）、`.github/workflows/ci.yml`（GitHub Actions 自动跑测试）。
+- [x] **仓库清理**：删除 `pixelforge-source.zip`，`.gitignore` 增加 zip 包与 E2E 截图目录排除；2026-10-04 将根目录 26 份诊断/报告文档归档至 `docs/history/`，并删除过时的 `TOOLS_CHECKLIST.md`。
 
 ---
 
@@ -145,7 +147,7 @@
 
 | 项 | 说明 |
 |---|---|
-| 🔴 暴露的 Token | 见 P0；必须轮换，否则仓库推送权限可被他人滥用 |
+| 🔴 暴露的 Token | 见 P0 / §三；**撤销状态未核实，必须立即吊销并轮换**，否则仓库推送权限可被他人滥用（该 token 曾/本轮经 `ghproxy.net` 明文使用） |
 | ⚠️ 无真实权重（历史） | 沙箱仅有 CPU 无法训练；**但已通过用户 AutoDL 训练 + 上传 .pt 补全真实权重**，沙箱已验证加载（见 §2.5） |
 | ⚠️ SR 感知损失缺陷 | SR×4 用 `--perceptual`，但原实现有缺陷：VGG 输入未做 ImageNet 归一化、像素项被 `0.01` 系数抹除。**已在代码中修复**（`train/train.py`），需重训才体现。**不是"配置选择"，是已定位的实现问题。** |
 | ℹ️ 权重已进 git | 已选 B：`.gitignore` 移除 `serve/models/*.pt` 忽略规则，`sr_generator_scale4.pt` / `lowlight.pt` 随仓库提交，`git clone` 即得可运行项目 |
@@ -162,7 +164,7 @@
 | 训练 | 模型 / 数据 / 指标 / 训练 / 导出 | ✅ |
 | 推理 | FastAPI / 经典兜底 / 权重加载 | ✅ |
 | 前端 | Next.js Demo / 滑块 / 代理 | ✅ |
-| 文档 | README / DEPLOY / 工具清单 / LICENSE | ✅ |
+| 文档 | README / DEPLOY / PROJECT_NOTES / LICENSE / 诊断归档（docs/history/） | ✅ |
 | 测试 / Demo | 单元测试 20/20 + 真实 demo 图 | ✅ |
 | 训练 | 真实权重（GPU） | ✅ |
 | 评测 | 真实 PSNR/SSIM 数值 | ⚠️ |
