@@ -50,6 +50,14 @@ def get_lowlight_model():
 
 @torch.no_grad()
 def predict_sr(img: Image.Image, scale: int) -> Image.Image:
+    """Super-resolve ``img`` by ``scale``.
+
+    Honesty note (see DIAGNOSIS_ROUND10/16/18): the model's *real* output is
+    ``lr_size * scale``. The previous implementation then ran a second PIL
+    BICUBIC resize up to ``orig_size * scale``, silently claiming "x4" while the
+    model only ever produced a x4 of the downscaled input. We now return the
+    model's true output and never re-upscale it.
+    """
     model = get_sr_model(scale)
     if model is None:
         return None
@@ -58,9 +66,7 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image:
                     Image.BICUBIC)
     x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
     out = model(x).clamp(0, 1)
-    out = TF.to_pil_image(out.squeeze(0).cpu())
-    # Match the original aspect by resizing to scale * original size.
-    return out.resize((img.width * scale, img.height * scale), Image.BICUBIC)
+    return TF.to_pil_image(out.squeeze(0).cpu())
 
 
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:

@@ -135,7 +135,8 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
         x = TF.to_tensor(lr).unsqueeze(0).to(_device())
         out = model(x).clamp(0, 1)
         out = TF.to_pil_image(out.squeeze(0).cpu())
-    return out.resize((img.width * scale, img.height * scale), Image.BICUBIC)
+    # Return the model's TRUE output (lr*scale). Do not re-upscale to img*scale.
+    return out
 
 
 def predict_lowlight(img: Image.Image) -> Image.Image | None:
@@ -280,8 +281,10 @@ st.markdown(PIXEL_CSS, unsafe_allow_html=True)
 
 # Render-time engine probe: check the weight FILES only (no torch.jit.load),
 # so merely opening the page never allocates model memory.
+sr2_ready = _sr_weight_path(2) is not None
 sr4_ready = _sr_weight_path(4) is not None
 low_ready = _lowlight_weight_path() is not None
+sr2_tag = "ML 自训模型" if sr2_ready else "classical 基线(无权重)"
 sr4_tag = "ML 自训模型" if sr4_ready else "classical 基线"
 low_tag = "ML 自训模型" if low_ready else "classical 基线"
 
@@ -290,7 +293,7 @@ st.markdown(
     <div class="pf-hero">
       <p class="pf-title">PIXELFORGE</p>
       <p class="pf-sub">&gt; SUPER-RESOLUTION &amp; LOW-LIGHT ENHANCEMENT&lt;</p>
-      <p class="pf-badge">SR ×4 · {sr4_tag} ｜ LOW-LIGHT · {low_tag}</p>
+      <p class="pf-badge">SR ×2 · {sr2_tag} ｜ SR ×4 · {sr4_tag} ｜ LOW-LIGHT · {low_tag}</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -313,9 +316,19 @@ if uploaded is not None:
     with st.spinner("推理中…"):
         if use_sr:
             scale_i = int(scale)
-            out = predict_sr(img, scale_i) or sr_classical(img, scale_i)
+            ml_out = predict_sr(img, scale_i)
+            out = ml_out or sr_classical(img, scale_i)
+            if ml_out is None:
+                st.warning(f"SR ×{scale_i}：无对应自训权重，当前使用 **classical bicubic 基线**。")
+            else:
+                st.success(f"SR ×{scale_i}：由 **自训模型** 输出（真实分辨率 = 下采样输入 ×{scale_i}）。")
         else:
-            out = predict_lowlight(img) or lowlight_classical(img)
+            ml_out = predict_lowlight(img)
+            out = ml_out or lowlight_classical(img)
+            if ml_out is None:
+                st.warning("低光：无自训权重，当前使用 **classical 自适应伽马基线**。")
+            else:
+                st.success("低光：由 **自训 U-Net** 输出。")
 
     c1, c2 = st.columns(2)
     c1.image(img, caption="Before", width="stretch")

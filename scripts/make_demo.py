@@ -1,16 +1,22 @@
 """Generate honest before/after demo images for the README.
 
 This version uses the **actually trained TorchScript weights** in
-``serve/models/`` so the showcase reflects what the live demo runs:
+``serve/models/`` so the showcase reflects what the live demo runs.
+
+Outputs are written as ``.jpg`` — matching the filenames referenced by
+``README.md`` — so that running this script genuinely reproduces the showcase
+(previously the script wrote ``.png`` while the README referenced ``.jpg``,
+which meant it could NOT reproduce the displayed images; see
+DIAGNOSIS_ROUND18).
 
   assets/sample_scene.png            photogenic synthetic scene (512x512)
   assets/sample_dark.png             underexposed version (low-light source)
-  assets/demo_sr_lr.png              low-res input (128x128, upscaled for display)
-  assets/demo_sr_bicubic.png         Bicubic 4x upscale (classical baseline)
-  assets/demo_sr_ours.png            PixelForge SRResNet 4x (trained)
-  assets/demo_lowlight_input.png     dark input
-  assets/demo_lowlight_gamma.png     adaptive-gamma baseline
-  assets/demo_lowlight_ours.png      PixelForge U-Net (trained)
+  assets/demo_sr_lr.jpg              low-res input (blocky display)
+  assets/demo_sr_bicubic.jpg         Bicubic 4x upscale (classical baseline)
+  assets/demo_sr_ours.jpg            PixelForge SRResNet (trained, true output)
+  assets/demo_lowlight_input.jpg     dark input
+  assets/demo_lowlight_gamma.jpg     adaptive-gamma baseline
+  assets/demo_lowlight_ours.jpg      PixelForge U-Net (trained)
 
 Run:  python scripts/make_demo.py
 """
@@ -62,7 +68,10 @@ def make_scene(size: int = 512) -> Image.Image:
 
 def _save(name: str, img: Image.Image) -> None:
     p = os.path.join(ASSETS, name)
-    img.save(p)
+    if name.lower().endswith((".jpg", ".jpeg")):
+        img.convert("RGB").save(p, quality=92)
+    else:
+        img.save(p)
     print(f"  {name:30s} {os.path.getsize(p):>8d} bytes")
 
 
@@ -79,18 +88,20 @@ def main() -> None:
 
     gamma = lowlight_classical(dark_img)            # classical baseline
     ours_ll = ml.predict_lowlight(dark_img) or gamma  # trained U-Net
-    dark_img.save(os.path.join(ASSETS, "demo_lowlight_input.png"))
-    gamma.save(os.path.join(ASSETS, "demo_lowlight_gamma.png"))
-    ours_ll.save(os.path.join(ASSETS, "demo_lowlight_ours.png"))
+    _save("demo_lowlight_input.jpg", dark_img)
+    _save("demo_lowlight_gamma.jpg", gamma)
+    _save("demo_lowlight_ours.jpg", ours_ll)
 
     # ---- Super-resolution demo (4x) -------------------------------------
+    # Feed the LR image to the model (architecturally correct: the SR model
+    # consumes a low-res input). predict_sr now returns the model's TRUE output.
     lr = scene.resize((128, 128), Image.LANCZOS)     # simulate low-res capture
     lr_disp = lr.resize((512, 512), Image.NEAREST)   # blocky display of LR
     bicubic = sr_classical(lr, scale=4)              # classical baseline
-    ours_sr = ml.predict_sr(scene, scale=4) or bicubic  # trained SRResNet
-    lr_disp.save(os.path.join(ASSETS, "demo_sr_lr.png"))
-    bicubic.save(os.path.join(ASSETS, "demo_sr_bicubic.png"))
-    ours_sr.save(os.path.join(ASSETS, "demo_sr_ours.png"))
+    ours_sr = ml.predict_sr(lr, scale=4) or bicubic   # trained SRResNet
+    _save("demo_sr_lr.jpg", lr_disp)
+    _save("demo_sr_bicubic.jpg", bicubic)
+    _save("demo_sr_ours.jpg", ours_sr)
 
     print("Demo images written to assets/.")
 

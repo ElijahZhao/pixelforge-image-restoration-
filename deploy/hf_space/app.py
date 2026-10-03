@@ -95,7 +95,8 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
     x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
     out = model(x).clamp(0, 1)
     out = TF.to_pil_image(out.squeeze(0).cpu())
-    return out.resize((img.width * scale, img.height * scale), Image.BICUBIC)
+    # Return the model's TRUE output (lr*scale). Do not re-upscale to img*scale.
+    return out
 
 
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
@@ -124,10 +125,11 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
 # Gradio UI
 # --------------------------------------------------------------------------- #
 def _engine_status() -> str:
+    sr2 = "ML" if get_sr_model(2) is not None else "classical baseline (no weight)"
     sr4 = "ML" if get_sr_model(4) is not None else "classical baseline"
     low = "ML" if get_lowlight_model() is not None else "classical baseline"
     return (
-        f"**Engine in use** — SR ×4: `{sr4}` · Low-light: `{low}`  \n"
+        f"**Engine in use** — SR ×2: `{sr2}` · SR ×4: `{sr4}` · Low-light: `{low}`  \n"
         f"Trained models are loaded from `models/` when present; "
         f"otherwise the classical baselines keep the demo fully usable."
     )

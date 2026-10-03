@@ -30,6 +30,14 @@ from .model_loader import get_sr_model, get_lowlight_model, predict_sr, predict_
 
 app = FastAPI(title="CV Restoration API", version="1.0.0")
 
+# ---------------------------------------------------------------------------
+# Resource limits (F13 — see DIAGNOSIS_ROUND6/14). Without these, a single large
+# upload can produce a multi-GB base64 response (SR x4 grows output linearly)
+# and OOM the host. All limits are overridable via env vars.
+# ---------------------------------------------------------------------------
+MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(10 * 1024 * 1024)))   # 10 MB
+MAX_INPUT_PIXELS = int(os.getenv("MAX_INPUT_PIXELS", str(4_000_000)))          # ~4 MP
+
 # Production: set ALLOWED_ORIGINS=https://your-domain.com,https://admin.your-domain.com
 # Multiple origins can be comma-separated. Defaults to wildcard for local dev.
 _ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*")
@@ -76,25 +84,52 @@ async def predict(
     if scale not in (2, 4):
         scale = 2
 
+    # F13: reject oversized uploads before decoding them.
+    raw = await image.read()
+    if len(raw) > MAX_UPLOAD_BYTES:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"upload too large (>{MAX_UPLOAD_BYTES} bytes)"},
+        )
+
     try:
-        original = Image.open(io.BytesIO(await image.read())).convert("RGB")
+        original = Image.open(io.BytesIO(raw)).convert("RGB")
     except Exception:
         return JSONResponse(
             status_code=422, content={"error": "uploaded file is not a valid image"}
+        )
+
+    # F13: bound the work by input pixel count.
+    if original.width * original.height > MAX_INPUT_PIXELS:
+        return JSONResponse(
+            status_code=413,
+            content={"error": f"image too large (>{MAX_INPUT_PIXELS} pixels); "
+                              f"downscale it first."},
         )
 
     if task == "sr":
         ml_result = predict_sr(original, scale)
         engine = "ml" if ml_result is not None else "classical"
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
-        # "before" = original shown at the upscaled size (blurry reference)
-        before = original.resize((original.width * scale, original.height * scale),
-                                Image.BICUBIC)
+        # "before" = the same low-res input upscaled by the classical bicubic
+        # baseline, so before/after share one resolution and one reference frame
+        # (the model's true output is lr*scale; see DIAGNOSIS_ROUND10/16/18).
+        lr = original.resize((max(1, original.width // scale),
+                              max(1, original.height // scale)), Image.BICUBIC)
+        before = lr.resize((lr.width * scale, lr.height * scale), Image.BICUBIC)
     else:  # lowlight
         ml_result = predict_lowlight(original)
         engine = "ml" if ml_result is not None else "classical"
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
         before = original
+
+    # F8: when no trained weight exists for the chosen task/scale, say so
+    # explicitly instead of silently falling back to a classical baseline.
+    if engine == "classical":
+        note = ("Classical baseline in use — no trained weight found for "
+                f"{task} x{scale} (train & export one to switch to ML).")
+    else:
+        note = "Powered by a trained PyTorch model."
 
     return {
         "task": task,
@@ -102,11 +137,7 @@ async def predict(
         "engine": engine,
         "before": _img_to_b64(before),
         "after": _img_to_b64(result),
-        "note": (
-            "Classical baseline (train & export real weights to upgrade to ML)."
-            if engine == "classical"
-            else "Powered by a trained PyTorch model."
-        ),
+        "note": note,
     }
 
 

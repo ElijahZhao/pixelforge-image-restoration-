@@ -43,8 +43,21 @@ from metrics import evaluate_batch
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 
+# ImageNet normalization stats — REQUIRED for ImageNet-pretrained VGG features.
+# Without this, feeding raw [0,1] tensors drives >90% of VGG activations to zero
+# and the perceptual loss becomes meaningless (see DIAGNOSIS_ROUND3/11/13/15).
+_IMAGENET_MEAN = (0.485, 0.456, 0.406)
+_IMAGENET_STD = (0.229, 0.224, 0.225)
+
+
 class VGGPerceptualLoss(nn.Module):
-    """Perceptual loss using VGG16 feature maps (relu5_4)."""
+    """Perceptual loss using VGG16 features.
+
+    Uses ``features[:30]``, which ends at ``ReLU5_3`` (the SRGAN "VGG54" choice,
+    Ledig et al. 2017) — not ``relu5_4`` as an earlier docstring claimed.
+    Inputs are ImageNet-normalized before feature extraction; skipping this step
+    was a real defect (94% of activations collapsed to zero).
+    """
 
     def __init__(self):
         super().__init__()
@@ -53,9 +66,25 @@ class VGGPerceptualLoss(nn.Module):
             p.requires_grad = False
         self.vgg = vgg
         self.criterion = nn.L1Loss()
+        self.register_buffer(
+            "mean", torch.tensor(_IMAGENET_MEAN).view(1, 3, 1, 1))
+        self.register_buffer(
+            "std", torch.tensor(_IMAGENET_STD).view(1, 3, 1, 1))
+
+    def _feat(self, x: torch.Tensor) -> torch.Tensor:
+        # Align every operand to the VGG backbone's device. The backbone is
+        # created on DEVICE (cuda when available), but callers may pass CPU
+        # tensors (e.g. unit tests, or pre-to(DEVICE) inputs). Without this the
+        # loss only works when inputs already live on DEVICE — a latent bug that
+        # passed CPU-only CI but broke on the training GPU (DIAGNOSIS_ROUND20).
+        dev = next(self.vgg.parameters()).device
+        x = x.to(dev)
+        mean = self.mean.to(dev)
+        std = self.std.to(dev)
+        return self.vgg((x - mean) / std)
 
     def forward(self, pred: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        return self.criterion(self.vgg(pred), self.vgg(target))
+        return self.criterion(self._feat(pred), self._feat(target))
 
 
 def l1_charbonnier(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-3):
@@ -85,8 +114,17 @@ def train(args):
 
     best_psnr = -1.0
     log_path = f"results/train_log_{args.task}_{args.model}.csv"
+    # F5: record the training objective and the best-checkpoint criterion in the
+    # same artifact, so the two can never silently diverge (DIAGNOSIS_ROUND13).
+    best_criterion = "val_psnr"  # best checkpoint is selected by validation PSNR
+    objective = (f"{args.w_pixel}*charbonnier + {args.w_percep}*vgg_perceptual"
+                 if args.perceptual else "charbonnier")
     with open(log_path, "w", newline="") as f:
-        csv.writer(f).writerow(["epoch", "train_loss", "val_psnr", "val_ssim", "time_s"])
+        w = csv.writer(f)
+        w.writerow([f"# objective={objective}"])
+        w.writerow([f"# best_criterion={best_criterion}"])
+        w.writerow([f"# perceptual_normalized={bool(args.perceptual)}"])
+        w.writerow(["epoch", "train_loss", "val_psnr", "val_ssim", "time_s"])
 
     for epoch in range(1, args.epochs + 1):
         model.train()
@@ -97,9 +135,16 @@ def train(args):
             optimizer.zero_grad()
             with autocast(enabled=(DEVICE == "cuda")):
                 out = model(lr)
-                loss = l1_charbonnier(out, hr)
+                pix = l1_charbonnier(out, hr)
                 if percep is not None:
-                    loss = 0.01 * loss + percep(out, hr)
+                    # Explicit, readable weighting. The old code used
+                    # ``0.01 * loss + percep`` which silently erased the pixel
+                    # term (see DIAGNOSIS_ROUND1/11/13). Weights are logged so the
+                    # two terms' magnitudes can be inspected during training.
+                    per = percep(out, hr)
+                    loss = args.w_pixel * pix + args.w_percep * per
+                else:
+                    loss = pix
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
@@ -145,6 +190,12 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=16)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--perceptual", action="store_true")
+    # Explicit loss weights (only used when --perceptual is on). Johnson et al.
+    # 2016 use a ~1:0.006 pixel:perceptual ratio after proper normalization.
+    p.add_argument("--w_pixel", type=float, default=1.0,
+                   help="weight for the pixel (Charbonnier) term")
+    p.add_argument("--w_percep", type=float, default=0.006,
+                   help="weight for the VGG perceptual term")
     return p.parse_args()
 
 
