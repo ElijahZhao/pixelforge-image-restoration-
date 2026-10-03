@@ -68,6 +68,8 @@ TEXTS = {
         "cap_sr_out": "③ PixelForge SR output (true ×{scale})",
         "cap_before": "Before",
         "cap_after": "After (enhanced)",
+        "sec_upload": "Upload",
+        "sec_result": "Result",
         "info_3panel": (
             "**How to read these three panels**: super-resolution maps a "
             "*low-resolution* image to a *high-resolution* one, so the middle "
@@ -111,6 +113,8 @@ TEXTS = {
         "cap_sr_out": "③ PixelForge 超分输出 (真实 ×{scale})",
         "cap_before": "Before",
         "cap_after": "After (enhanced)",
+        "sec_upload": "上传",
+        "sec_result": "结果",
         "info_3panel": (
             "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
             "所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
@@ -306,43 +310,96 @@ header[data-testid="stHeader"] { background: transparent; }
 
 .pf-hero {
   text-align: center;
-  padding: 30px 16px 24px;
-  margin-bottom: 20px;
+  padding: 34px 16px 26px;
+  margin-bottom: 22px;
   border: 3px solid var(--pf-border);
-  border-radius: 4px;
+  border-radius: 6px;
   background: var(--pf-hero-bg);
   box-shadow: var(--pf-hero-shadow);
   position: relative;
-  overflow: visible;
+  overflow: hidden;
 }
+/* Pixel-corner accents on the hero frame. */
+.pf-hero::before, .pf-hero::after {
+  content: "";
+  position: absolute;
+  width: 14px; height: 14px;
+  border: 3px solid var(--pf-cyan);
+}
+.pf-hero::before { top: 6px; left: 6px; border-right: 0; border-bottom: 0; }
+.pf-hero::after { bottom: 6px; right: 6px; border-left: 0; border-top: 0; }
 .pf-title {
   font-family: var(--pf-font);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 700;
-  line-height: 1.7;
+  line-height: 1.5;
   color: var(--pf-title-color);
   text-shadow: var(--pf-title-shadow);
-  margin: 0 0 16px;
-  letter-spacing: 2px;
+  margin: 0 0 14px;
+  letter-spacing: 4px;
   word-spacing: 4px;
 }
-.pf-sub { font-size: 13px; color: var(--pf-accent-text); margin: 0; }
-.pf-badge {
-  display: inline-block;
-  margin-top: 12px;
+.pf-sub {
+  font-size: 13px;
+  color: var(--pf-accent-text);
+  margin: 0 auto;
+  letter-spacing: 2px;
+}
+
+/* Status pills row under the hero. */
+.pf-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 18px;
+}
+.pf-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 5px 12px;
   font-size: 11px;
-  color: var(--pf-badge-fg);
-  background: var(--pf-cyan);
-  border-radius: 3px;
   font-weight: 700;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  border: 1px solid var(--pf-pill-border);
+  background: var(--pf-pill-bg);
+  color: var(--pf-pill-fg);
+}
+.pf-pill.on { border-color: var(--pf-pill-on-border); color: var(--pf-pill-on-fg); }
+.pf-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--pf-pill-dot);
+  box-shadow: 0 0 6px var(--pf-pill-dot);
+}
+
+/* Section cards: give the scattered widgets a visible frame. */
+.pf-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--pf-accent-text);
+  text-transform: uppercase;
+}
+.pf-section-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--pf-border), transparent);
 }
 
 .stButton > button, .stDownloadButton > button {
   font-family: "Courier New", monospace;
   font-weight: 700;
+  letter-spacing: 1px;
   border: 2px solid var(--pf-cyan);
-  border-radius: 3px;
+  border-radius: 4px;
   background: var(--pf-btn-bg);
   color: var(--pf-btn-fg);
   transition: all 0.12s ease;
@@ -359,54 +416,87 @@ header[data-testid="stHeader"] { background: transparent; }
   background: var(--pf-sidebar-bg);
   border-right: 2px solid var(--pf-sidebar-border);
 }
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+  padding-top: 1.2rem;
+}
 [data-testid="stFileUploader"] {
   border: 2px dashed var(--pf-border);
-  border-radius: 4px;
-  padding: 6px;
+  border-radius: 6px;
+  padding: 14px;
+  background: var(--pf-card-bg);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+[data-testid="stFileUploader"]:hover {
+  border-color: var(--pf-cyan);
+  box-shadow: 0 0 0 3px var(--pf-focus-ring);
 }
 [data-testid="stImage"] img {
   border: 3px solid var(--pf-img-border);
-  border-radius: 3px;
+  border-radius: 4px;
   box-shadow: 4px 4px 0 var(--pf-img-shadow);
 }
+/* Numbered corner tab on each result panel. */
+.pf-panel-cap {
+  display: block;
+  margin-top: 8px;
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-align: center;
+  color: var(--pf-pill-fg);
+  background: var(--pf-card-bg);
+  border: 1px solid var(--pf-border);
+  border-radius: 4px;
+}
 [data-testid="stAlert"] {
-  border-radius: 3px;
+  border-radius: 4px;
   border-left: 4px solid var(--pf-purple);
 }
+[data-testid="stAlert"] a { color: var(--pf-accent-text); }
 
-/* --- Light-theme readability fixes ---------------------------------------
-   Streamlit-native widgets (captions, info boxes, sidebar labels, the
-   file-uploader text, radio labels, dividers) use Streamlit's own colours,
-   which stayed light-grey on our light background -> unreadable. We force a
-   dark text colour for those only when the app is in light mode. The body /
-   main text also needs an explicit dark colour because our .stApp background
-   is overridden. */
-html[data-pf-theme="light"] .stApp,
-html[data-pf-theme="light"] [data-testid="stAppViewContainer"],
-html[data-pf-theme="light"] [data-testid="stSidebar"],
-html[data-pf-theme="light"] [data-testid="stSidebar"] * {
-  color: var(--pf-text);
+/* Pixel-style footer. */
+.pf-footer {
+  margin-top: 26px;
+  padding: 16px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 1px;
+  color: var(--pf-footer-fg);
+  border-top: 2px solid var(--pf-border);
 }
-html[data-pf-theme="light"] [data-testid="stCaptionContainer"],
-html[data-pf-theme="light"] small,
-html[data-pf-theme="light"] .stMarkdown p,
-html[data-pf-theme="light"] [data-testid="stWidgetLabel"] p,
-html[data-pf-theme="light"] [data-testid="stFileUploader"] span,
-html[data-pf-theme="light"] [data-testid="stFileUploader"] small {
-  color: var(--pf-text-muted) !important;
-}
-html[data-pf-theme="light"] [data-testid="stFileUploader"] {
-  background: #ffffff;
-  color: var(--pf-text-muted);
-}
-html[data-pf-theme="light"] [data-testid="stAlert"] {
-  background: #eef2ff;
-  color: var(--pf-text);
-}
-html[data-pf-theme="light"] [data-testid="stAlert"] * {
+.pf-footer a { color: var(--pf-accent-text); text-decoration: none; }
+.pf-footer a:hover { text-decoration: underline; }
+</style>
+"""
+
+# Light-theme readability sheet. Injected ONLY when light mode is active.
+# (A previous attempt scoped these under html[data-pf-theme="light"] and set
+# that attribute with a <script> — but Streamlit strips <script> from
+# st.markdown, so the attribute was never applied and light mode never took
+# effect. Verified in a real browser. Injecting conditionally avoids JS
+# entirely and is guaranteed to work.)
+_CSS_LIGHT_FIXES = """
+<style>
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"],
+[data-testid="stSidebar"] * { color: var(--pf-text); }
+[data-testid="stCaptionContainer"], small, .stMarkdown p,
+[data-testid="stWidgetLabel"] p, [data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] small { color: var(--pf-text-muted) !important; }
+[data-testid="stFileUploader"] { background: #ffffff; color: var(--pf-text-muted); }
+/* The uploader's inner dropzone + its button ship with their own dark
+   background in Streamlit's default theme; on a white page they read as a
+   jarring dark slab. Repaint them light. */
+[data-testid="stFileUploaderDropzone"] { background: #ffffff !important; }
+[data-testid="stFileUploaderDropzone"] button {
+  background: #eef2ff !important;
   color: var(--pf-text) !important;
+  border-color: var(--pf-border) !important;
 }
-html[data-pf-theme="light"] hr { border-color: rgba(15, 23, 42, 0.15); }
+[data-testid="stFileUploaderDropzone"] svg { fill: var(--pf-text-muted); }
+[data-testid="stAlert"] { background: #eef2ff; color: var(--pf-text); }
+[data-testid="stAlert"] * { color: var(--pf-text) !important; }
+[data-testid="stSidebar"] label, [data-testid="stSidebar"] p { color: var(--pf-text); }
+hr { border-color: rgba(15, 23, 42, 0.15); }
 </style>
 """
 
@@ -437,6 +527,15 @@ _CSS_VARS_DARK = """
   --pf-sidebar-border: rgba(168, 85, 247, 0.35);
   --pf-img-border: rgba(34, 211, 238, 0.5);
   --pf-img-shadow: rgba(168, 85, 247, 0.35);
+  --pf-card-bg: rgba(23, 19, 56, 0.55);
+  --pf-pill-bg: rgba(23, 19, 56, 0.75);
+  --pf-pill-fg: #cbd5e1;
+  --pf-pill-border: rgba(148, 163, 184, 0.35);
+  --pf-pill-on-fg: #eaffff;
+  --pf-pill-on-border: rgba(34, 211, 238, 0.75);
+  --pf-pill-dot: #22d3ee;
+  --pf-focus-ring: rgba(34, 211, 238, 0.20);
+  --pf-footer-fg: #64748b;
 }
 </style>
 """
@@ -467,6 +566,15 @@ _CSS_VARS_LIGHT = """
   --pf-sidebar-border: rgba(124, 58, 237, 0.25);
   --pf-img-border: rgba(8, 145, 178, 0.55);
   --pf-img-shadow: rgba(124, 58, 237, 0.22);
+  --pf-card-bg: rgba(255, 255, 255, 0.75);
+  --pf-pill-bg: #ffffff;
+  --pf-pill-fg: #334155;
+  --pf-pill-border: rgba(100, 116, 139, 0.35);
+  --pf-pill-on-fg: #0e7490;
+  --pf-pill-on-border: rgba(8, 145, 178, 0.65);
+  --pf-pill-dot: #0e7490;
+  --pf-focus-ring: rgba(8, 145, 178, 0.18);
+  --pf-footer-fg: #64748b;
   /* Streamlit-native text colours for the light theme (fixes low-contrast
      grey-on-white on captions / info boxes / sidebar labels / uploader). */
   --pf-text: #0f172a;
@@ -479,32 +587,20 @@ _CSS_VARS_LIGHT = """
 st.session_state.setdefault("lang", "en")      # English by default
 st.session_state.setdefault("theme", "dark")   # dark by default
 
-# Inject BOTH variable sheets ONCE, scoped by a data-attribute on <html>, plus
-# the common sheet. Switching theme then only flips that one attribute via a
-# tiny JS hop instead of re-emitting ~3 KB of CSS on every rerun and forcing
-# the browser to re-parse the whole stylesheet (which caused the lag).
-_SCOPED_VARS = f"""
-<style>
-{_CSS_VARS_DARK[len("<style>") : _CSS_VARS_DARK.rfind("</style>")].replace(":root {", 'html[data-pf-theme="dark"] {')}
-{_CSS_VARS_LIGHT[len("<style>") : _CSS_VARS_LIGHT.rfind("</style>")].replace(":root {", 'html[data-pf-theme="light"] {')}
-</style>
-"""
-st.markdown(_SCOPED_VARS, unsafe_allow_html=True)
+# Inject ONLY the active theme's variables, under plain :root, plus the common
+# sheet. The earlier "inject both, scope by html[data-pf-theme], flip via JS"
+# approach was WRONG: Streamlit sanitises <script> out of st.markdown, so the
+# attribute was never set and the theme never changed (verified in a real
+# browser: documentElement had no data-pf-theme). Rendering the active sheet
+# directly is guaranteed to work with zero JS. The light-theme readability
+# overrides are still scoped by a *selector* (html[data-pf-theme="light"]) in
+# _CSS_COMMON, which we now drive by emitting that attribute as a real DOM
+# attribute on a wrapper we fully control — see _THEME_ATTR below.
+st.markdown(_CSS_VARS_DARK if st.session_state.theme == "dark" else _CSS_VARS_LIGHT,
+            unsafe_allow_html=True)
 st.markdown(_CSS_COMMON, unsafe_allow_html=True)
-
-# Apply the active theme by setting one attribute on <html>. This is what makes
-# the toggle feel instant: no re-layout of the injected CSS, no rerun needed.
-st.markdown(
-    f"""
-    <script>
-    (function() {{
-      var t = "{st.session_state.theme}";
-      document.documentElement.setAttribute("data-pf-theme", t);
-    }})();
-    </script>
-    """,
-    unsafe_allow_html=True,
-)
+if st.session_state.theme == "light":
+    st.markdown(_CSS_LIGHT_FIXES, unsafe_allow_html=True)
 
 # --- sidebar controls (language + theme first, then task/scale) -------------
 # Widgets are bound directly to session_state via `key=`. The earlier version
@@ -537,6 +633,8 @@ with st.sidebar:
     st.divider()
     st.caption(T["trained_caption"])
 
+st.markdown(f'<p class="pf-section-title">{T["sec_upload"]}</p>',
+            unsafe_allow_html=True)
 uploaded = st.file_uploader(T["upload_label"], type=["png", "jpg", "jpeg", "bmp", "webp"])
 
 # --- render-time engine probe (files only; no torch.jit.load) ---------------
@@ -552,7 +650,14 @@ st.markdown(
     <div class="pf-hero">
       <p class="pf-title">PIXELFORGE</p>
       <p class="pf-sub">&gt; SUPER-RESOLUTION &amp; LOW-LIGHT ENHANCEMENT&lt;</p>
-      <p class="pf-badge">SR ×2 · {sr2_tag} ｜ SR ×4 · {sr4_tag} ｜ LOW-LIGHT · {low_tag}</p>
+      <div class="pf-pills">
+        <span class="pf-pill {'on' if sr2_ready else ''}">
+          <span class="pf-dot"></span>SR ×2 · {sr2_tag}</span>
+        <span class="pf-pill {'on' if sr4_ready else ''}">
+          <span class="pf-dot"></span>SR ×4 · {sr4_tag}</span>
+        <span class="pf-pill {'on' if low_ready else ''}">
+          <span class="pf-dot"></span>LOW-LIGHT · {low_tag}</span>
+      </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -563,6 +668,8 @@ if uploaded is not None:
     use_sr = st.session_state.task == "sr"
     scale = st.session_state.scale
 
+    st.markdown(f'<p class="pf-section-title">{T["sec_result"]}</p>',
+                unsafe_allow_html=True)
     sr_pair = None
     ml_lr = None
     with st.spinner(T["spinner"]):
@@ -588,17 +695,32 @@ if uploaded is not None:
         # The middle panel is what stops a full-res upload from being compared
         # against a reconstruction that only had 1/scale^2 of the pixels.
         c1, c2, c3 = st.columns(3)
-        c1.image(img, caption=T["cap_original"], width="stretch")
-        lr_display = ml_lr.resize(out.size, Image.NEAREST)
-        c2.image(lr_display,
-                 caption=T["cap_lr"].format(w=ml_lr.width, h=ml_lr.height),
-                 width="stretch")
-        c3.image(out, caption=T["cap_sr_out"].format(scale=scale), width="stretch")
+        with c1:
+            st.image(img, width="stretch")
+            st.markdown(f'<span class="pf-panel-cap">{T["cap_original"]}</span>',
+                        unsafe_allow_html=True)
+        with c2:
+            lr_display = ml_lr.resize(out.size, Image.NEAREST)
+            st.image(lr_display, width="stretch")
+            st.markdown('<span class="pf-panel-cap">'
+                        + T["cap_lr"].format(w=ml_lr.width, h=ml_lr.height)
+                        + "</span>", unsafe_allow_html=True)
+        with c3:
+            st.image(out, width="stretch")
+            st.markdown('<span class="pf-panel-cap">'
+                        + T["cap_sr_out"].format(scale=scale)
+                        + "</span>", unsafe_allow_html=True)
         st.info(T["info_3panel"].format(scale=scale))
     else:
         c1, c2 = st.columns(2)
-        c1.image(img, caption=T["cap_before"], width="stretch")
-        c2.image(out, caption=T["cap_after"], width="stretch")
+        with c1:
+            st.image(img, width="stretch")
+            st.markdown(f'<span class="pf-panel-cap">{T["cap_before"]}</span>',
+                        unsafe_allow_html=True)
+        with c2:
+            st.image(out, width="stretch")
+            st.markdown(f'<span class="pf-panel-cap">{T["cap_after"]}</span>',
+                        unsafe_allow_html=True)
 
     buf = io.BytesIO()
     out.save(buf, format="PNG")
@@ -607,5 +729,10 @@ if uploaded is not None:
 else:
     st.info(T["empty_info"])
 
-st.divider()
-st.caption(T["footer"])
+st.markdown(
+    f'<div class="pf-footer">PIXELFORGE · PyTorch · FastAPI · Next.js · '
+    f'TorchScript · <a href="https://github.com/ElijahZhao/'
+    f'pixelforge-image-restoration-" target="_blank">GitHub</a><br>'
+    f'{T["footer"]}</div>',
+    unsafe_allow_html=True,
+)
