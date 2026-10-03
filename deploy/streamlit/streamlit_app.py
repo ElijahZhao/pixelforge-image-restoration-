@@ -12,6 +12,13 @@ Deploy (Streamlit Community Cloud, free)
 
 The trained models switch in automatically when present in ``models/``;
 otherwise the classical baselines keep the demo fully usable.
+
+UI
+--
+Bilingual (English default, one-click switch to Chinese) and a dark/light
+theme toggle, both driven by ``st.session_state``. All UI strings live in
+``TEXTS``; all colours live in ``_CSS_DARK`` / ``_CSS_LIGHT``. Switching either
+option just re-renders — no inference logic depends on language or theme.
 """
 
 from __future__ import annotations
@@ -29,6 +36,96 @@ from PIL import Image, ImageFilter, ImageOps
 # process OOM-killed (which shows up as a bare "Oh no." page with no traceback).
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
+
+# --------------------------------------------------------------------------- #
+# Bilingual UI strings. English is the default; ``LANG`` selects the active set.
+# Keys are shared across both languages so switching never leaves a blank.
+# --------------------------------------------------------------------------- #
+TEXTS = {
+    "en": {
+        "page_title": "PixelForge · Image Restoration",
+        "sidebar_header": "👾 Controls",
+        "lang_label": "Language / 语言",
+        "theme_dark": "🌙 Dark",
+        "theme_light": "☀️ Light",
+        "theme_label": "Theme",
+        "task_label": "Task",
+        "task_sr": "Super-Resolution (SR)",
+        "task_lowlight": "Low-Light Enhancement",
+        "scale_label": "SR scale",
+        "scale_help": "×4 uses the self-trained SRResNet + perceptual-loss model",
+        "trained_caption": "Trained on AutoDL RTX 3080 Ti · Low-light full-image validation PSNR 18.18",
+        "upload_label": "Upload an image",
+        "spinner": "Running inference…",
+        "tag_ml": "ML model",
+        "tag_classical": "classical baseline",
+        "warn_sr_no_weight": "SR ×{scale}: no self-trained weight found — using the **classical bicubic baseline**.",
+        "ok_sr": "SR ×{scale}: produced by the **self-trained model** (true resolution = downscaled input ×{scale}).",
+        "warn_ll_no_weight": "Low-light: no self-trained weight — using the **classical adaptive-gamma baseline**.",
+        "ok_ll": "Low-light: produced by the **self-trained U-Net**.",
+        "cap_original": "① Original (your upload)",
+        "cap_lr": "② Model input (LR {w}×{h}, upscaled for display)",
+        "cap_sr_out": "③ PixelForge SR output (true ×{scale})",
+        "cap_before": "Before",
+        "cap_after": "After (enhanced)",
+        "info_3panel": (
+            "**How to read these three panels**: super-resolution maps a "
+            "*low-resolution* image to a *high-resolution* one, so the middle "
+            "panel is the model's real input (your original downscaled ×{scale}). "
+            "The model only ever saw those pixels; panel ③ is its reconstruction "
+            "and should look much sharper than ②. Panel ① is the reference — it "
+            "is already high-res, and **SR neither can nor claims to beat its "
+            "true detail**. For a fair comparison upload a **low-resolution** "
+            "image (or just compare ② → ③)."
+        ),
+        "download": "⬇️ Download result PNG",
+        "empty_info": (
+            "👾 Upload an image to begin. Low-light works best on dark photos; "
+            "super-resolution is meant for low-resolution inputs."
+        ),
+        "footer": "PIXELFORGE · press start to restore your images",
+    },
+    "zh": {
+        "page_title": "PixelForge · 图像修复",
+        "sidebar_header": "👾 参数",
+        "lang_label": "语言 / Language",
+        "theme_dark": "🌙 黑夜",
+        "theme_light": "☀️ 白天",
+        "theme_label": "主题",
+        "task_label": "任务",
+        "task_sr": "超分辨率 (SR)",
+        "task_lowlight": "低光增强 (Low-Light)",
+        "scale_label": "SR 放大倍数",
+        "scale_help": "×4 使用自训 SRResNet + 感知损失模型",
+        "trained_caption": "模型在 AutoDL RTX 3080 Ti 上训练 · Low-light 全图验证 PSNR 18.18",
+        "upload_label": "上传图片",
+        "spinner": "推理中…",
+        "tag_ml": "ML 自训模型",
+        "tag_classical": "classical 基线",
+        "warn_sr_no_weight": "SR ×{scale}：无对应自训权重，当前使用 **classical bicubic 基线**。",
+        "ok_sr": "SR ×{scale}：由 **自训模型** 输出（真实分辨率 = 下采样输入 ×{scale}）。",
+        "warn_ll_no_weight": "低光：无自训权重，当前使用 **classical 自适应伽马基线**。",
+        "ok_ll": "低光：由 **自训 U-Net** 输出。",
+        "cap_original": "① 原图 (your upload)",
+        "cap_lr": "② 模型实际输入 (低清 {w}×{h}，放大显示)",
+        "cap_sr_out": "③ PixelForge 超分输出 (真实 ×{scale})",
+        "cap_before": "Before",
+        "cap_after": "After (enhanced)",
+        "info_3panel": (
+            "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
+            "所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
+            "模型只见过中间这张的像素，③ 是它重建出的结果——③ 应比 ② 清晰很多。"
+            "① 是参考原图：它本来就高清，**超分不会、也不该声称能超过它的真实细节**。"
+            "想看公平对比，请上传**低分辨率**图片（或直接看 ②→③）。"
+        ),
+        "download": "⬇️ 下载结果 PNG",
+        "empty_info": (
+            "👾 请上传一张图片开始体验。低光任务建议用较暗的照片；"
+            "超分建议用低分辨率图。"
+        ),
+        "footer": "PIXELFORGE · press start to restore your images",
+    },
+}
 
 
 def _device() -> str:
@@ -166,51 +263,31 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
 
 
 # --------------------------------------------------------------------------- #
-# Streamlit UI —— 复古像素 / 游戏风
+# Streamlit UI —— 复古像素 / 游戏风（双语 + 暗/亮双主题）
 # --------------------------------------------------------------------------- #
 st.set_page_config(page_title="PixelForge · Image Restoration",
                    page_icon="👾", layout="centered")
 
-PIXEL_CSS = """
+# Two colour schemes share identical selectors; only the :root variables and a
+# few hard-coded glows differ. `_css()` returns the active sheet.
+_CSS_COMMON = """
 <style>
-:root {
-  --pf-cyan: #22d3ee;
-  --pf-purple: #a855f7;
-  --pf-pink: #f472b6;
-  --pf-bg: #0b0a1f;
-  --pf-card: rgba(23, 19, 56, 0.72);
-  --pf-border: rgba(34, 211, 238, 0.35);
-  --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-/* 全局等宽 + 轻微像素渲染 */
 html, body, [class*="css"] {
   font-family: var(--pf-font);
   letter-spacing: 0.2px;
 }
-
-/* 深空背景 + 霓虹光晕 + 扫描线 */
-.stApp {
-  background:
-    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.22), transparent 42%),
-    radial-gradient(circle at 85% 25%, rgba(34, 211, 238, 0.18), transparent 40%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px),
-    var(--pf-bg);
-}
-
-/* 隐藏 Streamlit 框架元素，减少"框架感" */
+.stApp { background: var(--pf-app-bg); }
 #MainMenu, header[data-testid="stHeader"], footer { visibility: hidden; }
 [data-testid="stToolbar"] { display: none; }
 
-/* 自定义 Hero 标题 */
 .pf-hero {
   text-align: center;
   padding: 30px 16px 24px;
   margin-bottom: 20px;
   border: 3px solid var(--pf-border);
   border-radius: 4px;
-  background: linear-gradient(160deg, rgba(34,211,238,0.10), rgba(168,85,247,0.16));
-  box-shadow: 0 0 0 3px rgba(11,10,31,0.9), 0 0 24px rgba(168,85,247,0.35);
+  background: var(--pf-hero-bg);
+  box-shadow: var(--pf-hero-shadow);
   position: relative;
   overflow: visible;
 }
@@ -219,65 +296,55 @@ html, body, [class*="css"] {
   font-size: 28px;
   font-weight: 700;
   line-height: 1.7;
-  color: #fff;
-  text-shadow: 3px 3px 0 #a855f7, 6px 6px 0 rgba(34,211,238,0.55);
+  color: var(--pf-title-color);
+  text-shadow: var(--pf-title-shadow);
   margin: 0 0 16px;
   letter-spacing: 2px;
   word-spacing: 4px;
 }
-.pf-sub {
-  font-size: 13px;
-  color: var(--pf-cyan);
-  margin: 0;
-}
+.pf-sub { font-size: 13px; color: var(--pf-accent-text); margin: 0; }
 .pf-badge {
   display: inline-block;
   margin-top: 12px;
   padding: 5px 12px;
   font-size: 11px;
-  color: var(--pf-bg);
+  color: var(--pf-badge-fg);
   background: var(--pf-cyan);
   border-radius: 3px;
   font-weight: 700;
 }
 
-/* 像素风按钮 */
 .stButton > button, .stDownloadButton > button {
   font-family: "Courier New", monospace;
   font-weight: 700;
   border: 2px solid var(--pf-cyan);
   border-radius: 3px;
-  background: rgba(34, 211, 238, 0.10);
-  color: #eaffff;
+  background: var(--pf-btn-bg);
+  color: var(--pf-btn-fg);
   transition: all 0.12s ease;
-  box-shadow: 3px 3px 0 rgba(168, 85, 247, 0.45);
+  box-shadow: 3px 3px 0 var(--pf-btn-shadow);
 }
 .stButton > button:hover, .stDownloadButton > button:hover {
   background: var(--pf-cyan);
-  color: var(--pf-bg);
+  color: var(--pf-badge-fg);
   transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 rgba(244, 114, 182, 0.6);
+  box-shadow: 4px 4px 0 var(--pf-btn-shadow-hover);
 }
 
-/* 侧栏 / 卡片容器统一暗紫描边 */
 [data-testid="stSidebar"] {
-  background: linear-gradient(180deg, #171338, #0f0c2b);
-  border-right: 2px solid rgba(168, 85, 247, 0.35);
+  background: var(--pf-sidebar-bg);
+  border-right: 2px solid var(--pf-sidebar-border);
 }
 [data-testid="stFileUploader"] {
   border: 2px dashed var(--pf-border);
   border-radius: 4px;
   padding: 6px;
 }
-
-/* 图片容器加像素描边 */
 [data-testid="stImage"] img {
-  border: 3px solid rgba(34, 211, 238, 0.5);
+  border: 3px solid var(--pf-img-border);
   border-radius: 3px;
-  box-shadow: 4px 4px 0 rgba(168, 85, 247, 0.35);
+  box-shadow: 4px 4px 0 var(--pf-img-shadow);
 }
-
-/* 提示条重着色 */
 [data-testid="stAlert"] {
   border-radius: 3px;
   border-left: 4px solid var(--pf-purple);
@@ -285,16 +352,111 @@ html, body, [class*="css"] {
 </style>
 """
 
-st.markdown(PIXEL_CSS, unsafe_allow_html=True)
+_CSS_VARS_DARK = """
+<style>
+:root {
+  --pf-cyan: #22d3ee;
+  --pf-purple: #a855f7;
+  --pf-pink: #f472b6;
+  --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --pf-app-bg:
+    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.22), transparent 42%),
+    radial-gradient(circle at 85% 25%, rgba(34, 211, 238, 0.18), transparent 40%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.022) 0px, rgba(255,255,255,0.022) 1px, transparent 1px, transparent 3px),
+    #0b0a1f;
+  --pf-border: rgba(34, 211, 238, 0.35);
+  --pf-hero-bg: linear-gradient(160deg, rgba(34,211,238,0.10), rgba(168,85,247,0.16));
+  --pf-hero-shadow: 0 0 0 3px rgba(11,10,31,0.9), 0 0 24px rgba(168,85,247,0.35);
+  --pf-title-color: #fff;
+  --pf-title-shadow: 3px 3px 0 #a855f7, 6px 6px 0 rgba(34,211,238,0.55);
+  --pf-accent-text: var(--pf-cyan);
+  --pf-badge-fg: #0b0a1f;
+  --pf-btn-bg: rgba(34, 211, 238, 0.10);
+  --pf-btn-fg: #eaffff;
+  --pf-btn-shadow: rgba(168, 85, 247, 0.45);
+  --pf-btn-shadow-hover: rgba(244, 114, 182, 0.6);
+  --pf-sidebar-bg: linear-gradient(180deg, #171338, #0f0c2b);
+  --pf-sidebar-border: rgba(168, 85, 247, 0.35);
+  --pf-img-border: rgba(34, 211, 238, 0.5);
+  --pf-img-shadow: rgba(168, 85, 247, 0.35);
+}
+</style>
+"""
 
-# Render-time engine probe: check the weight FILES only (no torch.jit.load),
-# so merely opening the page never allocates model memory.
+_CSS_VARS_LIGHT = """
+<style>
+:root {
+  --pf-cyan: #0891b2;
+  --pf-purple: #7c3aed;
+  --pf-pink: #db2777;
+  --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --pf-app-bg:
+    radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.10), transparent 42%),
+    radial-gradient(circle at 85% 25%, rgba(8, 145, 178, 0.10), transparent 40%),
+    #f5f7fb;
+  --pf-border: rgba(8, 145, 178, 0.45);
+  --pf-hero-bg: linear-gradient(160deg, rgba(8,145,178,0.08), rgba(124,58,237,0.10));
+  --pf-hero-shadow: 0 0 0 3px rgba(255,255,255,0.9), 0 0 18px rgba(124,58,237,0.18);
+  --pf-title-color: #1e1b4b;
+  --pf-title-shadow: 3px 3px 0 rgba(124,58,237,0.35), 6px 6px 0 rgba(8,145,178,0.25);
+  --pf-accent-text: #0e7490;
+  --pf-badge-fg: #ffffff;
+  --pf-btn-bg: rgba(8, 145, 178, 0.08);
+  --pf-btn-fg: #0e7490;
+  --pf-btn-shadow: rgba(124, 58, 237, 0.30);
+  --pf-btn-shadow-hover: rgba(219, 39, 119, 0.4);
+  --pf-sidebar-bg: linear-gradient(180deg, #eef2ff, #e0e7ff);
+  --pf-sidebar-border: rgba(124, 58, 237, 0.25);
+  --pf-img-border: rgba(8, 145, 178, 0.5);
+  --pf-img-shadow: rgba(124, 58, 237, 0.22);
+}
+</style>
+"""
+
+# --- session state defaults -------------------------------------------------
+st.session_state.setdefault("lang", "en")      # English by default
+st.session_state.setdefault("theme", "dark")   # dark by default
+
+st.markdown(_CSS_VARS_DARK if st.session_state.theme == "dark" else _CSS_VARS_LIGHT,
+            unsafe_allow_html=True)
+st.markdown(_CSS_COMMON, unsafe_allow_html=True)
+
+# --- sidebar controls (language + theme first, then task/scale) -------------
+with st.sidebar:
+    lang_choice = st.radio(
+        "Language / 语言", ["English", "中文"],
+        index=0 if st.session_state.lang == "en" else 1,
+        horizontal=True,
+    )
+    st.session_state.lang = "en" if lang_choice == "English" else "zh"
+    T = TEXTS[st.session_state.lang]
+
+    theme_choice = st.radio(
+        T["theme_label"], [T["theme_dark"], T["theme_light"]],
+        index=0 if st.session_state.theme == "dark" else 1,
+        horizontal=True,
+    )
+    st.session_state.theme = "dark" if theme_choice == T["theme_dark"] else "light"
+
+    st.divider()
+    st.header(T["sidebar_header"])
+    # NOTE: option VALUES are fixed ("sr"/"lowlight"); only the LABELS are
+    # translated via format_func, so task routing never depends on language.
+    task = st.radio(T["task_label"], ["sr", "lowlight"],
+                    format_func=lambda k: T["task_sr"] if k == "sr" else T["task_lowlight"])
+    scale = st.radio(T["scale_label"], ["2", "4"], index=1, help=T["scale_help"])
+    st.divider()
+    st.caption(T["trained_caption"])
+
+uploaded = st.file_uploader(T["upload_label"], type=["png", "jpg", "jpeg", "bmp", "webp"])
+
+# --- render-time engine probe (files only; no torch.jit.load) ---------------
 sr2_ready = _sr_weight_path(2) is not None
 sr4_ready = _sr_weight_path(4) is not None
 low_ready = _lowlight_weight_path() is not None
-sr2_tag = "ML 自训模型" if sr2_ready else "classical 基线(无权重)"
-sr4_tag = "ML 自训模型" if sr4_ready else "classical 基线"
-low_tag = "ML 自训模型" if low_ready else "classical 基线"
+sr2_tag = T["tag_ml"] if sr2_ready else T["tag_classical"]
+sr4_tag = T["tag_ml"] if sr4_ready else T["tag_classical"]
+low_tag = T["tag_ml"] if low_ready else T["tag_classical"]
 
 st.markdown(
     f"""
@@ -307,70 +469,53 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-with st.sidebar:
-    st.header("👾 参数")
-    task = st.radio("任务", ["超分辨率 (SR)", "低光增强 (Low-Light)"])
-    scale = st.radio("SR 放大倍数", ["2", "4"], index=1,
-                     help="×4 使用自训 SRResNet + 感知损失模型")
-    st.divider()
-    st.caption("模型在 AutoDL RTX 3080 Ti 上训练 · Low-light 全图验证 PSNR 18.18")
-
-uploaded = st.file_uploader("上传图片", type=["png", "jpg", "jpeg", "bmp", "webp"])
-
 if uploaded is not None:
     img = Image.open(uploaded).convert("RGB")
-    use_sr = task.startswith("超分")
+    use_sr = task == "sr"
 
     sr_pair = None
-    with st.spinner("推理中…"):
+    ml_lr = None
+    with st.spinner(T["spinner"]):
         if use_sr:
             scale_i = int(scale)
             sr_pair = predict_sr(img, scale_i)
             if sr_pair is None:
                 out = sr_classical(img, scale_i)
-                st.warning(f"SR ×{scale_i}：无对应自训权重，当前使用 **classical bicubic 基线**。")
+                st.warning(T["warn_sr_no_weight"].format(scale=scale_i))
             else:
                 ml_lr, out = sr_pair
-                st.success(f"SR ×{scale_i}：由 **自训模型** 输出（真实分辨率 = 下采样输入 ×{scale_i}）。")
+                st.success(T["ok_sr"].format(scale=scale_i))
         else:
             ml_out = predict_lowlight(img)
             out = ml_out or lowlight_classical(img)
             if ml_out is None:
-                st.warning("低光：无自训权重，当前使用 **classical 自适应伽马基线**。")
+                st.warning(T["warn_ll_no_weight"])
             else:
-                st.success("低光：由 **自训 U-Net** 输出。")
+                st.success(T["ok_ll"])
 
     if use_sr and sr_pair is not None and ml_lr is not None:
-        # 三图对比：原图 / 模型真实输入（低清） / 超分输出。
-        # 中间面板是关键——它让"超分 = 低清→高清"这件事一目了然，避免
-        # 用户拿"明明很清晰的原图"去比，误以为模型把图变糊了。
+        # 3-panel view: original / model's real (low-res) input / SR output.
+        # The middle panel is what stops a full-res upload from being compared
+        # against a reconstruction that only had 1/scale^2 of the pixels.
         c1, c2, c3 = st.columns(3)
-        c1.image(img, caption="① 原图 (your upload)", width="stretch")
-        # 低清输入用 NEAREST 放大显示，真实呈现模型"看到"的像素量。
+        c1.image(img, caption=T["cap_original"], width="stretch")
         lr_display = ml_lr.resize(out.size, Image.NEAREST)
         c2.image(lr_display,
-                 caption=f"② 模型实际输入 (低清 {ml_lr.width}×{ml_lr.height}，放大显示)",
+                 caption=T["cap_lr"].format(w=ml_lr.width, h=ml_lr.height),
                  width="stretch")
-        c3.image(out, caption=f"③ PixelForge 超分输出 (真实 ×{scale})",
-                 width="stretch")
-        st.info(
-            "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
-            f"所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
-            "模型只见过中间这张的像素，③ 是它重建出的结果——③ 应比 ② 清晰很多。"
-            "① 是参考原图：它本来就高清，**超分不会、也不该声称能超过它的真实细节**。"
-            "想看公平对比，请上传**低分辨率**图片（或直接看 ②→③）。"
-        )
+        c3.image(out, caption=T["cap_sr_out"].format(scale=scale), width="stretch")
+        st.info(T["info_3panel"].format(scale=scale))
     else:
         c1, c2 = st.columns(2)
-        c1.image(img, caption="Before", width="stretch")
-        c2.image(out, caption="After (enhanced)", width="stretch")
+        c1.image(img, caption=T["cap_before"], width="stretch")
+        c2.image(out, caption=T["cap_after"], width="stretch")
 
     buf = io.BytesIO()
     out.save(buf, format="PNG")
-    st.download_button("⬇️ 下载结果 PNG", buf.getvalue(),
+    st.download_button(T["download"], buf.getvalue(),
                        file_name="pixelforge_after.png", mime="image/png")
 else:
-    st.info("👾 请上传一张图片开始体验。低光任务建议用较暗的照片；超分建议用低分辨率图。")
+    st.info(T["empty_info"])
 
 st.divider()
-st.caption("PIXELFORGE · press start to restore your images")
+st.caption(T["footer"])
