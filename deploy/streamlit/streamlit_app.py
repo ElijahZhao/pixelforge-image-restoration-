@@ -377,8 +377,14 @@ def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
 # --------------------------------------------------------------------------- #
 # Streamlit UI —— 复古像素 / 游戏风（双语 + 暗/亮双主题）
 # --------------------------------------------------------------------------- #
-st.set_page_config(page_title="PixelForge · Image Restoration",
-                   page_icon="👾", layout="centered")
+# NOTE: `set_page_config` must be the first Streamlit call in the script, which
+# is why this sits above the TEXTS/session defaults below. We therefore read the
+# language defensively with `.get(...)` (the default is applied later) so the
+# browser TAB TITLE follows the selected language instead of always showing the
+# English string. Previously `TEXTS[..]["page_title"]` existed but was never
+# used, so a Chinese user still saw an English tab title.
+_page_title = TEXTS.get(st.session_state.get("lang", "en"), TEXTS["en"])["page_title"]
+st.set_page_config(page_title=_page_title, page_icon="👾", layout="centered")
 
 # Two colour schemes share identical selectors; only the :root variables and a
 # few hard-coded glows differ. `_css()` returns the active sheet.
@@ -613,7 +619,6 @@ _CSS_VARS_DARK = """
 :root {
   --pf-cyan: #22d3ee;
   --pf-purple: #a855f7;
-  --pf-pink: #f472b6;
   --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --pf-app-bg:
     radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.22), transparent 42%),
@@ -653,7 +658,6 @@ _CSS_VARS_LIGHT = """
 :root {
   --pf-cyan: #0e7490;
   --pf-purple: #6d28d9;
-  --pf-pink: #be185d;
   --pf-font: "Courier New", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --pf-app-bg:
     radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.08), transparent 42%),
@@ -718,7 +722,7 @@ if st.session_state.theme == "light":
 # one rerun per click and the state stays authoritative.
 with st.sidebar:
     st.radio(
-        "Language / 语言", ["en", "zh"],
+        TEXTS[st.session_state.lang]["lang_label"], ["en", "zh"],
         format_func=lambda k: "English" if k == "en" else "中文",
         horizontal=True, key="lang",
     )

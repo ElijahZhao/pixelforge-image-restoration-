@@ -45,12 +45,27 @@ def _pick_dir(data_root, *names):
     return None
 
 
+_ML_MODULE = None
+
+
 def _ml():
-    import importlib.util
-    spec = importlib.util.spec_from_file_location("ml", "serve/model_loader.py")
-    ml = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(ml)
-    return ml
+    """Return the shared ``serve.model_loader`` module.
+
+    Previously this used ``spec_from_file_location`` + ``exec_module`` on every
+    call, which executes the file as a BRAND-NEW module each time: it is not
+    registered in ``sys.modules``, so its ``_sr_cache`` / ``_lowlight_model``
+    are independent of the package's. Calling it twice (once for SR, once for
+    low-light) therefore loaded each model twice. Now we import the real package
+    module and memoise it, so the model caches are shared and populated once.
+    """
+    global _ML_MODULE
+    if _ML_MODULE is None:
+        repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from serve import model_loader as _ml_mod
+        _ML_MODULE = _ml_mod
+    return _ML_MODULE
 
 
 def _metric(pred_t, tgt_t):

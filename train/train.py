@@ -206,6 +206,17 @@ def train(args):
     print(f"Training finished. Best val PSNR: {best_psnr:.2f}")
 
 
+# Default loss weights (only used when --perceptual is on). Johnson et al. 2016
+# use a ~1:0.006 pixel:perceptual ratio after proper normalization.
+#
+# These live as module constants — not inline argparse defaults — so the unit
+# test that checks the pixel/perceptual balance can import the REAL values
+# instead of re-typing them. Previously the test hard-coded 1.0/0.006, so it
+# kept passing even if the defaults here were changed (or broken).
+DEFAULT_W_PIXEL = 1.0
+DEFAULT_W_PERCEP = 0.006
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Train SR / Low-Light models")
     p.add_argument("--task", choices=["sr", "lowlight"], required=True)
@@ -216,11 +227,9 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=16)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--perceptual", action="store_true")
-    # Explicit loss weights (only used when --perceptual is on). Johnson et al.
-    # 2016 use a ~1:0.006 pixel:perceptual ratio after proper normalization.
-    p.add_argument("--w_pixel", type=float, default=1.0,
+    p.add_argument("--w_pixel", type=float, default=DEFAULT_W_PIXEL,
                    help="weight for the pixel (Charbonnier) term")
-    p.add_argument("--w_percep", type=float, default=0.006,
+    p.add_argument("--w_percep", type=float, default=DEFAULT_W_PERCEP,
                    help="weight for the VGG perceptual term")
     return p.parse_args()
 

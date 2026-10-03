@@ -40,6 +40,7 @@ def test_srcnn_scale4():
     model = SRCNN(scale=4)
     y = model(x)
     assert list(y.shape) == [1, 3, 128, 128], f"SRCNN scale4 shape wrong: {list(y.shape)}"
+    _assert_range(y, "SRCNN scale4")
 
 
 def test_sr_generator_scale2():
@@ -55,6 +56,7 @@ def test_sr_generator_scale4():
     model = SRGenerator(scale=4)
     y = model(x)
     assert list(y.shape) == [1, 3, 128, 128], f"SRGenerator scale4 shape wrong: {list(y.shape)}"
+    _assert_range(y, "SRGenerator scale4")
 
 
 def test_lowlight_unet():
@@ -76,13 +78,41 @@ def test_build_model_factory():
     assert srgen.scale == 4
 
 
-def test_batch_invariance():
-    """Model outputs should be independent across batch dim for a trivial check."""
-    model = SRGenerator(scale=2, num_blocks=4)
-    x = torch.zeros(2, 3, 16, 16)
-    y = model(x)
-    # same input -> same output for both samples
-    assert torch.allclose(y[0], y[1], atol=1e-5), "Batch outputs differ for identical inputs"
+def test_batch_independence_and_determinism():
+    """Real, falsifiable properties (the old version used torch.zeros and only
+    asserted y[0] == y[1], which is trivially true for ANY deterministic module
+    — even a single Conv2d stub — so it could not catch a real defect).
+
+    We now assert two things that CAN fail:
+      1. In eval() the model is deterministic for the same input.
+      2. Different inputs produce different outputs (i.e. the input is actually
+         used — a model that ignored its input or collapsed to a constant, e.g.
+         a dead-ReLU/zeroed-weight bug, would fail this).
+    """
+    model = SRGenerator(scale=2, num_blocks=4).eval()
+    x = torch.rand(2, 3, 16, 16)
+    with torch.no_grad():
+        y1 = model(x)
+        y2 = model(x.clone())
+        y_other = model(torch.rand(2, 3, 16, 16))
+
+    # 1. Deterministic in eval mode.
+    assert torch.allclose(y1, y2, atol=1e-6), "eval-mode output is not deterministic"
+
+    # 2. The model actually responds to its input: a different input must give a
+    #    different output. Guards against constant-output / dead-network bugs.
+    assert not torch.allclose(y1, y_other, atol=1e-4), (
+        "model produced (nearly) identical outputs for different inputs — "
+        "it is not using its input"
+    )
+
+    # 3. Batch independence: running the two samples together must equal running
+    #    them separately. This is the property the old test *claimed* to check.
+    with torch.no_grad():
+        separately = torch.cat([model(x[i:i + 1]) for i in range(2)], dim=0)
+    assert torch.allclose(y1, separately, atol=1e-5), (
+        "batched output differs from per-sample output"
+    )
 
 
 if __name__ == "__main__":
