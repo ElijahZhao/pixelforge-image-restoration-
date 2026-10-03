@@ -1,0 +1,6 @@
+# Dev / CI dependencies (NOT needed in production runtime).
+#
+# Compile to requirements-dev.lock.txt with:
+#     pip-compile requirements-dev.txt -o requirements-dev.lock.txt
+pytest>=7
+requests>=2.25   # used by tests/e2e and any health-check scripting

@@ -1,0 +1,15 @@
+# PixelForge — project & tooling config.
+#
+# NOTE: this file only carries tool configuration (pytest). The repo is NOT a
+# pip-installable package — `train/` is used as a script directory (its tests do
+# `from models import ...`) and `serve/` is imported as a namespace package, so
+# neither needs __init__.py. Keep it that way; do not add a [build-system] /
+# [project] section that implies `pip install .`.
+
+[tool.pytest.ini_options]
+# `train` must be on the path so `from models import ...` resolves inside the
+# unit tests; `.` lets `serve` resolve as a namespace package for the API smoke
+# test. Both are needed for collection to succeed from the repo root.
+pythonpath = ["train", "."]
+testpaths = ["train/tests", "tests"]
+addopts = "-q"
