@@ -6,7 +6,7 @@
 
 **实测（脱敏）：**
 ```
-origin  https://oauth2:ghp_***REDACTED***@ghproxy.net/https://github.com/ElijahZhao/pixelforge-image-restoration-.git
+origin  https://oauth2:<REDACTED_TOKEN>@ghproxy.net/https://github.com/ElijahZhao/pixelforge-image-restoration-.git
 ```
 - `.git/config` 第 10 行**仍含明文 token**，且 remote 经**第三方镜像 `ghproxy.net`** 转发——token 会随每次 push/fetch 穿过第三方服务器。
 - **好消息（必须如实记）**：`git log -p --all` 全历史（17 个 commit）**未发现 `ghp_` token 明文**。即 token **从未进入提交历史**，泄露面局限在本地 `.git/config` + 第三方镜像转发，而非公开仓库内容。

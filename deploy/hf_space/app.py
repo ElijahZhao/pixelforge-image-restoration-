@@ -58,14 +58,24 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
 
 
 # --------------------------------------------------------------------------- #
-# TorchScript model loading (mirror of serve/model_loader.py)
+# TorchScript model loading (mirror of serve/model_loader.py — keep in sync)
 # --------------------------------------------------------------------------- #
 _sr_cache: dict = {}
 _lowlight_model = None
 
 
 def _load(path: str):
-    return torch.jit.load(path, map_location=DEVICE).eval()
+    try:
+        return torch.jit.load(path, map_location=DEVICE).eval()
+    except Exception as exc:  # noqa: BLE001 - corrupt/incompatible weights must not 500
+        import warnings
+
+        warnings.warn(
+            f"failed to load model from {path}: {exc!r}; "
+            f"falling back to classical baseline",
+            stacklevel=2,
+        )
+        return None
 
 
 def get_sr_model(scale: int):
@@ -161,7 +171,8 @@ with gr.Blocks(title="PixelForge · Image Restoration") as demo:
             after = gr.Image(type="pil", label="After (enhanced)")
     btn.click(process, inputs=[inp, task, scale], outputs=[before, after])
     gr.Markdown(
-        "Trained on AutoDL RTX 3080 Ti · SR ×4 (perceptual) · Low-light (PSNR 19.26)."
+        "Trained on AutoDL RTX 3080 Ti · SR ×4 (perceptual) · Low-light "
+        "(PSNR 18.18, full-image validation protocol)."
     )
 
 

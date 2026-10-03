@@ -305,7 +305,7 @@ with st.sidebar:
     scale = st.radio("SR 放大倍数", ["2", "4"], index=1,
                      help="×4 使用自训 SRResNet + 感知损失模型")
     st.divider()
-    st.caption("模型在 AutoDL RTX 3080 Ti 上训练 · Low-light Best PSNR 19.26")
+    st.caption("模型在 AutoDL RTX 3080 Ti 上训练 · Low-light 全图验证 PSNR 18.18")
 
 uploaded = st.file_uploader("上传图片", type=["png", "jpg", "jpeg", "bmp", "webp"])
 

@@ -76,7 +76,8 @@ class VGGPerceptualLoss(nn.Module):
         # created on DEVICE (cuda when available), but callers may pass CPU
         # tensors (e.g. unit tests, or pre-to(DEVICE) inputs). Without this the
         # loss only works when inputs already live on DEVICE — a latent bug that
-        # passed CPU-only CI but broke on the training GPU (DIAGNOSIS_ROUND20).
+        # passed CPU-only CI but broke on the training GPU (see the audit rounds
+        # covering the per-device alignment fix).
         dev = next(self.vgg.parameters()).device
         x = x.to(dev)
         mean = self.mean.to(dev)
@@ -139,7 +140,8 @@ def train(args):
                 if percep is not None:
                     # Explicit, readable weighting. The old code used
                     # ``0.01 * loss + percep`` which silently erased the pixel
-                    # term (see DIAGNOSIS_ROUND1/11/13). Weights are logged so the
+                    # term (see the audit rounds covering loss-weighting). Weights
+                    # are logged so the
                     # two terms' magnitudes can be inspected during training.
                     per = percep(out, hr)
                     loss = args.w_pixel * pix + args.w_percep * per
@@ -177,7 +179,7 @@ def train(args):
                         "model": args.model}, ckpt)
             print(f"  -> saved best checkpoint: {ckpt}")
 
-    print("Training finished. Best val PSNR: {:.2f}".format(best_psnr))
+    print(f"Training finished. Best val PSNR: {best_psnr:.2f}")
 
 
 def parse_args():
