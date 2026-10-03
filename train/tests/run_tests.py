@@ -12,7 +12,8 @@ import sys
 import traceback
 
 
-MODULES = ["train.tests.test_models", "train.tests.test_metrics"]
+MODULES = ["train.tests.test_models", "train.tests.test_metrics",
+           "train.tests.test_correctness"]
 
 
 def run() -> int:
