@@ -120,7 +120,15 @@ def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[
     return img, (w, h)
 
 
-def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
+def predict_sr(img: Image.Image, scale: int):
+    """Run SR. Returns ``(lr_input, model_output)`` or ``None``.
+
+    ``lr_input`` is the image the model ACTUALLY sees (``img`` downscaled by
+    ``scale``), returned so the UI can show the honest 3-panel view:
+    original / low-res input / super-resolved output. A x4 model can only ever
+    reconstruct from ``1/16`` of the pixels, so comparing its output against a
+    full-resolution original is misleading — see the 3-panel caption.
+    """
     path = _sr_weight_path(scale)
     if path is None:
         return None
@@ -135,8 +143,8 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
         x = TF.to_tensor(lr).unsqueeze(0).to(_device())
         out = model(x).clamp(0, 1)
         out = TF.to_pil_image(out.squeeze(0).cpu())
-    # Return the model's TRUE output (lr*scale). Do not re-upscale to img*scale.
-    return out
+    # Return the model's TRUE output (lr*scale), plus the true LR input.
+    return lr, out
 
 
 def predict_lowlight(img: Image.Image) -> Image.Image | None:
@@ -313,14 +321,16 @@ if uploaded is not None:
     img = Image.open(uploaded).convert("RGB")
     use_sr = task.startswith("超分")
 
+    sr_pair = None
     with st.spinner("推理中…"):
         if use_sr:
             scale_i = int(scale)
-            ml_out = predict_sr(img, scale_i)
-            out = ml_out or sr_classical(img, scale_i)
-            if ml_out is None:
+            sr_pair = predict_sr(img, scale_i)
+            if sr_pair is None:
+                out = sr_classical(img, scale_i)
                 st.warning(f"SR ×{scale_i}：无对应自训权重，当前使用 **classical bicubic 基线**。")
             else:
+                ml_lr, out = sr_pair
                 st.success(f"SR ×{scale_i}：由 **自训模型** 输出（真实分辨率 = 下采样输入 ×{scale_i}）。")
         else:
             ml_out = predict_lowlight(img)
@@ -330,9 +340,30 @@ if uploaded is not None:
             else:
                 st.success("低光：由 **自训 U-Net** 输出。")
 
-    c1, c2 = st.columns(2)
-    c1.image(img, caption="Before", width="stretch")
-    c2.image(out, caption="After (enhanced)", width="stretch")
+    if use_sr and sr_pair is not None and ml_lr is not None:
+        # 三图对比：原图 / 模型真实输入（低清） / 超分输出。
+        # 中间面板是关键——它让"超分 = 低清→高清"这件事一目了然，避免
+        # 用户拿"明明很清晰的原图"去比，误以为模型把图变糊了。
+        c1, c2, c3 = st.columns(3)
+        c1.image(img, caption="① 原图 (your upload)", width="stretch")
+        # 低清输入用 NEAREST 放大显示，真实呈现模型"看到"的像素量。
+        lr_display = ml_lr.resize(out.size, Image.NEAREST)
+        c2.image(lr_display,
+                 caption=f"② 模型实际输入 (低清 {ml_lr.width}×{ml_lr.height}，放大显示)",
+                 width="stretch")
+        c3.image(out, caption=f"③ PixelForge 超分输出 (真实 ×{scale})",
+                 width="stretch")
+        st.info(
+            "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
+            f"所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
+            "模型只见过中间这张的像素，③ 是它重建出的结果——③ 应比 ② 清晰很多。"
+            "① 是参考原图：它本来就高清，**超分不会、也不该声称能超过它的真实细节**。"
+            "想看公平对比，请上传**低分辨率**图片（或直接看 ②→③）。"
+        )
+    else:
+        c1, c2 = st.columns(2)
+        c1.image(img, caption="Before", width="stretch")
+        c2.image(out, caption="After (enhanced)", width="stretch")
 
     buf = io.BytesIO()
     out.save(buf, format="PNG")

@@ -97,7 +97,14 @@ def get_lowlight_model():
 
 
 @torch.no_grad()
-def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
+def predict_sr(img: Image.Image, scale: int):
+    """Run SR. Returns ``(lr_input, model_output)`` or ``None``.
+
+    ``lr_input`` is what the model ACTUALLY sees (``img`` downscaled by
+    ``scale``). The UI shows an honest 3-panel view so a full-resolution
+    original is never compared against a reconstruction that only had
+    ``1/scale^2`` of the pixels to work with.
+    """
     model = get_sr_model(scale)
     if model is None:
         return None
@@ -105,8 +112,8 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image | None:
     x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
     out = model(x).clamp(0, 1)
     out = TF.to_pil_image(out.squeeze(0).cpu())
-    # Return the model's TRUE output (lr*scale). Do not re-upscale to img*scale.
-    return out
+    # Return the model's TRUE output (lr*scale) plus the true LR input.
+    return lr, out
 
 
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
@@ -146,15 +153,27 @@ def _engine_status() -> str:
 
 
 def process(image, task, scale):
+    """Returns (original, lr_or_original, after).
+
+    For SR the middle panel is the model's real low-res input (nearest-upscaled
+    for display); for low-light it mirrors the original so the layout is stable.
+    """
     if image is None:
         raise gr.Error("Please upload an image first.")
     image = image.convert("RGB")
     scale = int(scale)
     if task == "sr":
-        out = predict_sr(image, scale) or sr_classical(image, scale)
+        pair = predict_sr(image, scale)
+        if pair is not None:
+            lr, out = pair
+            mid = lr.resize(out.size, Image.NEAREST)
+        else:
+            out = sr_classical(image, scale)
+            mid = image
     else:
         out = predict_lowlight(image) or lowlight_classical(image)
-    return image, out
+        mid = image
+    return image, mid, out
 
 
 with gr.Blocks(title="PixelForge · Image Restoration") as demo:
@@ -167,10 +186,15 @@ with gr.Blocks(title="PixelForge · Image Restoration") as demo:
             scale = gr.Radio(["2", "4"], value="4", label="SR scale (×4 使用自训模型)")
             btn = gr.Button("Enhance", variant="primary")
         with gr.Column():
-            before = gr.Image(type="pil", label="Before")
-            after = gr.Image(type="pil", label="After (enhanced)")
-    btn.click(process, inputs=[inp, task, scale], outputs=[before, after])
+            before = gr.Image(type="pil", label="① 原图 / Original")
+            mid = gr.Image(type="pil", label="② 模型输入（低清，放大显示）")
+            after = gr.Image(type="pil", label="③ 超分输出 / Enhanced")
+    btn.click(process, inputs=[inp, task, scale], outputs=[before, mid, after])
     gr.Markdown(
+        "**SR 怎么看**：超分把「低分辨率」映射成「高分辨率」，中间面板才是模型的真正输入"
+        "（由原图降采样得到），③ 是重建结果，应比 ② 清晰很多。① 本来就高清，"
+        "超分不会、也不该声称能超过它的真实细节——想看公平对比请上传**低分辨率**图。\n\n"
+        "Low-light 任务下中间面板 = 原图（低光为同尺寸「暗→亮」增强，无此陷阱）。  \n"
         "Trained on AutoDL RTX 3080 Ti · SR ×4 (perceptual) · Low-light "
         "(PSNR 18.18, full-image validation protocol)."
     )

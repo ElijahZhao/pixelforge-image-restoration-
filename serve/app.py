@@ -109,6 +109,7 @@ async def predict(
                               f"downscale it first."},
         )
 
+    lr_display = None
     if task == "sr":
         ml_result = predict_sr(original, scale)
         engine = "ml" if ml_result is not None else "classical"
@@ -119,6 +120,12 @@ async def predict(
         lr = original.resize((max(1, original.width // scale),
                               max(1, original.height // scale)), Image.BICUBIC)
         before = lr.resize((lr.width * scale, lr.height * scale), Image.BICUBIC)
+        # Extra field for the 3-panel frontends: the model's ACTUAL low-res input
+        # (nearest-upscaled to `before`'s size for display). This makes the demo
+        # honest about "SR maps a low-res image to a high-res one" and avoids the
+        # misleading "original vs reconstruction" comparison (a full-res upload
+        # can never be beaten by a model that only sees lr=input/scale).
+        lr_display = lr.resize(before.size, Image.NEAREST)
         # The classical SR baseline returns orig*scale, while the ML output and
         # `before` are ~orig. Force `after` to `before`'s size so the comparison
         # slider stays pixel-aligned. This is a display-only resize, NOT a hidden
@@ -136,10 +143,15 @@ async def predict(
     if engine == "classical":
         note = ("Classical baseline in use — no trained weight found for "
                 f"{task} x{scale} (train & export one to switch to ML).")
+    elif task == "sr":
+        note = ("Super-resolution maps a LOW-RES input to a high-res output. "
+                f"For a fair comparison, the middle panel shows the model's true "
+                f"input (original downscaled by x{scale}). A model that only sees "
+                f"1/{scale**2} of the pixels cannot out-detail a full-res original.")
     else:
         note = "Powered by a trained PyTorch model."
 
-    return {
+    payload = {
         "task": task,
         "scale": scale,
         "engine": engine,
@@ -147,6 +159,10 @@ async def predict(
         "after": _img_to_b64(result),
         "note": note,
     }
+    # 3-panel frontends use `lr` (the model's honest input); 2-panel ones ignore it.
+    if lr_display is not None:
+        payload["lr"] = _img_to_b64(lr_display)
+    return payload
 
 
 if __name__ == "__main__":
