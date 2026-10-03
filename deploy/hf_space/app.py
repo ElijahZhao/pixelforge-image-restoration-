@@ -138,6 +138,29 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
     return out.crop((0, 0, w, h))
 
 
+# --- exposure gate (see DIAGNOSIS_ROUND20) --------------------------------- #
+# The low-light U-Net is trained on LOL-v1 = real night PHOTOS. On a bright or
+# synthetic image (e.g. a game screenshot) it still applies its learned
+# illumination correction, but with no true underexposure to recover it crushes
+# the shadows and the picture gets DARKER (measured: median luminance
+# 0.26 -> 0.06). We require BOTH a dark 10th percentile and a dark mean, so a
+# normal photo with a few shadows is not mistaken for an underexposed shot.
+LOWLIGHT_DARK_P10 = 0.22
+LOWLIGHT_DARK_MEAN = 0.36
+
+
+def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
+    """Heuristically decide whether ``img`` is a genuinely low-light photo."""
+    arr = np.asarray(img.convert("RGB"), dtype="float32") / 255.0
+    lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+    mean_lum = float(lum.mean())
+    p10 = float(np.percentile(lum, 10))
+    p50 = float(np.percentile(lum, 50))
+    stats = {"mean": mean_lum, "p10": p10, "p50": p50}
+    is_dark = (p10 <= LOWLIGHT_DARK_P10) and (mean_lum <= LOWLIGHT_DARK_MEAN)
+    return is_dark, stats
+
+
 # --------------------------------------------------------------------------- #
 # Gradio UI
 # --------------------------------------------------------------------------- #
@@ -153,10 +176,12 @@ def _engine_status() -> str:
 
 
 def process(image, task, scale):
-    """Returns (original, lr_or_original, after).
+    """Returns (original, lr_or_baseline, after).
 
     For SR the middle panel is the model's real low-res input (nearest-upscaled
-    for display); for low-light it mirrors the original so the layout is stable.
+    for display). For low-light the middle panel is the classical adaptive-gamma
+    baseline, so the model can be compared against a correct-but-simple
+    reference (see the exposure gate below).
     """
     if image is None:
         raise gr.Error("Please upload an image first.")
@@ -171,8 +196,17 @@ def process(image, task, scale):
             out = sr_classical(image, scale)
             mid = image
     else:
-        out = predict_lowlight(image) or lowlight_classical(image)
-        mid = image
+        # Compute BOTH so panel ② (classical) is always available as a fair
+        # reference, and gate the model on whether the input is really dark.
+        classical_out = lowlight_classical(image)
+        is_dark, _stats = looks_underexposed(image)
+        ml_out = predict_lowlight(image) if is_dark else None
+        if ml_out is not None:
+            out = ml_out
+            mid = classical_out
+        else:
+            out = classical_out
+            mid = image
     return image, mid, out
 
 
@@ -187,14 +221,18 @@ with gr.Blocks(title="PixelForge · Image Restoration") as demo:
             btn = gr.Button("Enhance", variant="primary")
         with gr.Column():
             before = gr.Image(type="pil", label="① 原图 / Original")
-            mid = gr.Image(type="pil", label="② 模型输入（低清，放大显示）")
-            after = gr.Image(type="pil", label="③ 超分输出 / Enhanced")
+            mid = gr.Image(type="pil", label="② 模型输入（SR）或 classical 基线（低光）")
+            after = gr.Image(type="pil", label="③ 输出 / Enhanced")
     btn.click(process, inputs=[inp, task, scale], outputs=[before, mid, after])
     gr.Markdown(
         "**SR 怎么看**：超分把「低分辨率」映射成「高分辨率」，中间面板才是模型的真正输入"
         "（由原图降采样得到），③ 是重建结果，应比 ② 清晰很多。① 本来就高清，"
         "超分不会、也不该声称能超过它的真实细节——想看公平对比请上传**低分辨率**图。\n\n"
-        "Low-light 任务下中间面板 = 原图（低光为同尺寸「暗→亮」增强，无此陷阱）。  \n"
+        "**Low-light 怎么看**：中间面板是 **classical 自适应伽马基线**（正常提亮），"
+        "③ 是自训 U-Net。若 ③ 比 ① 更暗，说明这张图**并不欠曝**、模型没被启用——"
+        "该 U-Net 在 LOL-v1（真实夜间**照片**）上训练，喂它明亮图或游戏截图时它仍会"
+        "执行照度校正，但因没有真正的欠曝可恢复，结果会压死暗部、使画面更暗"
+        "（实测亮度中位数 0.26 → 0.06）。**想看模型真实效果，请上传确实很暗的照片。**\n\n"
         "Trained on AutoDL RTX 3080 Ti · SR ×4 (perceptual) · Low-light "
         "(PSNR 18.18, full-image validation protocol)."
     )

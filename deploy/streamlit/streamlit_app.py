@@ -63,6 +63,23 @@ TEXTS = {
         "ok_sr": "SR ×{scale}: produced by the **self-trained model** (true resolution = downscaled input ×{scale}).",
         "warn_ll_no_weight": "Low-light: no self-trained weight — using the **classical adaptive-gamma baseline**.",
         "ok_ll": "Low-light: produced by the **self-trained U-Net**.",
+        "note_ll_notdark": (
+            "**This image is not actually underexposed**, so the self-trained "
+            "low-light U-Net was skipped. That model is trained on LOL-v1 "
+            "(real night *photos*); applied to a bright or synthetic image it "
+            "still runs its illumination correction but — with no true "
+            "underexposure to recover — it **crushes the shadows and makes the "
+            "picture darker** (measured on a game screenshot: median luminance "
+            "0.26 → 0.06). You are seeing the **classical adaptive-gamma "
+            "baseline**, which brightens. Upload a genuinely dark **photo** to "
+            "exercise the model."
+        ),
+        "info_ll_3panel": (
+            "**How to read these three panels**: ① your input, ② the classical "
+            "adaptive-gamma baseline, ③ the self-trained U-Net. Where ③ is "
+            "darker than ①, the model is fighting an input it was not trained "
+            "for (see the note above) — ② is the safer choice for that image."
+        ),
         "cap_original": "① Original (your upload)",
         "cap_lr": "② Model input (LR {w}×{h}, upscaled for display)",
         "cap_sr_out": "③ PixelForge SR output (true ×{scale})",
@@ -108,6 +125,19 @@ TEXTS = {
         "ok_sr": "SR ×{scale}：由 **自训模型** 输出（真实分辨率 = 下采样输入 ×{scale}）。",
         "warn_ll_no_weight": "低光：无自训权重，当前使用 **classical 自适应伽马基线**。",
         "ok_ll": "低光：由 **自训 U-Net** 输出。",
+        "note_ll_notdark": (
+            "**这张图其实并不欠曝**，因此已跳过自训低光 U-Net。该模型是在 "
+            "LOL-v1（真实夜间**照片**）上训练的；喂给它一张明亮图或合成图时，"
+            "它仍会执行学到的照度校正，但由于没有真正的欠曝可恢复，"
+            "结果会把**暗部压死、使画面更暗**（实测游戏截图：亮度中位数 0.26 → 0.06）。"
+            "你现在看到的是 **classical 自适应伽马基线**，它是正常提亮的。"
+            "想真正测试该模型，请上传一张确实很暗的**照片**。"
+        ),
+        "info_ll_3panel": (
+            "**怎么看这三张图**：① 你的输入，② classical 自适应伽马基线，"
+            "③ 自训 U-Net。若 ③ 比 ① 还暗，说明模型正在处理一张它没被训练过的输入"
+            "（见上方说明）——对该图而言 ② 是更稳妥的选择。"
+        ),
         "cap_original": "① 原图 (your upload)",
         "cap_lr": "② 模型实际输入 (低清 {w}×{h}，放大显示)",
         "cap_sr_out": "③ PixelForge 超分输出 (真实 ×{scale})",
@@ -264,6 +294,37 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
         out = model(x).clamp(0, 1)
         out = TF.to_pil_image(out.squeeze(0).cpu())
     return out.crop((0, 0, w, h))
+
+
+# --- is-this-actually-a-low-light-photo? ------------------------------------ #
+# The low-light U-Net is trained on LOL-v1: real night PHOTOS, where "low light"
+# means photon-starved sensor data with a specific noise/gamma signature. Fed a
+# synthetic bright image (e.g. a game screenshot), it still applies its learned
+# illumination correction, but with no real underexposure to recover it just
+# crushes the shadows and amplifies compression artefacts -- i.e. the picture
+# gets DARKER, not brighter (verified: median luminance 0.26 -> 0.06 on a real
+# screenshot). So we gate the model on a simple exposure check and fall back to
+# the (correctly brightening) classical gamma baseline when the image is not
+# actually underexposed.
+LOWLIGHT_DARK_P10 = 0.22   # a real night photo has a very dark 10th percentile
+LOWLIGHT_DARK_MEAN = 0.36  # ...and a low overall mean luminance
+
+
+def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
+    """Heuristically decide whether ``img`` is a genuinely low-light photo.
+
+    Returns ``(is_dark, stats)``. We require BOTH a dark lower decile *and* a
+    dark mean, so a normal photo that merely contains a few shadows (a bright
+    subject on a dark background) is not mistaken for an underexposed shot.
+    """
+    arr = _to_array(img)
+    lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
+    mean_lum = float(lum.mean())
+    p10 = float(np.percentile(lum, 10))
+    p50 = float(np.percentile(lum, 50))
+    stats = {"mean": mean_lum, "p10": p10, "p50": p50}
+    is_dark = (p10 <= LOWLIGHT_DARK_P10) and (mean_lum <= LOWLIGHT_DARK_MEAN)
+    return is_dark, stats
 
 
 # --------------------------------------------------------------------------- #
@@ -672,6 +733,9 @@ if uploaded is not None:
                 unsafe_allow_html=True)
     sr_pair = None
     ml_lr = None
+    ll_triple = None          # (original, classical, model) for the 3-panel view
+    ll_used_model = False
+    ll_notdark = False
     with st.spinner(T["spinner"]):
         if use_sr:
             scale_i = int(scale)
@@ -683,12 +747,23 @@ if uploaded is not None:
                 ml_lr, out = sr_pair
                 st.success(T["ok_sr"].format(scale=scale_i))
         else:
-            ml_out = predict_lowlight(img)
-            out = ml_out or lowlight_classical(img)
+            # Always compute BOTH so the 3-panel view can show them side by side.
+            classical_out = lowlight_classical(img)
+            is_dark, _stats = looks_underexposed(img)
+            ml_out = predict_lowlight(img) if is_dark else None
             if ml_out is None:
-                st.warning(T["warn_ll_no_weight"])
+                # Either no weight, or the image is not actually underexposed.
+                out = classical_out
+                if _lowlight_weight_path() is None:
+                    st.warning(T["warn_ll_no_weight"])
+                else:
+                    ll_notdark = True
+                    st.info(T["note_ll_notdark"])
             else:
+                ll_used_model = True
+                out = ml_out
                 st.success(T["ok_ll"])
+            ll_triple = (img, classical_out, ml_out)
 
     if use_sr and sr_pair is not None and ml_lr is not None:
         # 3-panel view: original / model's real (low-res) input / SR output.
@@ -711,6 +786,27 @@ if uploaded is not None:
                         + T["cap_sr_out"].format(scale=scale)
                         + "</span>", unsafe_allow_html=True)
         st.info(T["info_3panel"].format(scale=scale))
+    elif not use_sr and ll_triple is not None and ll_triple[2] is not None:
+        # Low-light 3-panel view: input / classical baseline / self-trained model.
+        # Shown ONLY when the model actually ran, so the honest side-by-side is
+        # visible exactly when the domain-gap question can arise. (When the
+        # model was skipped we fall through to the simple Before/After pair.)
+        ll_in, ll_cls, ll_mod = ll_triple
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.image(ll_in, width="stretch")
+            st.markdown(f'<span class="pf-panel-cap">{T["cap_before"]}</span>',
+                        unsafe_allow_html=True)
+        with c2:
+            st.image(ll_cls, width="stretch")
+            st.markdown('<span class="pf-panel-cap">'
+                        + T["tag_classical"] + "</span>",
+                        unsafe_allow_html=True)
+        with c3:
+            st.image(ll_mod, width="stretch")
+            st.markdown('<span class="pf-panel-cap">'
+                        + T["tag_ml"] + "</span>", unsafe_allow_html=True)
+        st.info(T["info_ll_3panel"])
     else:
         c1, c2 = st.columns(2)
         with c1:

@@ -25,7 +25,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 
 from .classical import run_classical
-from .model_loader import get_sr_model, get_lowlight_model, predict_sr, predict_lowlight
+from .model_loader import (
+    get_sr_model,
+    get_lowlight_model,
+    predict_sr,
+    predict_lowlight,
+    looks_underexposed,
+)
 
 app = FastAPI(title="CV Restoration API", version="1.0.0")
 
@@ -133,14 +139,21 @@ async def predict(
         if result.size != before.size:
             result = result.resize(before.size, Image.BICUBIC)
     else:  # lowlight
-        ml_result = predict_lowlight(original)
+        is_dark, _stats = looks_underexposed(original)
+        ml_result = predict_lowlight(original) if is_dark else None
         engine = "ml" if ml_result is not None else "classical"
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
         before = original
 
     # F8: when no trained weight exists for the chosen task/scale, say so
     # explicitly instead of silently falling back to a classical baseline.
-    if engine == "classical":
+    if engine == "classical" and task == "lowlight":
+        note = ("Classical adaptive-gamma baseline. The self-trained low-light "
+                "U-Net is trained on LOL-v1 (real night PHOTOS); on a bright or "
+                "synthetic image it crushes shadows and DARKENS the picture "
+                "(measured: median luminance 0.26 -> 0.06), so it was skipped "
+                "here. Upload a genuinely dark photo to exercise the model.")
+    elif engine == "classical":
         note = ("Classical baseline in use — no trained weight found for "
                 f"{task} x{scale} (train & export one to switch to ML).")
     elif task == "sr":
