@@ -18,7 +18,6 @@ from __future__ import annotations
 import base64
 import io
 import os
-from typing import Optional
 
 from fastapi import FastAPI, File, Form, UploadFile
 from fastapi.responses import JSONResponse
@@ -95,6 +94,9 @@ async def predict(
     try:
         original = Image.open(io.BytesIO(raw)).convert("RGB")
     except Exception:
+        # Catches malformed images AND PIL DecompressionBombError (the default
+        # MAX_IMAGE_PIXELS ~89M guard). We surface it as 422 rather than 500;
+        # the 4MP cap above is the first line of defence, this is the backstop.
         return JSONResponse(
             status_code=422, content={"error": "uploaded file is not a valid image"}
         )
@@ -117,6 +119,12 @@ async def predict(
         lr = original.resize((max(1, original.width // scale),
                               max(1, original.height // scale)), Image.BICUBIC)
         before = lr.resize((lr.width * scale, lr.height * scale), Image.BICUBIC)
+        # The classical SR baseline returns orig*scale, while the ML output and
+        # `before` are ~orig. Force `after` to `before`'s size so the comparison
+        # slider stays pixel-aligned. This is a display-only resize, NOT a hidden
+        # upscale — in the ML path the sizes already match (no-op).
+        if result.size != before.size:
+            result = result.resize(before.size, Image.BICUBIC)
     else:  # lowlight
         ml_result = predict_lowlight(original)
         engine = "ml" if ml_result is not None else "classical"

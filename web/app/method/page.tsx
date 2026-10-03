@@ -47,11 +47,12 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
 
       <h2 className="text-xl font-semibold mt-8">Evaluation</h2>
       <p className="mt-3 text-slate-300">
-        Quantitative results use PSNR and SSIM on standard benchmarks. The
-        comparison table below is populated <b>after training</b> on DIV2K /
-        LOL. Until real weights are trained, the &ldquo;ours&rdquo; rows are
-        honestly marked <b>TBD</b> — no placeholder numbers are shown as if they
-        were real results.
+        Quantitative results use PSNR and SSIM. Rows marked <b>ours</b> are
+        filled with metrics measured on this repo&rsquo;s trained weights
+        (SR&times;4 on DIV2K, low-light on LOL, full-image protocol); the
+        SRCNN&times;2 row stays <b>TBD</b> because no weight was trained/exported
+        for it (it falls back to the classical baseline). No placeholder numbers
+        are ever shown as real results.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm glass">
@@ -80,32 +81,40 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
               <td className="p-2 text-slate-500">TBD</td>
             </tr>
             <tr>
+              <td className="p-2">Bicubic (baseline)</td>
+              <td className="p-2">SR</td>
+              <td className="p-2">4×</td>
+              <td className="p-2">26.69</td>
+              <td className="p-2">0.754</td>
+            </tr>
+            <tr>
               <td className="p-2">SRResNet (ours)</td>
               <td className="p-2">SR</td>
               <td className="p-2">4×</td>
-              <td className="p-2 text-slate-500">TBD</td>
-              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2">27.47</td>
+              <td className="p-2">0.780</td>
             </tr>
             <tr>
-              <td className="p-2">Adaptive gamma (baseline)</td>
+              <td className="p-2">No-op (baseline)</td>
               <td className="p-2">LowLight</td>
               <td className="p-2">—</td>
-              <td className="p-2 text-slate-500">TBD</td>
-              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2">7.77</td>
+              <td className="p-2">0.192</td>
             </tr>
             <tr>
               <td className="p-2">LowLight-UNet (ours)</td>
               <td className="p-2">LowLight</td>
               <td className="p-2">—</td>
-              <td className="p-2 text-slate-500">TBD</td>
-              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2">18.18</td>
+              <td className="p-2">0.739</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        * Set5 ×2 Bicubic reference value (Dong et al.). Replace every TBD with
-        your own measured metrics after training.
+        * Set5 ×2 Bicubic reference value (Dong et al.). The ×4 / low-light rows
+        are measured in this repo (DIV2K / LOL, full-image protocol); SRCNN ×2
+        remains TBD (no trained weight — it uses the classical fallback).
       </p>
 
       <h2 className="text-xl font-semibold mt-8">Datasets</h2>

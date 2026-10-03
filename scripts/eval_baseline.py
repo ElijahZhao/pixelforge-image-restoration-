@@ -64,7 +64,7 @@ def _metric(pred_t, tgt_t):
 def eval_sr(scale, data_root, max_images):
     sr_dir = _pick_dir(data_root, "div2k", "sr")
     if sr_dir is None:
-        print(f"[!] 未找到 SR 数据目录"); return
+        print("[!] 未找到 SR 数据目录"); return
     hrs = _load_images(os.path.join(sr_dir, "val"))
     if not hrs:
         print(f"[!] 未找到验证图: {sr_dir}/val"); return
@@ -75,7 +75,7 @@ def eval_sr(scale, data_root, max_images):
     ml = _ml()
     model = ml.get_sr_model(scale)
     if model is None:
-        print(f"[!] 无 sr scale={scale} 权重"); return
+        print(f"[!] 无 sr scale={scale} 权重 (缺失或损坏)"); return
 
     bic_p, bic_s, mod_p, mod_s = [], [], [], []
     for i, f in enumerate(hrs, 1):
@@ -86,6 +86,12 @@ def eval_sr(scale, data_root, max_images):
         x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
         with torch.no_grad():
             out = model(x).clamp(0, 1)
+        # NOTE: the model's TRUE output is lr*scale (it never sees the full-res
+        # HR). We bicubic-resize it back to hr.size here *only* so the PSNR/SSIM
+        # comparison is measured at the same pixel grid as the bicubic baseline.
+        # This resize is an evaluation-time normalization, NOT a hidden second
+        # upscale — contrast with serve/model_loader.predict_sr, which returns
+        # the model's true lr*scale output to the caller (no resize).
         pred = TF.to_pil_image(out.squeeze(0).cpu()).resize(hr.size, Image.BICUBIC)
 
         hr_t = TF.to_tensor(hr).unsqueeze(0)
@@ -106,7 +112,7 @@ def eval_sr(scale, data_root, max_images):
 def eval_lowlight(data_root, max_images):
     ll_dir = _pick_dir(data_root, "lol", "lowlight")
     if ll_dir is None:
-        print(f"[!] 未找到低光数据目录"); return
+        print("[!] 未找到低光数据目录"); return
     low_dir = os.path.join(ll_dir, "val", "low")
     high_dir = os.path.join(ll_dir, "val", "high")
     if not (os.path.isdir(low_dir) and os.path.isdir(high_dir)):
@@ -115,7 +121,7 @@ def eval_lowlight(data_root, max_images):
     ml = _ml()
     model = ml.get_lowlight_model()
     if model is None:
-        print("[!] 无 lowlight 权重"); return
+        print("[!] 无 lowlight 权重 (缺失或损坏)"); return
 
     lows = _load_images(low_dir)
     if max_images:

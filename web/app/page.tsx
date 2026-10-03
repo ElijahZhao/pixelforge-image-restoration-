@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import CompareSlider from "@/components/CompareSlider";
 import { predict, type PredictResult } from "@/lib/api";
 
@@ -23,6 +23,14 @@ export default function Home() {
     setResult(null);
     setError(null);
   };
+
+  // R4: revoke the previous blob URL when a new one is created or on unmount,
+  // otherwise repeated uploads leak blob memory.
+  useEffect(() => {
+    return () => {
+      if (preview) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   const run = async () => {
     if (!file) return;

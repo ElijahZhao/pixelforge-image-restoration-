@@ -11,7 +11,7 @@ When a weight file is missing, the corresponding task silently falls back to
 
 from __future__ import annotations
 
-import os
+import warnings
 from pathlib import Path
 
 import torch
@@ -26,15 +26,30 @@ _lowlight_model = None
 
 
 def _load(path: str):
-    return torch.jit.load(path, map_location=DEVICE).eval()
+    """Load a TorchScript model, failing soft instead of crashing the service.
+
+    A corrupt or torch-incompatible ``.pt`` must not take down the whole API
+    (the deploy/streamlit copy already does this; see R1). On failure we warn
+    and return ``None`` so callers fall back to the classical baseline. The
+    failure is cached (None) so we don't retry-load on every request.
+    """
+    try:
+        return torch.jit.load(path, map_location=DEVICE).eval()
+    except Exception as exc:  # noqa: BLE001 - defensive: never 500 on bad weights
+        warnings.warn(
+            f"failed to load model from {path}: {exc!r}; "
+            f"falling back to classical baseline",
+            stacklevel=2,
+        )
+        return None
 
 
 def get_sr_model(scale: int):
     key = f"sr_{scale}"
     if key not in _sr_cache:
-        p = MODELS_DIR / f"sr_*_scale{scale}.pt"
         matches = list(MODELS_DIR.glob(f"sr_*_scale{scale}.pt"))
         if matches:
+            # May cache None on load failure (see _load).
             _sr_cache[key] = _load(str(matches[0]))
     return _sr_cache.get(key)
 
