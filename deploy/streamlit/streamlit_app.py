@@ -64,15 +64,18 @@ TEXTS = {
         "warn_ll_no_weight": "Low-light: no self-trained weight — using the **classical adaptive-gamma baseline**.",
         "ok_ll": "Low-light: produced by the **self-trained U-Net**.",
         "note_ll_notdark": (
-            "**This image is not actually underexposed**, so the self-trained "
+            "**This image is not a low-light photo**, so the self-trained "
             "low-light U-Net was skipped. That model is trained on LOL-v1 "
-            "(real night *photos*); applied to a bright or synthetic image it "
-            "still runs its illumination correction but — with no true "
-            "underexposure to recover — it **crushes the shadows and makes the "
-            "picture darker** (measured on a game screenshot: median luminance "
-            "0.26 → 0.06). You are seeing the **classical adaptive-gamma "
-            "baseline**, which brightens. Upload a genuinely dark **photo** to "
-            "exercise the model."
+            "(real night *photographs*); it only helps a genuinely underexposed "
+            "photo. Two common reasons it does not apply here: the image is "
+            "already well-exposed (it is not dark enough to be 'low light'), "
+            "or it is a **screenshot / synthetic image** rather than a "
+            "photograph. In either case the model would still run its "
+            "illumination correction with no real underexposure to recover, so "
+            "it **crushes the shadows and makes the picture darker** (measured "
+            "on a game screenshot: median luminance 0.26 → 0.06). You are "
+            "seeing the **classical adaptive-gamma baseline**, which brightens. "
+            "Upload a genuinely dark **photograph** to exercise the model."
         ),
         "info_ll_3panel": (
             "**How to read these three panels**: ① your input, ② the classical "
@@ -126,10 +129,12 @@ TEXTS = {
         "warn_ll_no_weight": "低光：无自训权重，当前使用 **classical 自适应伽马基线**。",
         "ok_ll": "低光：由 **自训 U-Net** 输出。",
         "note_ll_notdark": (
-            "**这张图其实并不欠曝**，因此已跳过自训低光 U-Net。该模型是在 "
-            "LOL-v1（真实夜间**照片**）上训练的；喂给它一张明亮图或合成图时，"
-            "它仍会执行学到的照度校正，但由于没有真正的欠曝可恢复，"
-            "结果会把**暗部压死、使画面更暗**（实测游戏截图：亮度中位数 0.26 → 0.06）。"
+            "**这张图不是低光照片**，因此已跳过自训低光 U-Net。该模型是在 "
+            "LOL-v1（真实夜间**照片**）上训练的，只对「确实欠曝的照片」有帮助。"
+            "常见的不适用情况有两种：图像本身曝光已足够（不够暗，算不上低光），"
+            "或者它是**截图 / 合成图**而非真实照片。这两种情况下，模型仍会执行"
+            "学到的照度校正，但由于没有真正的欠曝可恢复，结果会把**暗部压死、"
+            "使画面更暗**（实测游戏截图：亮度中位数 0.26 → 0.06）。"
             "你现在看到的是 **classical 自适应伽马基线**，它是正常提亮的。"
             "想真正测试该模型，请上传一张确实很暗的**照片**。"
         ),

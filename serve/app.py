@@ -148,11 +148,14 @@ async def predict(
     # F8: when no trained weight exists for the chosen task/scale, say so
     # explicitly instead of silently falling back to a classical baseline.
     if engine == "classical" and task == "lowlight":
-        note = ("Classical adaptive-gamma baseline. The self-trained low-light "
-                "U-Net is trained on LOL-v1 (real night PHOTOS); on a bright or "
-                "synthetic image it crushes shadows and DARKENS the picture "
-                "(measured: median luminance 0.26 -> 0.06), so it was skipped "
-                "here. Upload a genuinely dark photo to exercise the model.")
+        note = ("Classical adaptive-gamma baseline. This image is not a low-light "
+                "PHOTO, so the self-trained low-light U-Net was skipped: it is "
+                "trained on LOL-v1 (real night photographs) and only helps a "
+                "genuinely underexposed photo. The image is either already "
+                "well-exposed, or it is a screenshot / synthetic image rather "
+                "than a photograph. Running the model anyway would crush the "
+                "shadows and DARKEN the picture (measured: median luminance "
+                "0.26 -> 0.06). Upload a genuinely dark photo to exercise it.")
     elif engine == "classical":
         note = ("Classical baseline in use — no trained weight found for "
                 f"{task} x{scale} (train & export one to switch to ML).")
