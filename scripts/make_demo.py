@@ -27,6 +27,8 @@ import os
 import sys
 
 import numpy as np
+import torch
+import torchvision.transforms.functional as TF
 from PIL import Image, ImageDraw, ImageFilter
 
 # Allow running as `python scripts/make_demo.py` from the repo root.
@@ -93,12 +95,21 @@ def main() -> None:
     _save("demo_lowlight_ours.jpg", ours_ll)
 
     # ---- Super-resolution demo (4x) -------------------------------------
-    # Feed the LR image to the model (architecturally correct: the SR model
-    # consumes a low-res input). predict_sr now returns the model's TRUE output.
     lr = scene.resize((128, 128), Image.LANCZOS)     # simulate low-res capture
     lr_disp = lr.resize((512, 512), Image.NEAREST)   # blocky display of LR
-    bicubic = sr_classical(lr, scale=4)              # classical baseline
-    ours_sr = ml.predict_sr(lr, scale=4) or bicubic   # trained SRResNet
+    # Feed the LR image DIRECTLY to the traced model. Do NOT route it through
+    # ``ml.predict_sr``: that wrapper's contract is "caller passes a full-size
+    # image; we downscale to LR first". Passing an already-LR (128px) image
+    # would shrink it AGAIN to 32px, so the model reconstructed from 1/16 of
+    # the pixels and looked far blurrier than bicubic — the exact bug that
+    # produced the misleading 2025-10 demo figure.
+    model = ml.get_sr_model(4)
+    if model is None:
+        raise SystemExit("sr scale4 weight missing/unloadable; run train/export.py")
+    with torch.no_grad():
+        out = model(TF.to_tensor(lr).unsqueeze(0)).clamp(0, 1)
+    ours_sr = TF.to_pil_image(out.squeeze(0).cpu())   # true 4x output (512px)
+    bicubic = sr_classical(lr, scale=4)               # classical baseline
     _save("demo_sr_lr.jpg", lr_disp)
     _save("demo_sr_bicubic.jpg", bicubic)
     _save("demo_sr_ours.jpg", ours_sr)
