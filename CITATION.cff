@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "如果本项目对你的研究或学习有所帮助，欢迎引用。"
+title: "PixelForge: 端到端单图超分辨率与低光增强"
+abstract: >-
+  一个端到端的计算机视觉项目：用自行训练的 PyTorch 模型完成单图超分辨率
+  （SRCNN / SRResNet）与低光图像增强（U-Net），包含数据加载、训练、PSNR/SSIM
+  评测、TorchScript 导出、FastAPI 推理服务与交互式 Web 前端，并已上线公开 Demo。
+type: software
+authors:
+  - family-names: "Zhao"
+    given-names: "Elijah"
+    # 可选：补上 ORCID 与邮箱以提升引用完整性
+license: MIT
+repository-code: "https://github.com/ElijahZhao/pixelforge-image-restoration-"
+url: "https://hddzzb68eqfnoed8zsmgqp.streamlit.app/"
+keywords:
+  - super-resolution
+  - low-light-enhancement
+  - image-restoration
+  - pytorch
+  - computer-vision
+version: 1.0.0
+date-released: "2026-10-04"

@@ -4,10 +4,10 @@
 
 <p align="center">
   <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ElijahZhao/pixelforge-image-restoration-?style=flat-square" alt="License"></a>
-  <img src="https://img.shields.io/badge/python-3.9%2B-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python">
+  <img src="https://img.shields.io/badge/python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
   <a href="https://hddzzb68eqfnoed8zsmgqp.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-PixelForge-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
-  <img src="https://img.shields.io/badge/build-passing-brightgreen?style=flat-square" alt="Build">
+  <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/for-Graduate%20School-ff69b4?style=flat-square" alt="For Grad School">
 </p>
 
@@ -43,6 +43,7 @@
 - [部署上线](#部署上线)
 - [路线图 / 剩余待办](#路线图--剩余待办)
 - [许可证](#许可证)
+- [贡献与引用](#贡献与引用)
 - [致谢与参考](#致谢与参考)
 
 ---
@@ -53,13 +54,12 @@
 
 | 维度 | 状态 | 说明 |
 |---|:---:|---|
-| 训练 / 推理 / 前端代码闭环 | ✅ 已完成 | 代码闭环，测试 20/20 |
+| 训练 / 推理 / 前端代码闭环 | ✅ 已完成 | 代码闭环，pytest 28/28 |
 | 文档（中文美化 README 等） | ✅ 已完成 | 含诊断/修复/成果/证据链 |
 | 真实训练权重（自训 `.pt`） | ✅ 已完成 | 修复后重训，权重随仓库分发 |
 | 真实评测指标 PSNR / SSIM | ✅ 已完成 | 与 bicubic/不处理基线同口径对比，可复现 |
 | 线上部署（Streamlit Cloud 公开 Demo） | ✅ 已上线 | 免费档会休眠，首访需唤醒 |
 | 申请材料（SOP / CV / 报告 / 幻灯片） | ⏳ 未开始 | 与项目本身质量无关 |
-| 轮换已暴露的 GitHub Token | ✅ 已完成 | 本地已清除；旧 token 已在 GitHub 撤销 |
 
 ---
 
@@ -210,6 +210,9 @@ pixelforge-image-restoration/
 ├── scripts/           # 辅助脚本（生成 demo 图等）
 ├── tests/             # E2E 浏览器测试
 ├── DEPLOY.md          # 部署与受限网络推送指南
+├── CHANGELOG.md       # 版本变更记录
+├── CONTRIBUTING.md    # 贡献指南
+├── CITATION.cff       # 引用元数据
 ├── PROGRESS.md        # 项目进度与分级待办
 └── README.md
 ```
@@ -260,7 +263,7 @@ pnpm dev
 python -m train.tests.run_tests
 ```
 
-预期结果：`20/20 passed`（其中 8 个为**正确性测试**：VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性等——这些是"形状测试"抓不到、而审计中真实出现过的缺陷类别）。
+预期结果：`28 passed`（20 个训练单元测试 + 8 个 API 冒烟测试；其中训练侧 8 个为**正确性测试**：VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性等——这些是"形状测试"抓不到、而审计中真实出现过的缺陷类别）。
 
 ### E2E 浏览器测试
 
@@ -397,7 +400,7 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 
 项目工程已竣工并上线，以下为**诚实标注的剩余项**（完整分级见 [PROGRESS.md](PROGRESS.md)）：
 
-- ✅ **P0 轮换已暴露的 GitHub Token**：本地 `.git/config` 明文凭证已清除，旧 token 已在 GitHub 撤销并换新。
+- ✅ **P0 代码与文档闭环**：数据 → 训练 → 评测 → 导出 → 部署全链路打通，仓库无明文凭据、无敏感文件。
 - ✅ **SR ×4 与低光重训（含修复）**：已在修复后代码上完成 200 epoch 重训并打赢基线（SR ×4 +0.77 dB / 低光 +10.41 dB）；评测脚本、逐 epoch 日志与平台凭证均已留档。
 - 🟡 **可选：`SRCNN ×2` 训练**：当前仍为 `TBD`（未训练），可用 `train/train.py --model srcnn --scale 2` 补训。
 - 🟢 **P3 申请材料包装**：英文 SOP / CV / 项目报告 / 答辩幻灯片（可用本地 `docx` / `pdf` / `pptx` 技能生成）。
@@ -407,6 +410,14 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 ## 许可证
 
 本项目基于 [MIT License](LICENSE) 开源。
+
+---
+
+## 贡献与引用
+
+- **如何贡献**：开发环境、测试与 PR 约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+- **版本变更**：见 [CHANGELOG.md](CHANGELOG.md)。
+- **如何引用**：引用信息见 [CITATION.cff](CITATION.cff)（GitHub 页面右上角会显示 "Cite this repository"）。
 
 ---
 
