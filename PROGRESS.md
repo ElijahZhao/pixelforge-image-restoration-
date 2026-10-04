@@ -111,7 +111,7 @@
 - [x] **SR 重训（含感知损失修复）** —— 已用修复后代码重训，SR×4 达 **27.47（高于 bicubic +0.77 dB）**，缺陷闭环；
   评测脚本 `scripts/eval_baseline.py`、逐 epoch 日志 `results/train_log_*.csv`、平台凭证 `docs/retrain_journey/` 均已留档。
   > **执行摘要（实际执行，2026-10-03，AutoDL RTX 3080 Ti）**：
-  > 1. 备份旧产物 → `unzip` 覆盖修复后 `train/`、`serve/` → `python -m train.tests.run_tests`（20/20）；
+  > 1. 备份旧产物 → `unzip` 覆盖修复后 `train/`、`serve/` → `python -m train.tests.run_tests`（当时 20/20；后续已扩充为 pytest 28/28，见 §一）；
   > 2. 冒烟 2 epoch 通过 → 正式重训 SR×4 与低光各 200 epoch（前台顺序执行，无人工干预）；
   > 3. 自动 `export.py` 导出 TorchScript → 下载权重回仓库替换 3 处 `models/`；
   > 4. 同口径基线评测：SR×4 +0.77 dB、低光 +10.41 dB。
@@ -165,7 +165,7 @@
 | 推理 | FastAPI / 经典兜底 / 权重加载 | ✅ |
 | 前端 | Next.js Demo / 滑块 / 代理 | ✅ |
 | 文档 | README / DEPLOY / PROJECT_NOTES / LICENSE / 诊断归档（docs/history/） | ✅ |
-| 测试 / Demo | 单元测试 20/20 + 真实 demo 图 | ✅ |
+| 测试 / Demo | pytest 28/28（20 训练单测 + 8 API 冒烟）+ 真实 demo 图 | ✅ |
 | 训练 | 真实权重（GPU） | ✅ |
 | 评测 | 真实 PSNR/SSIM 数值 | ⚠️ |
 | 部署 | Streamlit Cloud 公开 Demo | ✅ |
