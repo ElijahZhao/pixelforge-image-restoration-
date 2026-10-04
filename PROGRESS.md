@@ -1,6 +1,6 @@
 # PixelForge · 项目进度与待办清单
 
-> 最后更新：2026-10-04（ROUND22/23 全项目审计 · pytest CI 固化 · 诊断文档归档至 docs/history/）
+> 最后更新：2026-10-04（ROUND22/23 全项目审计 · pytest CI 固化并经 GitHub Actions 实测通过 · 诊断文档归档至 docs/history/）
 > 本文件记录 PixelForge 的**真实完成度**与**剩余工作**。所有状态均经过实际核查（非估计）。
 
 ---
@@ -139,6 +139,9 @@
 - [x] **浏览器 E2E 测试**：`tests/e2e/e2e.py` 用 Playwright + Chromium 跑通「上传→Enhance→拖动滑块」全流程并截图留证；超分与低光两条链路均通过。
 - [x] **全项目审计（ROUND22 / ROUND23）**：安全/并发/复现性/边界缺陷（11 项）+ 部署依赖契约/测试有效性「假通过」/死代码（7 项），全部修缮并实测回归通过（归档见 `docs/history/`）。
 - [x] **pytest CI 固化 + 依赖 lock**：新增 `pyproject.toml`（pytest 配置）、`tests/test_api_smoke.py`、`requirements*.lock.txt`（pip-tools 固定传递依赖）、`.github/workflows/ci.yml`（GitHub Actions 自动跑测试）。
+- [x] **CI 实际运行验证（2026-10-04 实测）**：GitHub Actions 已真实执行 CI 工作流多次，**全部 `success`**（`d3e86a1` / `a98492e` / `7fa7992` / `3511c0b` 等提交），验证 CI 配置可正常运行、徽章反映真实状态：
+  - 运行记录：<https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml>
+  - 环境：`ubuntu-latest` + Python 3.11，按 `requirements.lock.txt` / `requirements-dev.lock.txt` 安装后执行 `python -m pytest -q`。
 - [x] **仓库清理**：删除 `pixelforge-source.zip`，`.gitignore` 增加 zip 包与 E2E 截图目录排除；2026-10-04 将根目录 26 份诊断/报告文档归档至 `docs/history/`，并删除过时的 `TOOLS_CHECKLIST.md`。
 
 ---
