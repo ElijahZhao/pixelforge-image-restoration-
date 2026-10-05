@@ -1,7 +1,7 @@
-# PixelForge — project & tooling config.
+# PixelForge: project & tooling config.
 #
 # NOTE: this file only carries tool configuration (pytest). The repo is NOT a
-# pip-installable package — `train/` is used as a script directory (its tests do
+# pip-installable package; `train/` is used as a script directory (its tests do
 # `from models import ...`) and `serve/` is imported as a namespace package, so
 # neither needs __init__.py. Keep it that way; do not add a [build-system] /
 # [project] section that implies `pip install .`.

@@ -1,6 +1,6 @@
 # Deployment
 
-> ⚠️ **本文档描述的是历史/备选方案（Vercel + Hugging Face Spaces）。**
+> **本文档描述的是历史 / 备选方案（Vercel + Hugging Face Spaces）。**
 > **当前实际上线的公开 Demo 走的是 Streamlit Community Cloud**，权威步骤见
 > [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
 > 之所以保留本文档：受限网络下的镜像推送方法（第 4 节）仍然有用。
@@ -57,7 +57,7 @@ whitelist), use a public GitHub mirror that the network *can* reach, e.g.
 server-side, so your sandbox never needs direct access to GitHub.
 
 ```bash
-TOKEN=ghp_xxxYOURTOKENxxx   # a fine-grained PAT with `repo` scope
+TOKEN=<YOUR_FINE_GRAINED_TOKEN>   # a fine-grained token with `repo` scope
 # set the remote to go through the mirror (auth travels via the mirror):
 git remote set-url origin \
   "https://oauth2:${TOKEN}@ghproxy.net/https://github.com/USER/REPO.git"

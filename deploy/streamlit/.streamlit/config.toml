@@ -3,7 +3,7 @@
 
 [theme]
 base = "dark"
-primaryColor = "#22d3ee"            # 霓虹青 —— 按钮 / 选中态
+primaryColor = "#22d3ee"            # 霓虹青：按钮 / 选中态
 backgroundColor = "#0b0a1f"         # 深空紫背景
 secondaryBackgroundColor = "#171338" # 卡片 / 侧栏
 textColor = "#e8e6ff"

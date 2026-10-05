@@ -57,7 +57,7 @@ python -m train.tests.run_tests
 ## 报告问题
 
 - 通过 GitHub Issues 提交，请附：复现步骤、期望结果、实际结果、环境（OS / Python / 是否 GPU）。
-- ⚠️ **请勿在 Issue / PR 中粘贴任何令牌、密钥或私密数据。**
+- **请勿在 Issue / PR 中粘贴任何令牌、密钥或私密数据。**
 
 ## 许可
 
