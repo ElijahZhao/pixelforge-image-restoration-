@@ -12,7 +12,7 @@ authors:
     # 可选：补上 ORCID 与邮箱以提升引用完整性
 license: MIT
 repository-code: "https://github.com/ElijahZhao/pixelforge-image-restoration-"
-url: "https://hddzzb68eqfnoed8zsmgqp.streamlit.app/"
+url: "https://pixelforge-image-restoration.streamlit.app/"
 keywords:
   - super-resolution
   - low-light-enhancement

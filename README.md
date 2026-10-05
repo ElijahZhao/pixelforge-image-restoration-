@@ -6,7 +6,7 @@
   <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ElijahZhao/pixelforge-image-restoration-?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
-  <a href="https://hddzzb68eqfnoed8zsmgqp.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-PixelForge-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
+  <a href="https://pixelforge-image-restoration.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-PixelForge-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
   <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
@@ -15,7 +15,7 @@
   用 <b>自己训练的 PyTorch 模型</b> 做单图超分辨率（Super-Resolution）与低光图像增强（Low-Light Enhancement），并通过交互式网页展示。
 </p>
 
-> **现已上线公开 Demo**：<https://hddzzb68eqfnoed8zsmgqp.streamlit.app/>
+> **现已上线公开 Demo**：<https://pixelforge-image-restoration.streamlit.app/>
 > 由自训模型实时驱动（SR ×4 与 Low-light 均加载真实权重，非基线兜底）。
 > 项目当前进度与详细待办见 [PROGRESS.md](PROGRESS.md)。
 >
@@ -104,7 +104,7 @@ results/     训练日志 + 量化对比表
 
 | 环境 | 地址 | 说明 |
 |---|---|---|
-| 公开 Demo（已上线） | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ | Streamlit Cloud 托管，由自训模型实时驱动 |
+| 公开 Demo（已上线） | https://pixelforge-image-restoration.streamlit.app/ | Streamlit Cloud 托管，由自训模型实时驱动 |
 | 本地（默认） | http://localhost:3000 | 克隆后按「快速开始」启动（Next.js + FastAPI） |
 
 > 公开 Demo 默认运行**自训模型**（SRResNet ×4 与 Low-light U-Net）。当你本地用自己的 GPU 重训权重并替换 `serve/models/` 后，服务会自动切换引擎（访问 `/api/health` 可见当前引擎是 `ml` 还是 `classical`）。
@@ -246,7 +246,7 @@ pnpm dev
 ```
 
 打开 http://localhost:3000，上传一张图片，选择任务，点击 Enhance，拖动滑块对比。
-想直接体验公开 Demo？打开 <https://hddzzb68eqfnoed8zsmgqp.streamlit.app/> 即可，无需本地环境。
+想直接体验公开 Demo？打开 <https://pixelforge-image-restoration.streamlit.app/> 即可，无需本地环境。
 
 ---
 
@@ -397,7 +397,7 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 
 ### 公开 Demo（已上线）
 - Streamlit Community Cloud：免费、无 GPU 额度限制、直接从 GitHub 仓库部署。
-- 地址：<https://hddzzb68eqfnoed8zsmgqp.streamlit.app/>
+- 地址：<https://pixelforge-image-restoration.streamlit.app/>
 - 入口文件：`deploy/streamlit/streamlit_app.py`（自包含：经典基线 + TorchScript 模型加载 + Streamlit UI，已修复 U-Net 32 倍数尺寸约束）。
 - 部署步骤见 [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
 
@@ -446,5 +446,5 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 ---
 
 <p align="center">
-  <sub>PixelForge · 端到端图像复原流水线 &nbsp;·&nbsp; <a href="https://hddzzb68eqfnoed8zsmgqp.streamlit.app/">Live Demo</a></sub>
+  <sub>PixelForge · 端到端图像复原流水线 &nbsp;·&nbsp; <a href="https://pixelforge-image-restoration.streamlit.app/">Live Demo</a></sub>
 </p>

@@ -6,7 +6,7 @@
   <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/blob/main/LICENSE"><img src="https://img.shields.io/github/license/ElijahZhao/pixelforge-image-restoration-?style=flat-square" alt="License"></a>
   <img src="https://img.shields.io/badge/python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
-  <a href="https://hddzzb68eqfnoed8zsmgqp.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-PixelForge-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
+  <a href="https://pixelforge-image-restoration.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-PixelForge-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
   <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
 </p>
 
@@ -16,7 +16,7 @@
   served through a small web frontend.
 </p>
 
-> **Live demo:** <https://hddzzb68eqfnoed8zsmgqp.streamlit.app/>
+> **Live demo:** <https://pixelforge-image-restoration.streamlit.app/>
 > Runs the self-trained weights for both tasks (not the classical fallback).
 > The Chinese README ([README.md](README.md)) is the primary document and carries
 > more detail; this file is the English entry point.

@@ -1,6 +1,6 @@
 # PixelForge · 项目进度
 
-> 最后更新：2026-10-04
+> 最后更新：2026-10-05
 > 本文件记录 PixelForge 的完成度与剩余工作。
 
 ---
@@ -18,7 +18,7 @@
 | 容器化（后端） | 已完成 | `Dockerfile`：Python 3.11-slim、非 root、带健康检查、内置权重 |
 | 真实模型权重（自训 `.pt`） | 已完成 | 修复后重训并导出（见 §2.4） |
 | 真实评测指标（PSNR / SSIM） | 已完成 | 与基线同口径对比，逐 epoch 日志已提交，可复现 |
-| 线上部署（Streamlit Cloud 公开 Demo） | 已上线 | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
+| 线上部署（Streamlit Cloud 公开 Demo） | 已上线 | https://pixelforge-image-restoration.streamlit.app/ （2026-10-05 更换域名，旧 app 已停用） |
 | 延伸材料（报告 / 幻灯片） | 未开始 | 与项目本身质量无关 |
 | 安全收尾（吊销开发期 PAT） | 待办 | 见 §四 |
 
