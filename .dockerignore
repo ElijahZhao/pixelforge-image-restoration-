@@ -1,0 +1,34 @@
+# Keep the build context small and free of secrets/artifacts.
+# The Dockerfile only COPYs requirements.lock.txt, serve/ and train/, so most
+# of this is belt-and-braces - but a small context also means faster builds.
+
+.git
+.github
+.codebuddy
+
+# Frontend is a separate target; do not ship its tree into the Python image.
+web/node_modules
+web/.next
+
+# Docs and process records are not needed at runtime.
+docs
+assets
+*.md
+
+# Local data and scratch.
+data/div2k
+data/lol
+.pytest_cache
+.preview
+tests/e2e/screenshots
+
+# Python caches.
+__pycache__
+*.pyc
+.venv
+venv
+.coverage
+
+# Editors / OS.
+.DS_Store
+*.tsbuildinfo

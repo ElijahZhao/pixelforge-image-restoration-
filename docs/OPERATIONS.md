@@ -13,6 +13,7 @@
 |---|---|---|
 | Streamlit 公开 Demo | `deploy/streamlit/streamlit_app.py` | 已上线，自包含：经典兜底 + TorchScript 加载 + UI 都在一个文件里。**不依赖 FastAPI** |
 | FastAPI 服务 | `serve/app.py` | 完整 HTTP 服务，含 `/api/health` 与 `/api/predict`。前端 `web/` 与它对接 |
+| Docker 镜像 | `Dockerfile` | 推理服务的容器化打包（Python 3.11-slim + 内置权重，非 root，带 `HEALTHCHECK`）。只含后端 |
 | HF Spaces（备选） | `deploy/hf_space/app.py` | 备选方案，原因见 `deploy/streamlit/DEPLOY_STREAMLIT.md` |
 
 关键点：**Streamlit 那份是自包含的，不调 FastAPI**。所以线上 Demo 挂了，
@@ -90,6 +91,6 @@ git revert <bad-commit>      # 生成一个反向提交（不改写历史）
 - **没有依赖漏洞扫描的落地**：CI 里加了 `pip-audit`（见 `.github/workflows/ci.yml`），
   但没有对无修复 CVE 的抑制清单（`.pip-audit-ignore`）；一旦某依赖爆出无补丁 CVE，CI 会直接变红，
   届时需要手动加白名单并说明原因，而不是删掉扫描步骤。
-- **没有容器化**：没有 `Dockerfile`，部署依赖平台托管。
+- **容器化只覆盖后端**：`Dockerfile` 打的是推理服务（`serve/`），前端 `web/` 仍是独立构建目标，不在镜像内。
 - **没有多实例方案**：限流是进程内的（`serve/app.py`），多实例会失效，详见 `docs/API.md`。
 - **没有备份/灾备**：无状态服务，也没有需要备份的持久数据，所以这项目前为空。

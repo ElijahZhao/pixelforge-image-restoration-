@@ -18,6 +18,8 @@
 > **现已上线公开 Demo**：<https://hddzzb68eqfnoed8zsmgqp.streamlit.app/>
 > 由自训模型实时驱动（SR ×4 与 Low-light 均加载真实权重，非基线兜底）。
 > 项目当前进度与详细待办见 [PROGRESS.md](PROGRESS.md)。
+>
+> Read this in [English](README.en.md).
 
 ---
 
@@ -199,13 +201,16 @@ pixelforge-image-restoration/
 │   ├── streamlit/     # 已上线：Streamlit Cloud 公开 Demo
 │   └── hf_space/      # 备选：Hugging Face Spaces 包
 ├── web/               # 前端（Next.js + Tailwind）
-├── scripts/           # 辅助脚本（生成 demo 图等）
+├── scripts/           # 辅助脚本（生成 demo 图、准备数据集）
 ├── tests/             # E2E 浏览器测试
+├── docs/              # docs/API.md（接口）、docs/OPERATIONS.md（运维）、history/、retrain_journey/
+├── Dockerfile         # 推理服务镜像
 ├── DEPLOY.md          # 部署与受限网络推送指南
 ├── CHANGELOG.md       # 版本变更记录
 ├── CONTRIBUTING.md    # 贡献指南
 ├── CITATION.cff       # 引用元数据
 ├── PROGRESS.md        # 项目进度与分级待办
+├── README.en.md       # English README
 └── README.md
 ```
 

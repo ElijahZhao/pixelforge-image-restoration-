@@ -14,7 +14,8 @@
 | 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 29 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
 | 前端（Next.js 交互 Demo） | 已完成 | `next build` + `tsc` + vitest 已进 CI |
 | 依赖与接口安全 | 已完成 | CI 跑 pip-audit；`/api/predict` 带按 IP 限流 |
-| 文档（README / API / 运维 / LICENSE） | 已完成 | 另含 `docs/API.md`、`docs/OPERATIONS.md` |
+| 文档（README / API / 运维 / LICENSE） | 已完成 | 中文主文档 + `README.en.md` + `docs/API.md` + `docs/OPERATIONS.md` |
+| 容器化（后端） | 已完成 | `Dockerfile`：Python 3.11-slim、非 root、带健康检查、内置权重 |
 | 真实模型权重（自训 `.pt`） | 已完成 | 修复后重训并导出（见 §2.4） |
 | 真实评测指标（PSNR / SSIM） | 已完成 | 与基线同口径对比，逐 epoch 日志已提交，可复现 |
 | 线上部署（Streamlit Cloud 公开 Demo） | 已上线 | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
