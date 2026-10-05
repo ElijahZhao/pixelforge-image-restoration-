@@ -4,7 +4,7 @@ Usage:
     python -m train.tests.run_tests        (from repository root)
     python train/tests/run_tests.py        (from repository root)
 
-Tests may raise ``unittest.SkipTest`` to be reported as SKIP rather than FAIL —
+Tests may raise ``unittest.SkipTest`` to be reported as SKIP rather than FAIL;
 used for checks that need a network download (e.g. ImageNet VGG weights), so an
 offline run does not look like a real regression.
 """
@@ -35,7 +35,7 @@ def run() -> int:
                 t()
                 print(f"  PASS {t.__name__}")
             except unittest.SkipTest as e:
-                # Dependency unavailable (typically no network) — not a regression.
+                # Dependency unavailable (typically no network), not a regression.
                 print(f"  SKIP {t.__name__}: {e}")
                 skipped.append(f"{mod_name}.{t.__name__}")
             except Exception as e:

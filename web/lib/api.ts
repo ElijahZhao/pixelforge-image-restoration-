@@ -16,7 +16,7 @@ export async function predict(
 ): Promise<PredictResult> {
   // When NEXT_PUBLIC_API_URL is set (production), call the backend directly.
   // Otherwise use the same-origin /api path, which Next.js proxies to the
-  // local FastAPI service (see next.config.mjs) — keeps the demo CORS-free.
+  // local FastAPI service (see next.config.mjs), keeping the demo CORS-free.
   const base = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "");
   const endpoint = base ? `${base}/api/predict` : `/api/predict`;
   const fd = new FormData();

@@ -81,12 +81,12 @@ def test_build_model_factory():
 def test_batch_independence_and_determinism():
     """Real, falsifiable properties (the old version used torch.zeros and only
     asserted y[0] == y[1], which is trivially true for ANY deterministic module
-    — even a single Conv2d stub — so it could not catch a real defect).
+    (even a single Conv2d stub), so it could not catch a real defect).
 
     We now assert two things that CAN fail:
       1. In eval() the model is deterministic for the same input.
       2. Different inputs produce different outputs (i.e. the input is actually
-         used — a model that ignored its input or collapsed to a constant, e.g.
+         used; a model that ignored its input or collapsed to a constant, e.g.
          a dead-ReLU/zeroed-weight bug, would fail this).
     """
     model = SRGenerator(scale=2, num_blocks=4).eval()
@@ -102,7 +102,7 @@ def test_batch_independence_and_determinism():
     # 2. The model actually responds to its input: a different input must give a
     #    different output. Guards against constant-output / dead-network bugs.
     assert not torch.allclose(y1, y_other, atol=1e-4), (
-        "model produced (nearly) identical outputs for different inputs — "
+        "model produced (nearly) identical outputs for different inputs; "
         "it is not using its input"
     )
 

@@ -88,7 +88,7 @@ def main() -> int:
     SCREENS.mkdir(parents=True, exist_ok=True)
 
     # NOTE: the body below is wrapped by `_run()` so `_cleanup()` runs on EVERY
-    # exit path — including an unexpected exception. Previously a thrown error
+    # exit path, including an unexpected exception. Previously a thrown error
     # would orphan the uvicorn and pnpm child processes.
     try:
         return _run(requests, sync_playwright)
@@ -138,7 +138,7 @@ def _run(requests, sync_playwright) -> int:
                 if scale == 4:
                     page.get_by_role("button", name="4×").click()
 
-            # Hidden file input — Playwright can set files even when hidden.
+            # Hidden file input: Playwright can set files even when hidden.
             page.set_input_files('input[type="file"]', str(image_path))
             page.get_by_role("button", name="Enhance").click()
 
@@ -187,7 +187,7 @@ def _run(requests, sync_playwright) -> int:
 
         run_flow("sr", ROOT / "assets" / "sample_scene.png", "Super-Resolution", scale=4)
         # Run low-light UNCONDITIONALLY. The old `if not failures:` guard meant a
-        # single SR failure silently skipped this flow — i.e. the low-light path
+        # single SR failure silently skipped this flow, i.e. the low-light path
         # went untested exactly when something was already wrong.
         run_flow("lowlight", ROOT / "assets" / "sample_dark.png", "Low-Light")
 

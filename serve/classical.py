@@ -1,13 +1,13 @@
 """Classical (non-learned) baselines used when no trained weights are present.
 
 These let the website run end-to-end out of the box. They are *not* the ML
-models — once you train and export real weights into ``serve/models/``, the
+models: once you train and export real weights into ``serve/models/``, the
 service switches to the learned models automatically.
 
   - Super-Resolution : bicubic upscale + unsharp masking (a classic sharpening
     trick that visibly improves edge crispness over plain upscaling).
   - Low-Light        : adaptive gamma correction (brightens dark images while
-    leaving already-bright images essentially unchanged) — a robustness-friendly
+    leaving already-bright images essentially unchanged), a robustness-friendly
     low-light baseline.
 """
 

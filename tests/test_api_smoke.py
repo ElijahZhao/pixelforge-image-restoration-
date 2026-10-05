@@ -1,6 +1,6 @@
 """API smoke test for the FastAPI inference service.
 
-Uses FastAPI's in-process ``TestClient`` — no live server, no network, no
+Uses FastAPI's in-process ``TestClient``: no live server, no network, no
 browser. It exercises *every* route and the resource-guard branches so a
 regression in the service layer fails CI before deployment.
 
@@ -128,7 +128,7 @@ def test_predict_rejects_oversized_upload(monkeypatch):
 
 
 def test_predict_rejects_oversized_dimensions(monkeypatch):
-    # Pixel-count guard (F13, ROUND 22): a header declaring far more pixels than
+    # Pixel-count guard: a header declaring far more pixels than
     # the cap is rejected without decoding. Lower the cap so a normal 32x32
     # image trips it; the real default is 4 MP.
     monkeypatch.setattr("serve.app.MAX_INPUT_PIXELS", 100)

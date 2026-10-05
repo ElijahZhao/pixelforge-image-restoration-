@@ -43,7 +43,7 @@ def _load(path: str):
     """Load a TorchScript model, failing soft instead of crashing the service.
 
     A corrupt or torch-incompatible ``.pt`` must not take down the whole API
-    (the deploy/streamlit copy already does this; see R1). On failure we warn
+    (the deploy/streamlit copy already does this). On failure we warn
     and return ``None`` so callers fall back to the classical baseline. The
     failure is cached (None) so we don't retry-load on every request.
     """
@@ -94,11 +94,11 @@ def get_lowlight_model():
 def predict_sr(img: Image.Image, scale: int) -> Image.Image:
     """Super-resolve ``img`` by ``scale``.
 
-    Honesty note (see DIAGNOSIS_ROUND10/16/18): the model's *real* output is
-    ``lr_size * scale``. The previous implementation then ran a second PIL
-    BICUBIC resize up to ``orig_size * scale``, silently claiming "x4" while the
-    model only ever produced a x4 of the downscaled input. We now return the
-    model's true output and never re-upscale it.
+    The model's *real* output is ``lr_size * scale``. The previous
+    implementation then ran a second PIL BICUBIC resize up to
+    ``orig_size * scale``, silently claiming "x4" while the model only ever
+    produced a x4 of the downscaled input. We now return the model's true output
+    and never re-upscale it.
     """
     model = get_sr_model(scale)
     if model is None:
@@ -150,7 +150,7 @@ def predict_lowlight(img: Image.Image) -> Image.Image:
     return out.crop((0, 0, w, h))
 
 
-# --- exposure gate + output guard (see DIAGNOSIS_ROUND20/21) ---------------- #
+# --- exposure gate + output guard ------------------------------------------- #
 # The low-light U-Net is trained on LOL-v1 = real night PHOTOS. On synthetic art
 # or an already-bright image it still applies its learned illumination
 # correction, but with no true underexposure to recover it crushes the shadows

@@ -61,9 +61,9 @@ def seed_everything(seed: int = SEED) -> None:
     torch.cuda.manual_seed_all(seed)
 
 
-# ImageNet normalization stats — REQUIRED for ImageNet-pretrained VGG features.
+# ImageNet normalization stats: REQUIRED for ImageNet-pretrained VGG features.
 # Without this, feeding raw [0,1] tensors drives >90% of VGG activations to zero
-# and the perceptual loss becomes meaningless (see DIAGNOSIS_ROUND3/11/13/15).
+# and the perceptual loss becomes meaningless.
 _IMAGENET_MEAN = (0.485, 0.456, 0.406)
 _IMAGENET_STD = (0.229, 0.224, 0.225)
 
@@ -72,9 +72,8 @@ class VGGPerceptualLoss(nn.Module):
     """Perceptual loss using VGG16 features.
 
     Uses ``features[:30]``, which ends at ``ReLU5_3`` (the SRGAN "VGG54" choice,
-    Ledig et al. 2017) — not ``relu5_4`` as an earlier docstring claimed.
-    Inputs are ImageNet-normalized before feature extraction; skipping this step
-    was a real defect (94% of activations collapsed to zero).
+    Ledig et al. 2017). Inputs are ImageNet-normalized before feature extraction;
+    skipping this step was a real defect (94% of activations collapsed to zero).
     """
 
     def __init__(self):
@@ -96,9 +95,8 @@ class VGGPerceptualLoss(nn.Module):
         # Align every operand to the VGG backbone's device. The backbone is
         # created on DEVICE (cuda when available), but callers may pass CPU
         # tensors (e.g. unit tests, or pre-to(DEVICE) inputs). Without this the
-        # loss only works when inputs already live on DEVICE — a latent bug that
-        # passed CPU-only CI but broke on the training GPU (see the audit rounds
-        # covering the per-device alignment fix).
+        # loss only works when inputs already live on DEVICE; a latent bug that
+        # passed CPU-only CI but broke on the training GPU.
         dev = next(self.vgg.parameters()).device
         x = x.to(dev)
         mean = self.mean.to(dev)
@@ -139,8 +137,8 @@ def train(args):
 
     best_psnr = -1.0
     log_path = f"results/train_log_{args.task}_{args.model}.csv"
-    # F5: record the training objective and the best-checkpoint criterion in the
-    # same artifact, so the two can never silently diverge (DIAGNOSIS_ROUND13).
+    # Record the training objective and the best-checkpoint criterion in the
+    # same artifact, so the two can never silently diverge.
     best_criterion = "val_psnr"  # best checkpoint is selected by validation PSNR
     objective = (f"{args.w_pixel}*charbonnier + {args.w_percep}*vgg_perceptual"
                  if args.perceptual else "charbonnier")
@@ -164,9 +162,8 @@ def train(args):
                 if percep is not None:
                     # Explicit, readable weighting. The old code used
                     # ``0.01 * loss + percep`` which silently erased the pixel
-                    # term (see the audit rounds covering loss-weighting). Weights
-                    # are logged so the
-                    # two terms' magnitudes can be inspected during training.
+                    # term. Weights are logged so the two terms' magnitudes can
+                    # be inspected during training.
                     per = percep(out, hr)
                     loss = args.w_pixel * pix + args.w_percep * per
                 else:
@@ -209,7 +206,7 @@ def train(args):
 # Default loss weights (only used when --perceptual is on). Johnson et al. 2016
 # use a ~1:0.006 pixel:perceptual ratio after proper normalization.
 #
-# These live as module constants — not inline argparse defaults — so the unit
+# These live as module constants (not inline argparse defaults) so the unit
 # test that checks the pixel/perceptual balance can import the REAL values
 # instead of re-typing them. Previously the test hard-coded 1.0/0.006, so it
 # kept passing even if the defaults here were changed (or broken).

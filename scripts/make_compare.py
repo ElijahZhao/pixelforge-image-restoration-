@@ -4,11 +4,11 @@ Reproducibility fix: the previous ``assets/compare_sr_4x.png`` /
 ``assets/compare_lowlight.png`` were produced by a throwaway one-off snippet
 that was never committed, so the figures could not be regenerated. This
 script composes the 3-panel figures from ``assets/demo_*.jpg`` (which
-``make_demo.py`` produces via the CORRECT pipeline — LR fed straight to the
+``make_demo.py`` produces via the CORRECT pipeline: LR fed straight to the
 traced model, see the comment in ``make_demo.py``).
 
 Captions state DIV2K/LOL full-image validation AVERAGES (from
-``scripts/eval_baseline.py``), explicitly labeled as such — they are not the
+``scripts/eval_baseline.py``), explicitly labeled as such; they are not the
 per-image scores of the synthetic demo scene.
 
 Run:  python scripts/make_compare.py
@@ -83,7 +83,7 @@ def main() -> None:
         ],
         "compare_lowlight.png",
         "PSNR/SSIM are LOL full-image validation AVERAGES (eval_baseline.py), "
-        "not this scene. The no-op baseline is the identity map — its output IS the dark input.",
+        "not this scene. The no-op baseline is the identity map: its output IS the dark input.",
     )
     print("Comparison figures written to assets/.")
 

@@ -14,7 +14,7 @@ def psnr(pred: torch.Tensor, target: torch.Tensor, max_val: float = 1.0) -> torc
     """Peak Signal-to-Noise Ratio (dB), averaged over the batch.
 
     Returns ``+inf`` only if every pixel matches exactly (MSE == 0), which is the
-    mathematically correct limit — and, importantly, a value the caller can still
+    mathematically correct limit, and, importantly, a value the caller can still
     *compare* (``inf > best_psnr`` works). We must not silently substitute a huge
     finite number.
     """

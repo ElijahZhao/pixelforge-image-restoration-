@@ -23,7 +23,7 @@ import torch.nn.functional as F
 # ---------------------------------------------------------------------------
 
 class SRCNN(nn.Module):
-    """SRCNN (Dong et al., ECCV 2014) — the classic 3-layer SR network.
+    """SRCNN (Dong et al., ECCV 2014): the classic 3-layer SR network.
 
     A deliberately simple, fully explainable baseline. Great for showing the
     fundamentals: feature extraction -> non-linear mapping -> reconstruction.

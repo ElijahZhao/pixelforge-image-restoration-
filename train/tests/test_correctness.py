@@ -1,12 +1,12 @@
 """Correctness tests (not shape tests).
 
-Motivation (see DIAGNOSIS_ROUND9): the pre-existing suite only asserted shapes,
-ranges and batch-invariance, so it could NOT catch any of the real defects
-(loss weighting, VGG normalization, size mismatches, semantics). Mutation
-testing showed 6 of 10 injected fatal bugs slipped through.
+Motivation: the pre-existing suite only asserted shapes, ranges and
+batch-invariance, so it could NOT catch any of the real defects (loss weighting,
+VGG normalization, size mismatches, semantics). Mutation testing showed 6 of 10
+injected fatal bugs slipped through.
 
-These tests assert on *behaviour that matters*, so the classes of bug found in
-the audit would now fail the suite.
+These tests assert on *behaviour that matters*, so this class of bug now fails
+the suite.
 
 Run from repository root:
     python -m train.tests.run_tests
@@ -30,7 +30,7 @@ from datasets import LowLightDataset  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
-# F2 — perceptual loss must ImageNet-normalize its input.
+# VGG perceptual loss must ImageNet-normalize its input.
 # --------------------------------------------------------------------------- #
 def _vgg_features():
     """VGG16 features[:30] with pinned ImageNet weights.
@@ -59,7 +59,7 @@ def test_vgg_perceptual_normalizes_input():
     mean). With proper normalization the feature magnitude recovers markedly.
 
     Judgment uses feature *magnitude* (mean of non-zero activations), not the
-    zero fraction — ReLU is intrinsically sparse, so zero-fraction alone is not
+    zero fraction: ReLU is intrinsically sparse, so zero-fraction alone is not
     a valid signal.
     """
     vgg = _vgg_features()
@@ -101,7 +101,7 @@ def test_vgg_perceptual_loss_sensitive_to_blur():
     assert d_norm > 0.01, f"perceptual distance to blur too small: {d_norm}"
     assert math.isfinite(d_norm)
 # --------------------------------------------------------------------------- #
-# F3 — loss weighting must be explicit and pixel term must not be erased.
+# Loss weighting must be explicit and the pixel term must not be erased.
 # --------------------------------------------------------------------------- #
 def _import_train_module():
     """Load train/train.py (the training module, not the package) safely."""
@@ -133,7 +133,7 @@ def test_loss_weights_are_explicit_and_sane():
     pix_contrib, per_contrib = w_pixel * pix, w_percep * per
     ratio = max(pix_contrib, per_contrib) / max(min(pix_contrib, per_contrib), 1e-12)
     # Measured on random 64x64 input: pixel=0.332, percep=0.089, so with the
-    # defaults (1.0 / 0.006) the ratio is ~620 — the pixel term leads, as the doc
+    # defaults (1.0 / 0.006) the ratio is ~620; the pixel term leads, as the doc
     # below intends. The bound is deliberately generous (order-of-magnitude, not
     # ±10%) so it does not become flaky on a different random draw, while still
     # catching a default that is off by an order of magnitude (e.g. 0.01 -> 1%).
@@ -150,14 +150,14 @@ def test_loss_weights_are_explicit_and_sane():
     )
     # And the pixel term must carry real weight, not be effectively zero.
     assert pix_contrib > 1e-3, f"pixel term contribution too small: {pix_contrib}"
-    # Both weights must be strictly positive — a 0 would silently disable a term.
+    # Both weights must be strictly positive; a 0 would silently disable a term.
     assert w_pixel > 0 and w_percep > 0, (
         f"loss weights must be positive, got w_pixel={w_pixel} w_percep={w_percep}"
     )
 
 
 # --------------------------------------------------------------------------- #
-# F7 — SR output size contract (no hidden second upsample).
+# SR output size contract (no hidden second upsample).
 # --------------------------------------------------------------------------- #
 def test_predict_sr_output_size_is_lr_times_scale():
     """predict_sr must return the model's TRUE resolution (lr*scale), not the
@@ -192,13 +192,13 @@ def test_predict_sr_output_size_is_lr_times_scale():
         lr_side = max(1, 64 // scale) * scale  # 16*4 = 64
         assert out.size == (lr_side, lr_side), (
             f"expected true output {(lr_side, lr_side)}, got {out.size} "
-            f"(orig*scale would be {(64*scale, 64*scale)} — the fake upsample)")
+            f"(orig*scale would be {(64*scale, 64*scale)}, the fake upsample)")
     finally:
         ml.get_sr_model = orig_get
 
 
 # --------------------------------------------------------------------------- #
-# F9 — data pipeline must not silently mis-pair or crash on bad data.
+# Data pipeline must not silently mis-pair or crash on bad data.
 # --------------------------------------------------------------------------- #
 def _write(path, arr=None, raw=None):
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -237,7 +237,7 @@ def test_lowlight_pairs_by_filename_not_order():
 
 def test_lowlight_val_is_deterministic():
     """Validation must be reproducible: two fetches of the same index must be
-    identical (random cropping is disabled for eval — see DIAGNOSIS_ROUND11)."""
+    identical (random cropping is disabled for eval)."""
     base = tempfile.mkdtemp()
     rng = np.random.default_rng(0)
     _write(f"{base}/low/0.png", (rng.random((200, 200, 3)) * 40).astype("uint8"))
@@ -250,7 +250,7 @@ def test_lowlight_val_is_deterministic():
 
 
 # --------------------------------------------------------------------------- #
-# Metrics — numeric correctness (not just finiteness).
+# Metrics: numeric correctness (not just finiteness).
 # --------------------------------------------------------------------------- #
 def test_psnr_matches_manual_formula():
     """PSNR must equal 10*log10(1/MSE) for [0,1] images (guards the coefficient

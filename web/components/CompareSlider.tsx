@@ -14,7 +14,7 @@ type Props = {
 // Alignment: the "after" layer is `block w-full` and therefore sizes the
 // container via its intrinsic aspect ratio. The "before" overlay must occupy
 // exactly the same box, or dragging the handle would compare pixels from
-// different places. `object-cover` does NOT guarantee that — when the two images
+// different places. `object-cover` does NOT guarantee that: when the two images
 // have different aspect ratios it CROPS the overlay, so an aligned comparison
 // silently becomes an apples-to-oranges one. The backend already forces before
 // and after to the same size, so we mirror that here with `object-fill` (and
@@ -59,11 +59,11 @@ export default function CompareSlider({
       onPointerLeave={stopDrag}
       onLostPointerCapture={stopDrag}
     >
-      {/* After (base layer) — sizes the container via its aspect ratio */}
+      {/* After (base layer): sizes the container via its aspect ratio */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={`data:image/png;base64,${after}`} alt="After" className="block w-full" />
 
-      {/* Before (clipped overlay) — MUST match the base layer's box exactly */}
+      {/* Before (clipped overlay): MUST match the base layer's box exactly */}
       <div
         className="absolute inset-0"
         style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}

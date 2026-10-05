@@ -1,13 +1,12 @@
-"""Generate honest before/after demo images for the README.
+"""Generate before/after demo images for the README.
 
 This version uses the **actually trained TorchScript weights** in
 ``serve/models/`` so the showcase reflects what the live demo runs.
 
-Outputs are written as ``.jpg`` — matching the filenames referenced by
-``README.md`` — so that running this script genuinely reproduces the showcase
+Outputs are written as ``.jpg``, matching the filenames referenced by
+``README.md``, so that running this script genuinely reproduces the showcase
 (previously the script wrote ``.png`` while the README referenced ``.jpg``,
-which meant it could NOT reproduce the displayed images; see
-DIAGNOSIS_ROUND18).
+which meant it could NOT reproduce the displayed images).
 
   assets/sample_scene.png            photogenic synthetic scene (512x512)
   assets/sample_dark.png             underexposed version (low-light source)
@@ -101,7 +100,7 @@ def main() -> None:
     # ``ml.predict_sr``: that wrapper's contract is "caller passes a full-size
     # image; we downscale to LR first". Passing an already-LR (128px) image
     # would shrink it AGAIN to 32px, so the model reconstructed from 1/16 of
-    # the pixels and looked far blurrier than bicubic — the exact bug that
+    # the pixels and looked far blurrier than bicubic; the exact bug that
     # produced the misleading 2025-10 demo figure.
     model = ml.get_sr_model(4)
     if model is None:

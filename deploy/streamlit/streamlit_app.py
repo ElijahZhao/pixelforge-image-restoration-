@@ -8,7 +8,7 @@ Deploy (Streamlit Community Cloud, free)
 1. Push this repo to GitHub (already done).
 2. Go to https://share.streamlit.io → "New app" → pick this repo/branch.
 3. Set the main file path to ``deploy/streamlit/streamlit_app.py``.
-4. Deploy — you get a public ``*.streamlit.app`` link.
+4. Deploy to get a public ``*.streamlit.app`` link.
 
 The trained models switch in automatically when present in ``models/``;
 otherwise the classical baselines keep the demo fully usable.
@@ -18,7 +18,7 @@ UI
 Bilingual (English default, one-click switch to Chinese) and a dark/light
 theme toggle, both driven by ``st.session_state``. All UI strings live in
 ``TEXTS``; all colours live in ``_CSS_DARK`` / ``_CSS_LIGHT``. Switching either
-option just re-renders — no inference logic depends on language or theme.
+option just re-renders; no inference logic depends on language or theme.
 """
 
 from __future__ import annotations
@@ -59,9 +59,9 @@ TEXTS = {
         "spinner": "Running inference…",
         "tag_ml": "ML model",
         "tag_classical": "classical baseline",
-        "warn_sr_no_weight": "SR ×{scale}: no self-trained weight found — using the **classical bicubic baseline**.",
+        "warn_sr_no_weight": "SR ×{scale}: no self-trained weight found; using the **classical bicubic baseline**.",
         "ok_sr": "SR ×{scale}: produced by the **self-trained model** (true resolution = downscaled input ×{scale}).",
-        "warn_ll_no_weight": "Low-light: no self-trained weight — using the **classical adaptive-gamma baseline**.",
+        "warn_ll_no_weight": "Low-light: no self-trained weight; using the **classical adaptive-gamma baseline**.",
         "ok_ll": "Low-light: produced by the **self-trained U-Net**.",
         "note_ll_notdark": (
             "**This image is not a low-light photo**, so the self-trained "
@@ -78,11 +78,11 @@ TEXTS = {
             "Upload a genuinely dark **photograph** to exercise the model."
         ),
         "note_ll_darkened": (
-            "**The self-trained U-Net was tried and discarded** — it produced a "
+            "**The self-trained U-Net was tried and discarded**: it produced a "
             "**darker** image than the input, so it was rejected automatically "
             "(a low-light *enhancement* that darkens its input is wrong by "
             "definition). This happens when the image is dark but is **not an "
-            "underexposed photograph** — e.g. night-scene artwork or a game "
+            "underexposed photograph**, e.g. night-scene artwork or a game "
             "screenshot. The model is trained on LOL-v1 (real night photos) and "
             "crushes the shadows on anything outside that domain. You are "
             "seeing the **classical adaptive-gamma baseline**, which brightens."
@@ -91,7 +91,7 @@ TEXTS = {
             "**How to read these three panels**: ① your input, ② the classical "
             "adaptive-gamma baseline, ③ the self-trained U-Net. Where ③ is "
             "darker than ①, the model is fighting an input it was not trained "
-            "for (see the note above) — ② is the safer choice for that image."
+            "for (see the note above); ② is the safer choice for that image."
         ),
         "cap_original": "① Original (your upload)",
         "cap_lr": "② Model input (LR {w}×{h}, upscaled for display)",
@@ -105,7 +105,7 @@ TEXTS = {
             "*low-resolution* image to a *high-resolution* one, so the middle "
             "panel is the model's real input (your original downscaled ×{scale}). "
             "The model only ever saw those pixels; panel ③ is its reconstruction "
-            "and should look much sharper than ②. Panel ① is the reference — it "
+            "and should look much sharper than ②. Panel ① is the reference; it "
             "is already high-res, and **SR neither can nor claims to beat its "
             "true detail**. For a fair comparison upload a **low-resolution** "
             "image (or just compare ② → ③)."
@@ -149,7 +149,7 @@ TEXTS = {
             "想真正测试该模型，请上传一张确实很暗的**照片**。"
         ),
         "note_ll_darkened": (
-            "**自训 U-Net 已尝试但被自动丢弃**——它的输出比输入**更暗**，"
+            "**自训 U-Net 已尝试但被自动丢弃**：它的输出比输入**更暗**，"
             "因此被自动拒绝（一个叫「低光增强」的功能却把图变暗，本身就不成立）。"
             "这通常发生在「图像确实很暗，但它并不是一张欠曝照片」的情况下，"
             "例如夜景插画或游戏截图。该模型在 LOL-v1（真实夜间照片）上训练，"
@@ -159,7 +159,7 @@ TEXTS = {
         "info_ll_3panel": (
             "**怎么看这三张图**：① 你的输入，② classical 自适应伽马基线，"
             "③ 自训 U-Net。若 ③ 比 ① 还暗，说明模型正在处理一张它没被训练过的输入"
-            "（见上方说明）——对该图而言 ② 是更稳妥的选择。"
+            "（见上方说明）。对该图而言 ② 是更稳妥的选择。"
         ),
         "cap_original": "① 原图 (your upload)",
         "cap_lr": "② 模型实际输入 (低清 {w}×{h}，放大显示)",
@@ -171,7 +171,7 @@ TEXTS = {
         "info_3panel": (
             "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
             "所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
-            "模型只见过中间这张的像素，③ 是它重建出的结果——③ 应比 ② 清晰很多。"
+            "模型只见过中间这张的像素，③ 是它重建出的结果，③ 应比 ② 清晰很多。"
             "① 是参考原图：它本来就高清，**超分不会、也不该声称能超过它的真实细节**。"
             "想看公平对比，请上传**低分辨率**图片（或直接看 ②→③）。"
         ),
@@ -287,10 +287,10 @@ def predict_sr(img: Image.Image, scale: int):
     """Run SR. Returns ``(lr_input, model_output)`` or ``None``.
 
     ``lr_input`` is the image the model ACTUALLY sees (``img`` downscaled by
-    ``scale``), returned so the UI can show the honest 3-panel view:
+    ``scale``), returned so the UI can show the 3-panel view:
     original / low-res input / super-resolved output. A x4 model can only ever
     reconstruct from ``1/16`` of the pixels, so comparing its output against a
-    full-resolution original is misleading — see the 3-panel caption.
+    full-resolution original is misleading; see the 3-panel caption.
     """
     path = _sr_weight_path(scale)
     if path is None:
@@ -336,7 +336,7 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
 # the shadows and amplifies compression artefacts -- i.e. the picture gets
 # DARKER, not brighter.
 #
-# Two guards, applied in order (see DIAGNOSIS_ROUND20/21):
+# Two guards, applied in order:
 #   1. INPUT gate  -- only bother running the model on something that is at
 #      least plausibly underexposed. Cheap, but NOT sufficient on its own:
 #      dark artwork (e.g. a night-scene game screenshot) also looks dark.
@@ -375,7 +375,7 @@ def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
 
 
 # --------------------------------------------------------------------------- #
-# Streamlit UI —— 复古像素 / 游戏风（双语 + 暗/亮双主题）
+# Streamlit UI：复古像素 / 游戏风（双语 + 暗/亮双主题）
 # --------------------------------------------------------------------------- #
 # NOTE: `set_page_config` must be the first Streamlit call in the script, which
 # is why this sits above the TEXTS/session defaults below. We therefore read the
@@ -397,8 +397,8 @@ html, body, [class*="css"] {
 .stApp { background: var(--pf-app-bg); }
 /* Hide ONLY leaf "chrome" elements, never the containers that host the
    sidebar collapse/expand control. Streamlit moves that control around
-   between versions — in new versions it lives inside [data-testid="stToolbar"]
-   / stDecoration — so hiding those whole containers removed the button
+   between versions; in new versions it lives inside [data-testid="stToolbar"]
+   / stDecoration, so hiding those whole containers removed the button
    entirely (the bug the user hit: no way to open the sidebar at all).
    We therefore target the specific decorative children instead.
    The deploy-button container is `stAppDeployButton` in current releases
@@ -585,7 +585,7 @@ header[data-testid="stHeader"] { background: transparent; }
 
 # Light-theme readability sheet. Injected ONLY when light mode is active.
 # (A previous attempt scoped these under html[data-pf-theme="light"] and set
-# that attribute with a <script> — but Streamlit strips <script> from
+# that attribute with a <script>, but Streamlit strips <script> from
 # st.markdown, so the attribute was never applied and light mode never took
 # effect. Verified in a real browser. Injecting conditionally avoids JS
 # entirely and is guaranteed to work.)
@@ -707,7 +707,7 @@ st.session_state.setdefault("theme", "dark")   # dark by default
 # directly is guaranteed to work with zero JS. The light-theme readability
 # overrides are still scoped by a *selector* (html[data-pf-theme="light"]) in
 # _CSS_COMMON, which we now drive by emitting that attribute as a real DOM
-# attribute on a wrapper we fully control — see _THEME_ATTR below.
+# attribute on a wrapper we fully control; see _THEME_ATTR below.
 st.markdown(_CSS_VARS_DARK if st.session_state.theme == "dark" else _CSS_VARS_LIGHT,
             unsafe_allow_html=True)
 st.markdown(_CSS_COMMON, unsafe_allow_html=True)
@@ -716,7 +716,7 @@ if st.session_state.theme == "light":
 
 # --- sidebar controls (language + theme first, then task/scale) -------------
 # Widgets are bound directly to session_state via `key=`. The earlier version
-# set both `index=` AND then overwrote session_state by hand — the classic
+# set both `index=` AND then overwrote session_state by hand, the classic
 # Streamlit anti-pattern that makes the widget and the state disagree and
 # triggers an extra, janky rerun on every change. With `key=` there is exactly
 # one rerun per click and the state stays authoritative.
@@ -853,7 +853,7 @@ if uploaded is not None:
         st.info(T["info_3panel"].format(scale=scale))
     elif not use_sr and ll_triple is not None and ll_triple[2] is not None:
         # Low-light 3-panel view: input / classical baseline / self-trained model.
-        # Shown ONLY when the model actually ran, so the honest side-by-side is
+        # Shown ONLY when the model actually ran, so the side-by-side is
         # visible exactly when the domain-gap question can arise. (When the
         # model was skipped we fall through to the simple Before/After pair.)
         ll_in, ll_cls, ll_mod = ll_triple

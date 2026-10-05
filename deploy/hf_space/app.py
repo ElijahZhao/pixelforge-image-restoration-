@@ -59,7 +59,7 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
 
 
 # --------------------------------------------------------------------------- #
-# TorchScript model loading (mirror of serve/model_loader.py — keep in sync)
+# TorchScript model loading (mirror of serve/model_loader.py; keep in sync)
 # --------------------------------------------------------------------------- #
 # Gradio serves requests from a thread pool, so the check-then-act caches below
 # are hit concurrently. The lock guarantees a cold start loads each weight once
@@ -116,7 +116,7 @@ def predict_sr(img: Image.Image, scale: int):
     """Run SR. Returns ``(lr_input, model_output)`` or ``None``.
 
     ``lr_input`` is what the model ACTUALLY sees (``img`` downscaled by
-    ``scale``). The UI shows an honest 3-panel view so a full-resolution
+    ``scale``). The UI shows a 3-panel view so a full-resolution
     original is never compared against a reconstruction that only had
     ``1/scale^2`` of the pixels to work with.
     """
@@ -161,7 +161,7 @@ def predict_lowlight(img: Image.Image) -> Image.Image | None:
     return out.crop((0, 0, w, h))
 
 
-# --- exposure gate + output guard (see DIAGNOSIS_ROUND20/21) ---------------- #
+# --- exposure gate + output guard ------------------------------------------- #
 # The low-light U-Net is trained on LOL-v1 = real night PHOTOS. On synthetic art
 # or an already-bright image it still applies its learned illumination
 # correction, but with no true underexposure to recover it crushes the shadows
@@ -204,7 +204,7 @@ def _engine_status() -> str:
     sr4 = "ML" if get_sr_model(4) is not None else "classical baseline"
     low = "ML" if get_lowlight_model() is not None else "classical baseline"
     return (
-        f"**Engine in use** — SR ×2: `{sr2}` · SR ×4: `{sr4}` · Low-light: `{low}`  \n"
+        f"**Engine in use**: SR ×2: `{sr2}` · SR ×4: `{sr4}` · Low-light: `{low}`  \n"
         f"Trained models are loaded from `models/` when present; "
         f"otherwise the classical baselines keep the demo fully usable."
     )
@@ -267,10 +267,10 @@ with gr.Blocks(title="PixelForge · Image Restoration") as demo:
     gr.Markdown(
         "**SR 怎么看**：超分把「低分辨率」映射成「高分辨率」，中间面板才是模型的真正输入"
         "（由原图降采样得到），③ 是重建结果，应比 ② 清晰很多。① 本来就高清，"
-        "超分不会、也不该声称能超过它的真实细节——想看公平对比请上传**低分辨率**图。\n\n"
+        "超分不会、也不该声称能超过它的真实细节。想看公平对比请上传**低分辨率**图。\n\n"
         "**Low-light 怎么看**：中间面板是 **classical 自适应伽马基线**（正常提亮），"
         "③ 是自训 U-Net。若 ③ 比 ① 更暗，说明这张图**不是低光照片**、模型未被启用"
-        "——该 U-Net 在 LOL-v1（真实夜间**照片**）上训练，只对确实欠曝的照片有帮助。"
+        "该 U-Net 在 LOL-v1（真实夜间**照片**）上训练，只对确实欠曝的照片有帮助。"
         "常见不适用情况：图像曝光已足够（不够暗），或它是**截图/合成图**而非照片。"
         "此时模型仍会执行照度校正，但因没有真正的欠曝可恢复，会压死暗部、使画面更暗"
         "（实测亮度中位数 0.26 → 0.06）。**想看模型真实效果，请上传确实很暗的照片。**\n\n"

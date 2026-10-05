@@ -46,7 +46,7 @@ class SuperResolutionDataset(Dataset):
         if not base.exists():
             raise FileNotFoundError(
                 f"Dataset directory not found: {base}. Download DIV2K (SR) or "
-                f"LOL-v1 (low-light) and place it under {root} — see data/README.md."
+                f"LOL-v1 (low-light) and place it under {root}; see data/README.md."
             )
         entries = sorted(p for p in base.iterdir() if p.is_file())
         if entries and entries[0].is_dir():
@@ -88,12 +88,12 @@ class SuperResolutionDataset(Dataset):
 class LowLightDataset(Dataset):
     """Paired low/high images for low-light enhancement.
 
-    Robustness (see DIAGNOSIS_ROUND12): the loader validates that low/high are
-    paired by *filename stem* (not just sorted order) and, crucially, that the
-    two images share the same size. Mismatched sizes used to load fine but then
-    crop low and high from *different spatial regions* — a silent misalignment
-    that poisons the supervision signal. Such samples are skipped with a warning
-    rather than silently corrupting training.
+    Robustness: the loader validates that low/high are paired by *filename stem*
+    (not just sorted order) and, crucially, that the two images share the same
+    size. Mismatched sizes used to load fine but then crop low and high from
+    *different spatial regions*: a silent misalignment that poisons the
+    supervision signal. Such samples are skipped with a warning rather than
+    silently corrupting training.
     """
 
     def __init__(self, root: str, split: str = "train", crop_size: int = 128,
@@ -105,7 +105,7 @@ class LowLightDataset(Dataset):
         if not low_dir.exists() or not high_dir.exists():
             raise FileNotFoundError(
                 f"Expected paired dirs {low_dir} and {high_dir}. "
-                f"Download LOL-v1 — see data/README.md."
+                f"Download LOL-v1; see data/README.md."
             )
 
         # Pair by filename stem, not by sorted position.
@@ -172,7 +172,7 @@ class LowLightDataset(Dataset):
                 low, high = TF.hflip(low), TF.hflip(high)
         else:
             # Deterministic evaluation: use the full image (resized if needed) so
-            # the metric is reproducible across runs (see DIAGNOSIS_ROUND11).
+            # the metric is reproducible across runs.
             if (w, h) != (self.crop_size, self.crop_size):
                 low = TF.resize(low, [self.crop_size, self.crop_size])
                 high = TF.resize(high, [self.crop_size, self.crop_size])
@@ -183,7 +183,7 @@ def _seed_worker(worker_id: int) -> None:
     """Give every DataLoader worker a deterministic, distinct RNG state.
 
     PyTorch seeds each worker by deriving from the base seed, but ``numpy`` and
-    the stdlib ``random`` module inside the worker are NOT reseeded by default —
+    the stdlib ``random`` module inside the worker are NOT reseeded by default,
     and our augmentation uses ``torch.rand``. Seeding all three here (plus making
     the base seed come from a fixed ``generator``) is what actually removes the
     run-to-run divergence.

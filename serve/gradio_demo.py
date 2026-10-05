@@ -7,8 +7,8 @@
 
 Great for a quick local prototype / HF Spaces before the full Next.js site is
 ready. Reuses the same classical + ML inference logic as ``app.py`` (including
-the low-light exposure gate and output guard — otherwise this entry point would
-still exhibit the "enhancement makes it darker" bug fixed in ROUND 20/21).
+the low-light exposure gate and output guard; otherwise this entry point would
+still exhibit the "enhancement makes it darker" behaviour).
 """
 
 from __future__ import annotations

@@ -105,7 +105,7 @@ def eval_sr(scale, data_root, max_images):
         # HR). We bicubic-resize it back to hr.size here *only* so the PSNR/SSIM
         # comparison is measured at the same pixel grid as the bicubic baseline.
         # This resize is an evaluation-time normalization, NOT a hidden second
-        # upscale — contrast with serve/model_loader.predict_sr, which returns
+        # upscale; contrast with serve/model_loader.predict_sr, which returns
         # the model's true lr*scale output to the caller (no resize).
         pred = TF.to_pil_image(out.squeeze(0).cpu()).resize(hr.size, Image.BICUBIC)
 

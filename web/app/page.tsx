@@ -39,7 +39,7 @@ export default function Home() {
     setError(null);
   };
 
-  // R4: revoke the previous blob URL when a new one is created or on unmount,
+  // revoke the previous blob URL when a new one is created or on unmount,
   // otherwise repeated uploads leak blob memory.
   useEffect(() => {
     return () => {
@@ -168,7 +168,7 @@ export default function Home() {
         </section>
       ) : preview ? (
         <section className="glass p-5 text-center text-slate-400 text-sm">
-          Preview loaded — press <span className="text-white">Enhance</span> to run
+          Preview loaded. Press <span className="text-white">Enhance</span> to run
           the model.
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
@@ -191,8 +191,8 @@ export default function Home() {
       )}
 
       <footer className="mt-12 text-xs text-slate-500">
-        Built as a graduate-admission CV portfolio. Models: SRCNN / SRResNet
-        (super-resolution) and a U-Net (low-light), implemented in PyTorch. See{" "}
+        Built with PyTorch, FastAPI and Next.js. Models: SRCNN / SRResNet
+        (super-resolution) and a U-Net (low-light). See{" "}
         <a href="/method" className="text-sky-300 hover:underline">
           method
         </a>

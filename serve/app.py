@@ -39,7 +39,7 @@ from .model_loader import (
 app = FastAPI(title="CV Restoration API", version="1.0.0")
 
 # ---------------------------------------------------------------------------
-# Resource limits (F13 — see DIAGNOSIS_ROUND6/14). Without these, a single large
+# Resource limits. Without these, a single large
 # upload can produce a multi-GB base64 response (SR x4 grows output linearly)
 # and OOM the host. All limits are overridable via env vars.
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ async def predict(
     task: str = Form("sr"),
     scale: int = Form(2),
 ):
-    # NOTE (ROUND 22): this handler is `async` only so it can `await image.read()`.
+    # This handler is `async` only so it can `await image.read()`.
     # The inference below is CPU-bound and can take seconds; running it directly
     # in the event loop would stall every other request (including /api/health).
     # We therefore hand the heavy work to a worker thread via run_in_threadpool.
@@ -104,7 +104,7 @@ async def predict(
 
 
 def _predict_sync(raw: bytes, task: str, scale: int):
-    """Blocking inference body — runs in a worker thread (see `predict`)."""
+    """Blocking inference body; runs in a worker thread (see `predict`)."""
     if task not in ("sr", "lowlight"):
         return JSONResponse(
             status_code=422, content={"error": "task must be 'sr' or 'lowlight'"}
@@ -112,14 +112,14 @@ def _predict_sync(raw: bytes, task: str, scale: int):
     if scale not in (2, 4):
         scale = 2
 
-    # F13: reject oversized uploads before decoding them.
+    # Reject oversized uploads before decoding them.
     if len(raw) > MAX_UPLOAD_BYTES:
         return JSONResponse(
             status_code=413,
             content={"error": f"upload too large (>{MAX_UPLOAD_BYTES} bytes)"},
         )
 
-    # F13 (ROUND 22): validate the PIXEL COUNT from the header *before* decoding.
+    # Validate the PIXEL COUNT from the header *before* decoding.
     # A byte-size cap alone does not bound memory: a 61 KB PNG can declare
     # 8000x8000 = 64 MP, and `.convert("RGB")` allocates ~385 MB to decode it
     # (measured). Repeating that request is a trivial OOM/DoS. PIL exposes
@@ -169,20 +169,21 @@ def _predict_sync(raw: bytes, task: str, scale: int):
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
         # "before" = the same low-res input upscaled by the classical bicubic
         # baseline, so before/after share one resolution and one reference frame
-        # (the model's true output is lr*scale; see DIAGNOSIS_ROUND10/16/18).
+        # (the model's true output is lr*scale).
         lr = original.resize((max(1, original.width // scale),
                               max(1, original.height // scale)), Image.BICUBIC)
         before = lr.resize((lr.width * scale, lr.height * scale), Image.BICUBIC)
         # Extra field for the 3-panel frontends: the model's ACTUAL low-res input
-        # (nearest-upscaled to `before`'s size for display). This makes the demo
-        # honest about "SR maps a low-res image to a high-res one" and avoids the
-        # misleading "original vs reconstruction" comparison (a full-res upload
-        # can never be beaten by a model that only sees lr=input/scale).
+        # (nearest-upscaled to `before`'s size for display). This keeps the demo
+        # aligned with what SR really does ("map a low-res image to a high-res
+        # one") and avoids the misleading "original vs reconstruction"
+        # comparison (a full-res upload can never be beaten by a model that only
+        # sees lr=input/scale).
         lr_display = lr.resize(before.size, Image.NEAREST)
         # The classical SR baseline returns orig*scale, while the ML output and
         # `before` are ~orig. Force `after` to `before`'s size so the comparison
         # slider stays pixel-aligned. This is a display-only resize, NOT a hidden
-        # upscale — in the ML path the sizes already match (no-op).
+        # upscale; in the ML path the sizes already match (no-op).
         if result.size != before.size:
             result = result.resize(before.size, Image.BICUBIC)
     else:  # lowlight
@@ -201,7 +202,7 @@ def _predict_sync(raw: bytes, task: str, scale: int):
         result = ml_result if ml_result is not None else run_classical(original, task, scale)
         before = original
 
-    # F8: when no trained weight exists for the chosen task/scale, say so
+    # When no trained weight exists for the chosen task/scale, say so
     # explicitly instead of silently falling back to a classical baseline.
     if engine == "classical" and task == "lowlight" and guard_rejected:
         note = ("Classical adaptive-gamma baseline. The self-trained low-light "
@@ -221,7 +222,7 @@ def _predict_sync(raw: bytes, task: str, scale: int):
                 "shadows and DARKEN the picture (measured: median luminance "
                 "0.26 -> 0.06). Upload a genuinely dark photo to exercise it.")
     elif engine == "classical":
-        note = ("Classical baseline in use — no trained weight found for "
+        note = ("Classical baseline in use: no trained weight found for "
                 f"{task} x{scale} (train & export one to switch to ML).")
     elif task == "sr":
         note = ("Super-resolution maps a LOW-RES input to a high-res output. "
@@ -239,7 +240,7 @@ def _predict_sync(raw: bytes, task: str, scale: int):
         "after": _img_to_b64(result),
         "note": note,
     }
-    # 3-panel frontends use `lr` (the model's honest input); 2-panel ones ignore it.
+    # 3-panel frontends use `lr` (the model's actual input); 2-panel ones ignore it.
     if lr_display is not None:
         payload["lr"] = _img_to_b64(lr_display)
     return payload

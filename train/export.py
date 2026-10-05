@@ -18,7 +18,7 @@ from models import build_model
 
 
 def export(checkpoint: str, out: str, task: str, scale: int):
-    # `os.path.dirname("model.pt")` is "" — and `os.makedirs("")` raises
+    # `os.path.dirname("model.pt")` is "" and `os.makedirs("")` raises
     # FileNotFoundError. Guard the no-directory case so `--out model.pt` works.
     out_dir = os.path.dirname(out)
     if out_dir:
