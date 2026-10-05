@@ -8,7 +8,7 @@ PY="${PYTHON:-python3}"   # AutoDL 多数镜像 python 就是 python3；若 pyth
 
 # ===== Step 0 · 覆盖修复代码 + 跑测试 =====
 unzip -o /root/autodl-tmp/pixelforge_fixed_train.zip -d /root/autodl-tmp/pixelforge
-"$PY" -m train.tests.run_tests     # 期望输出 28 passed
+"$PY" -m train.tests.run_tests     # 期望输出全部通过
 
 # ===== Step 1 · 备份旧产物（防覆盖）=====
 mkdir -p /root/autodl-tmp/backup_old

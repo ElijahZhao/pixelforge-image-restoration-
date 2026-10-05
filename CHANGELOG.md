@@ -5,6 +5,26 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.0] - 2026-10-05
+
+补齐工程完备性：测试与 CI 覆盖到前端，加上依赖漏洞扫描、接口限流，并补了 API 与运维文档。核心指标与训练权重未改动。
+
+### Added
+
+- `docs/API.md`：手写接口参考（端点、字段、错误码、环境变量），不再只依赖 FastAPI 自动生成的 `/docs`。
+- `docs/OPERATIONS.md`：部署形态、健康检查、日志、回滚方式与已知缺口清单。
+- `scripts/download_data.sh`：建数据集目录结构 + 打印下载地址 + 校验就位情况（不自动下大文件）。
+- 前端单元测试（`web/lib/api.test.ts`，vitest），覆盖 `predict()` 的端点选择与错误映射。
+- CI 新增 `audit`（pip-audit 扫锁定依赖）与 `frontend`（tsc + vitest + next build）两个 job。
+- 覆盖率门槛：`pytest-cov`，阈值 75%（配置在 `pyproject.toml`），当前实测 79.7%。
+- `/api/predict` 的按 IP 令牌桶限流（进程内内存实现，内置默认值可用环境变量调整），超限返回 429。
+
+### Changed
+
+- README 功能特性按实际能力分述：4× 由自训 SRResNet 驱动，2× 走经典兜底（SRCNN ×2 未训练）。此前笼统写「支持 2×/4×」与实现不符。
+- E2E 脚本 `tests/e2e/e2e.py` 改名 `test_e2e.py`，并加模块级 `pytest.skip`，确保它不会被 CI 当成浏览器用例拉起。
+- 测试计数随本轮更新：28 → 29 passed（新增限流测试），另有 1 skipped（E2E）。
+
 ## [1.0.0] - 2026-10-04
 
 首个正式发布版本：端到端图像复原流水线（超分辨率 + 低光增强）已闭环、可复现、已上线公开 Demo。

@@ -65,7 +65,7 @@
 git clone https://github.com/ElijahZhao/pixelforge-image-restoration-.git
 cd pixelforge-image-restoration-
 
-# 测试套件（pytest 28/28：20 训练单测 + 8 API 冒烟；亦可用 python -m train.tests.run_tests）
+# 测试套件（pytest 29 passed / 1 skipped：20 训练单测 + 9 API 冒烟；亦可用 python -m train.tests.run_tests）
 python -m pytest
 
 # 基线评测（需数据在 data/div2k 与 data/lol）

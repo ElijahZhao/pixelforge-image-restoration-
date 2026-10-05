@@ -11,9 +11,10 @@
 |---|---|---|
 | 训练侧代码（PyTorch 模型 / 数据 / 指标 / 脚本） | 已完成 | 结构可跑，已在 GPU 上真实训练 |
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | 已完成 | 无权重时自动走基线，有权重自动切 ML |
-| 前端（Next.js 交互 Demo） | 已完成 | 本地 `next build` 已通过 |
-| 文档（README / DEPLOY / LICENSE） | 已完成 | 中文 README 已上线 |
-| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 28/28；demo 图已生成 |
+| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 29 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
+| 前端（Next.js 交互 Demo） | 已完成 | `next build` + `tsc` + vitest 已进 CI |
+| 依赖与接口安全 | 已完成 | CI 跑 pip-audit；`/api/predict` 带按 IP 限流 |
+| 文档（README / API / 运维 / LICENSE） | 已完成 | 另含 `docs/API.md`、`docs/OPERATIONS.md` |
 | 真实模型权重（自训 `.pt`） | 已完成 | 修复后重训并导出（见 §2.4） |
 | 真实评测指标（PSNR / SSIM） | 已完成 | 与基线同口径对比，逐 epoch 日志已提交，可复现 |
 | 线上部署（Streamlit Cloud 公开 Demo） | 已上线 | https://hddzzb68eqfnoed8zsmgqp.streamlit.app/ |
@@ -79,9 +80,13 @@
 ### 2.5 工程收尾
 
 - 收紧 CORS：`serve/app.py` 支持 `ALLOWED_ORIGINS` 环境变量。
-- 测试：`train/tests/`（20）+ `tests/test_api_smoke.py`（8），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）与 API 全路径守卫；pytest 28/28。
-- 浏览器 E2E：`tests/e2e/e2e.py`（Playwright + Chromium）跑通「上传 → Enhance → 拖动滑块」全流程。
-- CI 与依赖锁定：`pyproject.toml`、`requirements*.lock.txt`（pip-tools）、`.github/workflows/ci.yml`（GitHub Actions 自动跑测试，多次 `success`）。
+- 接口限流：`/api/predict` 按 IP 令牌桶限流，超限 429（默认 30 突发 / 0.5 补充每秒）。
+- 测试：`train/tests/`（20）+ `tests/test_api_smoke.py`（9），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）与 API 全路径守卫；pytest 29 passed。
+- 覆盖率：`pytest-cov` 门槛 75%，当前 79.7%（配置见 `pyproject.toml`）。
+- 前端测试：`web/lib/api.test.ts`（vitest）覆盖请求构造与错误映射。
+- 浏览器 E2E：`tests/e2e/test_e2e.py`（Playwright + Chromium）跑通「上传 → Enhance → 拖动滑块」全流程；不在 CI 内运行。
+- 依赖漏洞扫描：CI `audit` job 跑 `pip-audit -r requirements.lock.txt`。
+- CI 与依赖锁定：`pyproject.toml`、`requirements*.lock.txt`（pip-tools）、`.github/workflows/ci.yml`（三个 job：pytest+覆盖率 / pip-audit / 前端 tsc+vitest+build）。
 - 仓库整理：删除 `pixelforge-source.zip`；26 份诊断/报告文档归档至 `docs/history/`；删除过时的 `TOOLS_CHECKLIST.md`。
 - 修复 U-Net 尺寸约束：低光 U-Net 要求边长 32 倍数，已在 `serve/model_loader.py`、`deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 加自适应补齐（pad → 推理 → 裁回）。
 

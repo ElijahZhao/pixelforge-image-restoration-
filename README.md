@@ -34,6 +34,8 @@
 - [技术栈](#技术栈)
 - [快速开始](#快速开始)
 - [本地测试](#本地测试)
+- [接口文档](docs/API.md)
+- [运维说明](docs/OPERATIONS.md)
 - [训练真实模型](#训练真实模型)
 - [评测指标](#评测指标)
 - [方法说明](#方法说明)
@@ -53,7 +55,7 @@
 
 | 维度 | 状态 | 说明 |
 |---|:---:|---|
-| 训练 / 推理 / 前端代码闭环 | 已完成 | 代码闭环，pytest 28/28 |
+| 训练 / 推理 / 前端代码闭环 | 已完成 | 代码闭环，pytest 29 passed |
 | 文档 | 已完成 | 含项目说明、方法说明与结果报告 |
 | 真实训练权重（自训 `.pt`） | 已完成 | 修复后重训，权重随仓库分发 |
 | 真实评测指标 PSNR / SSIM | 已完成 | 与 bicubic / 不处理基线同口径对比，可复现 |
@@ -162,11 +164,12 @@ flowchart LR
 
 ## 功能特性
 
-- **单图超分辨率**：支持 2× / 4× 放大，基础版 SRCNN 与进阶版 SRResNet 生成器可选。
-- **低光图像增强**：基于 U-Net 的学习型增强，附带自适应伽马经典基线。
-- **前后对比**：公开 Demo 并列展示；Next.js 前端用可拖动滑块直观对比 before / after。
-- **两种部署入口**：`deploy/streamlit/streamlit_app.py`（一键公开 Demo）+ `serve/app.py`（完整 FastAPI 服务）。
-- **零敏感数据、近乎零成本**：DIV2K / LOL 公开数据集，训练在 AutoDL RTX 3080 Ti 上完成（计费与监控凭证见 `docs/retrain_journey/`）。
+- **单图超分辨率 4×**：自训 SRResNet 生成器（含感知损失），这是本仓库唯一训练并导出权重的超分档位。
+- **超分 2×**：无自训权重。请求 2× 时服务走经典 bicubic + unsharp 兜底，不是学出来的。若要用模型跑 2×，需先按 `train/train.py --task sr --model srcnn --scale 2` 补训。
+- **低光图像增强**：自训低光 U-Net；另带自适应伽马经典兜底。
+- **前后对比**：公开 Demo 并列展示；Next.js 前端用可拖动滑块对比 before / after。
+- **两种部署入口**：`deploy/streamlit/streamlit_app.py`（公开 Demo）+ `serve/app.py`（FastAPI 服务）。
+- **公开数据集**：DIV2K / LOL，训练在 AutoDL RTX 3080 Ti 上完成（计费与监控凭证见 `docs/retrain_journey/`）。
 
 ---
 
@@ -246,13 +249,27 @@ pnpm dev
 
 ### 单元测试（CPU）
 
-无需 GPU，跑训练侧单元测试：
+无需 GPU，跑全部单元测试与 API 冒烟测试：
 
 ```bash
-python -m train.tests.run_tests
+python -m pytest
 ```
 
-预期结果：`28 passed`（20 个训练单元测试 + 8 个 API 冒烟测试；其中训练侧 8 个为正确性测试：VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性等，覆盖形状断言无法发现的缺陷类别）。
+预期结果：`29 passed, 1 skipped`（20 个训练单元测试 + 9 个 API 冒烟测试；skip 的是 E2E 脚本，见下）。其中训练侧 8 个是正确性测试：VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性等，覆盖形状断言发现不了的缺陷类别。
+
+带覆盖率（阈值 75%，配置在 `pyproject.toml`）：
+
+```bash
+python -m pytest --cov --cov-report=term-missing
+```
+
+### 前端单元测试
+
+```bash
+cd web && pnpm install && pnpm test
+```
+
+覆盖 `web/lib/api.ts` 的请求构造与错误映射。
 
 ### E2E 浏览器测试
 
@@ -260,10 +277,12 @@ python -m train.tests.run_tests
 
 ```bash
 pip install playwright && playwright install chromium
-python tests/e2e/e2e.py
+python tests/e2e/test_e2e.py
 ```
 
 会验证：上传图片 → 选任务 → 点 Enhance → 返回 before/after → 拖动对比滑块。截图存到 `tests/e2e/screenshots/`。
+
+这个脚本会拉起真实浏览器和两个服务，所以**不放进 CI**。它在 pytest 下被显式跳过（模块级 `pytest.skip`）；要经 pytest 运行，设 `PIXELFORGE_RUN_E2E=1`。
 
 ### 重新生成 demo 图（自训模型）
 
@@ -278,7 +297,8 @@ python scripts/make_demo.py
 > 在 AutoDL RTX 3080 Ti 上运行。本仓库的权重已在该实例上训完并随仓库分发。
 
 ```bash
-# 先把 DIV2K + LOL 下载到 data/（见 data/README.md）
+# 先准备数据：建目录 + 打印下载地址（不会自动下大文件）
+bash scripts/download_data.sh
 pip install -r requirements.txt
 
 # 超分辨率（进阶生成器，4×，启用感知损失）
