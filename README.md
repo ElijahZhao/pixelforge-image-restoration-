@@ -352,7 +352,7 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 
 关于这个项目是如何做出来的、能拿出什么证据、以及边界在哪里，见 [`PROJECT_NOTES.md`](PROJECT_NOTES.md)。要点：
 
-- 项目在 AI 辅助下完成，但训练环境搭建、实际重训执行、结果验证与迭代决策均由作者主导，每一步都有第三方平台凭证（`docs/retrain_journey/`）支撑；
+- 项目由作者主导开发，过程中使用 AI 工具辅助；训练环境搭建、重训执行、结果验证与迭代决策均由作者负责，每一步都有第三方平台凭证（`docs/retrain_journey/`）支撑；
 - 未声称"SOTA"、未声称"低光优于其他方法"、未声称"代码 100% 手写"；只陈述有证据支持的部分；
 - 项目最有价值的部分不是"一次就跑通"，而是发现了一个真实的 ML 缺陷、修复它、并用重训验证修复有效。
 
