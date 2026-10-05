@@ -3,4 +3,5 @@
 # Compile to requirements-dev.lock.txt with:
 #     pip-compile requirements-dev.txt -o requirements-dev.lock.txt
 pytest>=7
+pytest-cov>=5   # coverage gate, configured in pyproject.toml
 requests>=2.25   # used by tests/e2e and any health-check scripting

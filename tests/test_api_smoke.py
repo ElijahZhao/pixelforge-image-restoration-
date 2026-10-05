@@ -19,10 +19,28 @@ import io
 
 from fastapi.testclient import TestClient
 from PIL import Image
+import pytest
 
+import serve.app as serve_app
 from serve.app import app
 
 client = TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def _relax_rate_limit(monkeypatch):
+    """Keep the per-IP limiter out of the way for the functional tests.
+
+    The smoke tests fire several requests from the same test client; without
+    this they could trip the bucket as more cases are added. The limiter has
+    its own dedicated test (`test_predict_rate_limited`) that patches the
+    capacity down instead, so this fixture does not hide a regression.
+    """
+    monkeypatch.setattr(serve_app, "RATE_LIMIT_CAPACITY", 10_000)
+    monkeypatch.setattr(serve_app, "RATE_LIMIT_REFILL_PER_SEC", 10_000.0)
+    serve_app._rate_buckets.clear()
+    yield
+    serve_app._rate_buckets.clear()
 
 
 def _is_png_b64(s: str) -> bool:
@@ -138,3 +156,20 @@ def test_predict_rejects_oversized_dimensions(monkeypatch):
         data={"task": "sr"},
     )
     assert r.status_code == 413
+
+
+def test_predict_rate_limited(monkeypatch):
+    # The `_relax_rate_limit` fixture normally raises the ceiling to keep the
+    # functional tests independent. Here we do the opposite: shrink the bucket
+    # to a single token and no refill, so the second request must be refused.
+    monkeypatch.setattr(serve_app, "RATE_LIMIT_CAPACITY", 1)
+    monkeypatch.setattr(serve_app, "RATE_LIMIT_REFILL_PER_SEC", 0.0)
+    serve_app._rate_buckets.clear()
+
+    payload = {"files": {"image": ("a.png", _png((16, 16)), "image/png")},
+               "data": {"task": "sr"}}
+    first = client.post("/api/predict", **payload)
+    assert first.status_code != 429  # first request spends the only token
+    second = client.post("/api/predict", **payload)
+    assert second.status_code == 429
+    assert second.headers.get("Retry-After") == "2"

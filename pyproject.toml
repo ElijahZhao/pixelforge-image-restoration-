@@ -13,3 +13,31 @@
 pythonpath = ["train", "."]
 testpaths = ["train/tests", "tests"]
 addopts = "-q"
+
+[tool.coverage.run]
+# Measure the code that actually ships and runs in production, not the
+# train-time entry points. `train/train.py`, `train/export.py` and the Gradio
+# demo are CLI/GUI entry points: they parse args and wire things together, and
+# are exercised by hand on a GPU box, not by unit tests. Excluding them keeps
+# the coverage number honest about the parts we do claim to test.
+source = ["serve", "train"]
+omit = [
+    "train/train.py",
+    "train/export.py",
+    "serve/gradio_demo.py",
+    "train/tests/*",
+    "tests/*",
+]
+
+[tool.coverage.report]
+# Threshold is set a couple of points below the current figure so a small,
+# reasonable refactor does not turn CI red, but a real drop in tested behaviour
+# does. Raise it as coverage improves; never lower it to make a red build green.
+fail_under = 75
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
+

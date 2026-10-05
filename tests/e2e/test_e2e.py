@@ -10,11 +10,20 @@ What it does
 4. Saves screenshots under tests/e2e/screenshots/ as visual evidence.
 
 Run (from repo root):
-    python tests/e2e/e2e.py
+    python tests/e2e/test_e2e.py
 
 Prerequisites:
     pip install playwright && playwright install chromium
     pnpm install   (in web/)
+
+Note
+----
+This file lives under `pytest`'s testpaths, but it is a *script*, not a pytest
+module: it boots two live servers and a real browser, so it must not run inside
+CI. It defines no ``test_*`` functions, so pytest collects nothing from it. The
+``collect_ignore_glob``-style guard below makes that explicit — if someone adds
+a ``test_*`` function here later, the module is skipped rather than silently
+trying to launch browsers on a CI runner.
 """
 
 from __future__ import annotations
@@ -25,6 +34,14 @@ import signal
 import subprocess
 import sys
 import time
+
+import pytest
+
+# Belt-and-braces: skip the whole module under pytest unless explicitly opted in
+# via PIXELFORGE_RUN_E2E=1. Direct `python tests/e2e/test_e2e.py` is unaffected.
+if os.environ.get("PIXELFORGE_RUN_E2E") != "1":
+    pytest.skip("E2E browser test: run directly, or set PIXELFORGE_RUN_E2E=1",
+                allow_module_level=True)
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent.parent
 WEB = ROOT / "web"

@@ -27,6 +27,64 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.lock.txt -r requirements-dev.lock.txt
+          pip install pytest-cov
 
-      - name: Run test suite
-        run: python -m pytest -q
+      - name: Run test suite (with coverage gate)
+        run: python -m pytest --cov --cov-report=term-missing
+
+  audit:
+    name: dependency audit (pip-audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: python -m pip install pip-audit
+
+      # Audits the lock file, so the checked set matches what actually ships.
+      # If a CVE has no fix yet, add it to .pip-audit-ignore with a reason
+      # instead of dropping the check.
+      - name: Audit locked runtime dependencies
+        run: pip-audit -r requirements.lock.txt
+
+  frontend:
+    name: frontend build (tsc + next build)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm exec tsc --noEmit
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build

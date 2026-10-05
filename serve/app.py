@@ -18,8 +18,9 @@ from __future__ import annotations
 import base64
 import io
 import os
+import time
 
-from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -36,7 +37,7 @@ from .model_loader import (
     LOWLIGHT_MIN_GAIN,
 )
 
-app = FastAPI(title="CV Restoration API", version="1.0.0")
+app = FastAPI(title="CV Restoration API", version="1.1.0")
 
 # ---------------------------------------------------------------------------
 # Resource limits. Without these, a single large
@@ -67,6 +68,45 @@ app.add_middleware(
 )
 
 
+# ---------------------------------------------------------------------------
+# Rate limiting. Inference is CPU-bound and can run for seconds, so a client
+# that hammers /api/predict can starve every other request. There is no auth
+# on this service, so a per-IP token bucket is the cheapest way to bound that.
+#
+# Deliberately in-process and in-memory: this is a single-instance demo, and
+# pulling in a Redis-backed limiter would add a dependency and an ops concern
+# for no real gain here. If the service is ever scaled to multiple instances,
+# this limiter must move to a shared store or it will over-admit by N.
+#
+# Defaults: 30 requests burst, refilled at 0.5/s (~30/min). Override via env.
+# ---------------------------------------------------------------------------
+RATE_LIMIT_CAPACITY = int(os.getenv("RATE_LIMIT_CAPACITY", "30"))
+RATE_LIMIT_REFILL_PER_SEC = float(os.getenv("RATE_LIMIT_REFILL_PER_SEC", "0.5"))
+
+_rate_buckets: dict[str, tuple[float, float]] = {}  # ip -> (tokens, last_ts)
+
+
+def _client_ip(request) -> str:
+    # Trust X-Forwarded-For's first hop only when present (we may run behind a
+    # proxy); otherwise fall back to the socket peer.
+    fwd = request.headers.get("x-forwarded-for")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _rate_limited(ip: str) -> bool:
+    """Return True if this IP is over budget. Cheap token-bucket refill."""
+    now = time.monotonic()
+    tokens, last = _rate_buckets.get(ip, (float(RATE_LIMIT_CAPACITY), now))
+    tokens = min(float(RATE_LIMIT_CAPACITY), tokens + (now - last) * RATE_LIMIT_REFILL_PER_SEC)
+    if tokens < 1.0:
+        _rate_buckets[ip] = (tokens, now)
+        return True
+    _rate_buckets[ip] = (tokens - 1.0, now)
+    return False
+
+
 def _img_to_b64(img: Image.Image) -> str:
     buf = io.BytesIO()
     img.save(buf, format="PNG")
@@ -87,10 +127,20 @@ def health():
 
 @app.post("/api/predict")
 async def predict(
+    request: Request,
     image: UploadFile = File(...),
     task: str = Form("sr"),
     scale: int = Form(2),
 ):
+    # Throttle before doing any work: this endpoint is unauthenticated and the
+    # body read below is already cheap to abuse.
+    if _rate_limited(_client_ip(request)):
+        return JSONResponse(
+            status_code=429,
+            content={"error": "too many requests; slow down"},
+            headers={"Retry-After": "2"},
+        )
+
     # This handler is `async` only so it can `await image.read()`.
     # The inference below is CPU-bound and can take seconds; running it directly
     # in the event loop would stall every other request (including /api/health).

@@ -5,6 +5,12 @@ __pycache__/
 .venv/
 venv/
 
+# Coverage artifacts
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
 # Data & model weights
 data/div2k/
 data/lol/
