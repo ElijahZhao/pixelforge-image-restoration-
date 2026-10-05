@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PixelForge — AI Image Restoration",
+  title: "PixelForge | AI Image Restoration",
   description:
-    "Super-resolution and low-light enhancement powered by self-trained PyTorch models. A computer-vision portfolio project.",
+    "Super-resolution and low-light enhancement powered by self-trained PyTorch models.",
 };
 
 export default function RootLayout({

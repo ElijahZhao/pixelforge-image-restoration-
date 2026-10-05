@@ -13,7 +13,7 @@
   <rect width="1200" height="380" fill="url(#bg)"/>
   <text x="80" y="140" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="80" font-weight="700" fill="#f8fafc">PixelForge</text>
   <text x="82" y="195" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" fill="#cbd5e1">AI 图像复原 · 超分辨率 &amp; 低光增强</text>
-  <text x="82" y="238" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#94a3b8">计算机视觉作品集 · 自训 PyTorch 模型 · 面向研究生申请</text>
+  <text x="82" y="238" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="20" fill="#94a3b8">端到端图像复原 · 自训 PyTorch 模型 · 可复现流水线</text>
   <g transform="translate(800,120)">
     <rect width="150" height="120" rx="16" fill="#1e293b" stroke="#475569" stroke-width="2"/>
     <text x="75" y="68" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="20" fill="#64748b">Before</text>

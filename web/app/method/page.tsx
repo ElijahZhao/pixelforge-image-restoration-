@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Method — PixelForge",
+  title: "Method | PixelForge",
 };
 
 export default function MethodPage() {
@@ -14,7 +14,7 @@ export default function MethodPage() {
       <p className="mt-3 text-slate-300">
         PixelForge is an end-to-end computer-vision project: I implemented and
         trained the models myself in PyTorch, then deployed them behind a web
-        interface. No black-box APIs — the full pipeline
+        interface. No black-box APIs: the full pipeline
         (data → training → evaluation → serving) is reproducible from this repo.
       </p>
 
@@ -97,14 +97,14 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
             <tr>
               <td className="p-2">No-op (baseline)</td>
               <td className="p-2">LowLight</td>
-              <td className="p-2">—</td>
+              <td className="p-2">N/A</td>
               <td className="p-2">7.77</td>
               <td className="p-2">0.192</td>
             </tr>
             <tr>
               <td className="p-2">LowLight-UNet (ours)</td>
               <td className="p-2">LowLight</td>
-              <td className="p-2">—</td>
+              <td className="p-2">N/A</td>
               <td className="p-2">18.18</td>
               <td className="p-2">0.739</td>
             </tr>
@@ -114,21 +114,21 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
       <p className="mt-2 text-xs text-slate-500">
         * Set5 ×2 Bicubic reference value (Dong et al.). The ×4 / low-light rows
         are measured in this repo (DIV2K / LOL, full-image protocol); SRCNN ×2
-        remains TBD (no trained weight — it uses the classical fallback).
+        remains TBD (no trained weight; it uses the classical fallback).
       </p>
 
       <h2 className="text-xl font-semibold mt-8">Datasets</h2>
       <ul className="mt-3 space-y-2 text-slate-300 list-disc pl-5 text-sm">
         <li>
-          <b>DIV2K</b> — 800 high-quality training images for SR (LR synthesised
+          <b>DIV2K</b>: 800 high-quality training images for SR (LR synthesised
           by bicubic downscaling).
         </li>
         <li>
-          <b>LOL-v1</b> — 500 paired low/high-light images for low-light
+          <b>LOL-v1</b>: 500 paired low/high-light images for low-light
           enhancement.
         </li>
         <li>
-          <b>Set5 / Set14</b> — standard SR test sets for evaluation.
+          <b>Set5 / Set14</b>: standard SR test sets for evaluation.
         </li>
       </ul>
 
@@ -152,11 +152,6 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \\
         TorchScript models (Hugging Face Spaces / small VPS). The service
         automatically falls back to classical baselines when no trained weights
         are present, so the demo always runs.
-      </p>
-
-      <p className="mt-8 text-slate-400 text-sm">
-        This page doubles as a plain-English summary you can adapt for a
-        Statement of Purpose or a resume project bullet.
       </p>
     </main>
   );
