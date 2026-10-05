@@ -2,7 +2,7 @@
 
 **主题：对外展示与叙述层的诚实度（项目展示的东西，有没有诚实地反映模型真实能力？）**
 **方法：实读 `web/components/CompareSlider.tsx`、`web/app/page.tsx`、`web/app/method/page.tsx`、`serve/gradio_demo.py` + 加载逻辑实测**
-**硬约束：只读不改，零代码改动**
+**范围：仅分析，不改动代码**
 
 ---
 
@@ -103,20 +103,15 @@
 
 ---
 
-## 8. 硬约束遵守
+## 8. 结论依据
 
-- 本轮**零代码改动**。`git diff train/ serve/ web/` 无输出。
-- 仅新增本文件 `DIAGNOSIS_ROUND16.md`。
 - 关键指控均经实测：`git ls-files serve/models/`、`get_sr_model(2)=False / (4)=True`、`predict_sr` 的 `resize(...*scale)` 逻辑（行 63）、`gradio_demo.py` 默认 `value="2"`。
-- `assets/sample_dark.png` 的 `M` 为早期跑 demo 副产物，非本轮改动。
+- `assets/sample_dark.png` 的 `M` 为早期跑 demo 副产物，与本轮无关。
 
 ---
 
-## 9. 下一步
+## 9. 遗留盲区
 
-三条路你定：
-1. **继续扫盲区** — 还剩 `web/app/method/page.tsx` 的部署段（HF Spaces）是否真 stale、`serve/app.py` 完整异常处理边界（第 14 轮提过但未逐行）、`README.md` 整体叙述与实况的对账。
-2. **做"修复方案"文档** — 汇总已确认根因成可执行修复清单（含"感知损失补归一化一行""叙述层与部署对齐""Gradio/Streamlit 默认 scale 修正"等高性价比项），纯方案、不动代码。
-3. **收网** — 把 16 轮合并成《PixelForge 工程复盘》。仍然只写文档，不动代码。
-
-你说方向。
+- `web/app/method/page.tsx` 的部署段（HF Spaces）是否 stale；
+- `serve/app.py` 完整异常处理边界（第 14 轮提过但未逐行）；
+- `README.md` 整体叙述与实况的对账。

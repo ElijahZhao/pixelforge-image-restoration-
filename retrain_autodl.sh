@@ -8,7 +8,7 @@ PY="${PYTHON:-python3}"   # AutoDL 多数镜像 python 就是 python3；若 pyth
 
 # ===== Step 0 · 覆盖修复代码 + 跑测试 =====
 unzip -o /root/autodl-tmp/pixelforge_fixed_train.zip -d /root/autodl-tmp/pixelforge
-"$PY" -m train.tests.run_tests     # 期望输出 20/20 passed
+"$PY" -m train.tests.run_tests     # 期望输出 28 passed
 
 # ===== Step 1 · 备份旧产物（防覆盖）=====
 mkdir -p /root/autodl-tmp/backup_old
@@ -38,7 +38,7 @@ echo "[低光重训完成] best checkpoint: models/lowlight_srcnn_scale2_best.pt
   --out serve/models/lowlight.pt --task lowlight
 
 echo "===== DONE ====="
-echo "请把以下文件发回给我，闭环 F6（可复现指标）："
+echo "请把以下文件发回给我，以便复算指标："
 echo "  results/train_log_sr_generator.csv"
 echo "  results/train_log_lowlight_srcnn.csv"
 echo "  train_sr_percep_fixed.log  train_lowlight_fixed.log"

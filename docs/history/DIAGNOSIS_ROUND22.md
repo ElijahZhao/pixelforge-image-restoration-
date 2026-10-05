@@ -113,7 +113,7 @@ two seeded runs -> identical batches: True
 different seed  -> different batches: True
 ```
 
-一个诚实的补充：**单靠 `worker_init_fn` 不够**。我单独测过——若父进程 numpy 未播种，即使加了 `worker_init_fn`，同种子两次仍不一致（因为基种子源自父进程 RNG 状态）。**父进程播种 + worker 内再播种**两者齐备才真正闭合。这也是为什么修复必须同时改 `train.py` 和 `datasets.py`。
+补充一点：**单靠 `worker_init_fn` 不够**。实测表明——若父进程 numpy 未播种，即使加了 `worker_init_fn`，同种子两次仍不一致（因为基种子源自父进程 RNG 状态）。**父进程播种 + worker 内再播种**两者齐备才真正闭合。这也是为什么修复必须同时改 `train.py` 和 `datasets.py`。
 
 ---
 

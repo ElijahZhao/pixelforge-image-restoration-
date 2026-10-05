@@ -1,6 +1,6 @@
 # PixelForge 深度审计 · 第 17 轮：文档自洽性（叙述层交叉对账）
 
-> 审计原则：只读探查，零代码改动。本轮聚焦一个"懂行的人会交叉对照"的维度——**项目自己的文档之间、以及文档与真实代码之间，讲的是否是同一套故事**。实读了 `README.md`、`DEPLOY.md`、`TOOLS_CHECKLIST.md`、`results/README.md`、`PROGRESS.md`，以及两个真实部署入口 `deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 与它们各自的部署文档。
+> 本轮聚焦文档之间、以及文档与真实代码之间的一致性——**讲的是否是同一套故事**。实读了 `README.md`、`DEPLOY.md`、`TOOLS_CHECKLIST.md`、`results/README.md`、`PROGRESS.md`，以及两个真实部署入口 `deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 与它们各自的部署文档。
 
 ## 一、经得起查的部分（先给信用，避免滥诉）
 
@@ -72,20 +72,16 @@
 >
 > 能力（health 端点诚实、图片齐全、快速开始可跑、默认路径真用 ML）都在场；**问题是叙述的"一致性与可证伪性"缺失**——读者无法从文档里得到一套自洽、可独立验证的真相。这和第 13 轮"训练—评估—验证闭环不自洽"是同一病灶在文档层的投影。
 
-## 四、诚实校准（本轮的可信度来源）
+## 四、校准与修正
 
 - **不滥诉**：先逐条核实"经得起查"的部分（health 端点、图片、依赖、默认路径真用 ML、SRCNN TBD 诚实），再指出矛盾。其中 health 端点暴露 `sr_scale2: classical` 比 UI 徽章更诚实，这点必须点明以免误伤。
 - **修正过度指控**：第 5/16 轮称 `method/page.tsx` "完全 stale"——实则其 TBD 占位本身诚实；本轮再次确认 `results/README.md` 的 SRCNN TBD 也是诚实的。矛盾点在"已验证胜出""刻意取舍"这类**强结论**，不在占位本身。
 
-## 五、硬约束遵守情况
+## 五、结论依据
 
-- **零代码改动**：`git diff train/ serve/ web/` 无输出；本轮仅新增 `DIAGNOSIS_ROUND17.md`。
 - 所有指控均基于实读（`README.md` 全篇、`DEPLOY.md`、`TOOLS_CHECKLIST.md`、`results/README.md`、`deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py`）与命令核查（`/api/health` 源码、`assets/` 文件存在性、`.github/` 缺失、`results/` 内容）。
 
-## 六、下一步（你定方向）
+## 六、遗留盲区
 
-1. **继续扫盲区** —— 剩 `PROGRESS.md` 与已发布 Demo 的实际可用性（公开链接是否仍可访问、冷启动行为）、`scripts/make_demo.py` 生成的 demo 图是否暗示了"模型胜出"叙事。
-2. **做"修复方案"文档** —— 把 17 轮确认的根因汇总成可执行清单（含叙述层对齐：统一部署文档、把强结论改为"待复现/已知弱于基线"、补齐 scale2 或显式标注回退），纯方案、不动代码。
-3. **收网** —— 把 17 轮合并成《PixelForge 工程复盘》，主线：**"诚实查清了什么、哪些是我自查推翻的、为什么'能力在场但闭环（训练/评估/叙述）不自洽'才是这个项目的真问题"**。仍然只写文档，不动代码。
-
-> 说方向，我不擅自动代码。
+- `PROGRESS.md` 与已发布 Demo 的实际可用性（公开链接是否仍可访问、冷启动行为）；
+- `scripts/make_demo.py` 生成的 demo 图是否暗示了"模型胜出"叙事。

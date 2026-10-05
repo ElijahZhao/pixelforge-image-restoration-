@@ -1,8 +1,8 @@
 # PixelForge 深度审计 · 第 15 轮
 
-**主题：ML 核心架构的论文保真度（经得起懂行人对照经典论文盯着看吗？）**
+**主题：ML 核心架构的论文保真度（与经典论文逐条对照）**
 **方法：实读源码 → 逐条对照 Ledig 2017 / Johnson 2016 / Dong 2014 → 用代码枚举验证，避免凭记忆下结论**
-**硬约束：只读不改，零代码改动**
+**范围：仅分析，不改动代码**
 
 ---
 
@@ -99,20 +99,15 @@
 
 ---
 
-## 7. 硬约束遵守
+## 7. 结论依据
 
-- 本轮**零代码改动**。`git diff train/ serve/ web/` 无输出。
-- 仅新增本文件 `DIAGNOSIS_ROUND15.md`。
 - 所有结论基于实读源码（lines 25–149 of `models.py`、46–58 of `train.py`）与 `vgg16.features` 枚举验证（确定性，可复现）。
-- `assets/sample_dark.png` 的 `M` 为早期跑 demo 脚本副产物，非本轮改动。
+- `assets/sample_dark.png` 的 `M` 为早期跑 demo 脚本副产物，与本轮无关。
 
 ---
 
-## 8. 下一步
+## 8. 遗留盲区
 
-三条路你定：
-1. **继续扫盲区** — 还剩 `web/app/method/page.tsx` 的 stale 文案（TBD / HF Spaces，第 5 轮提过未深挖）、`web/components/CompareSlider.tsx` 比例错位（第 4 轮）、`gradio_demo.py` 完整边界。
-2. **做"修复方案"文档** — 把已确认根因汇总成可执行的修复清单（含"感知损失只补归一化一行"这种高性价比项），纯方案、不动代码。
-3. **收网** — 把 15 轮合并成《PixelForge 工程复盘》，主线建议：**"诚实查清了什么、哪些是我自查推翻的、为什么'能力在场但闭环不自洽 + 叙述略松'才是这个项目的真问题"**。仍然只写文档，不动代码。
-
-你说方向。
+- `web/app/method/page.tsx` 的 stale 文案（TBD / HF Spaces，第 5 轮提过未深挖）；
+- `web/components/CompareSlider.tsx` 比例错位（第 4 轮）；
+- `gradio_demo.py` 完整边界。
