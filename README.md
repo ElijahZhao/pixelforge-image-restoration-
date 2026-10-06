@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <b>PixelForge</b> — an end-to-end image restoration pipeline<br/>
+  <b>PixelForge</b>: an end-to-end image restoration pipeline<br/>
   Self-trained PyTorch models for single-image super-resolution and low-light enhancement,
   built end to end from data to training, evaluation and deployment.
 </p>
@@ -43,7 +43,7 @@ Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 - **Full training loop**: data loading, Adam + cosine annealing + AMP mixed precision + optional VGG perceptual loss, PSNR/SSIM evaluation, TorchScript export.
 - **Quantitative comparison**: classical baselines vs. self-trained models on the same validation set; scripts and per-epoch logs are committed and recomputable.
 - **Graceful fallback**: classical baselines serve requests when no weight is present; drop a weight in and the service switches to the ML engine, visible via `GET /api/health`.
-- **Production hygiene**: CI (tests + coverage gate + dependency audit + frontend build), non-root Docker image, per-IP rate limiting, API docs.
+- Production hygiene is not an afterthought: CI (tests + coverage gate + dependency audit + frontend build), a non-root Docker image, per-IP rate limiting, and API docs.
 
 ## 🖼️ Showcase
 
@@ -53,7 +53,7 @@ Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 
 ![SR 4x comparison](assets/compare_sr_4x.png)
 
-> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB) but looks softer / greyer (measured: output gradient mean 1.39 vs. 1.45 for bicubic). This is typical of perceptual-loss training — it optimises feature-space similarity, not pixel sharpness. **Higher metric does not mean sharper**; the two are stated separately, no glossing over.
+> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB) but looks softer / greyer (measured: output gradient mean 1.39 vs. 1.45 for bicubic). This is typical of perceptual-loss training: it optimises feature-space similarity, not pixel sharpness. The metric and the visual result point in different directions.
 
 **Low-light enhancement: dark input → adaptive-gamma baseline vs. self-trained U-Net**
 
@@ -80,7 +80,7 @@ low-light gain is relative to a no-op baseline, not to other published methods.
 
 ## 🧩 Features
 
-- **SR ×4**: self-trained SRResNet generator (with perceptual loss) — the only super-resolution slot with a trained, exported weight.
+- **SR ×4**: self-trained SRResNet generator with perceptual loss. The only super-resolution slot that has a trained, exported weight.
 - **SR ×2**: no trained weight; requests fall back to a classical bicubic + unsharp path. Train one with `train/train.py --task sr --model srcnn --scale 2` to use a model at ×2.
 - **Low-light enhancement**: self-trained low-light U-Net, plus an adaptive-gamma classical fallback and an exposure gate for inputs that are dark but not underexposed photos.
 - **Before/after**: side-by-side in the Streamlit demo; draggable slider in the Next.js frontend.
@@ -198,6 +198,8 @@ Drop the exported `.pt` into `serve/models/` and the service picks it up on rest
   - `U-Net`: encoder-decoder with skip connections and residual learning, mapping low-light to normal-light (trained on LOL).
   - Classical baseline uses adaptive gamma: dark images brighten, already-lit images stay put.
 - **Evaluation**: PSNR and SSIM on the Y channel (or RGB), with a Gaussian-window SSIM to reduce boundary bias.
+
+A longer write-up of the architectures, training details and related work lives at `web/app/method/page.tsx` and renders at `/method` on the site.
 
 ## 📁 Structure
 
