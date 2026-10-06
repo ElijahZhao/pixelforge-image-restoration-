@@ -32,10 +32,17 @@ deploy/streamlit/
 ## 注意事项
 
 - 无访问 12 小时后 app 休眠，访客打开会自动唤醒（冷启动 30–60 秒），属正常。
-- 免费档内存约 2.7 GB，本 demo 推理很轻，够用。
-- 若 `torch` 安装过慢导致构建超时，可在 `requirements.txt` 里把 `torch` 换成 CPU 版：
-  `--extra-index-url https://download.pytorch.org/whl/cpu` + `torch==2.2.2+cpu`。
+- 免费档内存约 2.7 GB。**这里没有任何 GPU**，`torch.cuda.is_available()` 恒为 `False`，
+  推理走 CPU 路径——权重的训练是在 GPU 上完成的，但部署不需要 GPU，两者互不影响。
+- `requirements.txt` **已固定在 CPU-only torch**（`--extra-index-url .../whl/cpu` +
+  `torch>=2.0,<2.5`）。不要改回默认的 `pip install torch`：那会拉入 19 个
+  `nvidia-*` / `cuda-*` / `triton` 包，在免费档上纯属内存负担且永不执行。
+  完整诊断见 [`../../docs/DEPLOY_DIAGNOSIS.md`](../../docs/DEPLOY_DIAGNOSIS.md)。
 
 ## 已修复的坑（本部署已含）
 
 低光 U-Net 要求输入边长是 **32 的倍数**，否则解码器拼接崩溃。`streamlit_app.py` 的 `predict_lowlight` 已做自适应补齐（pad → 推理 → 裁回），任意尺寸安全。
+
+依赖侧：原 `torch>=2.0` 无上限，线上漂到了 `torch 2.14.1`（其 `torch.jit.load` 已弃用），
+且默认装的是 CUDA 构建。现已改为 CPU-only + 版本上限。诊断与日志证据见
+[`../../docs/DEPLOY_DIAGNOSIS.md`](../../docs/DEPLOY_DIAGNOSIS.md)。
