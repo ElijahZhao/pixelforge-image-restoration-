@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <b>PixelForge</b> —— 端到端图像复原流水线<br/>
+  <b>PixelForge</b>：端到端图像复原流水线<br/>
   用自训 PyTorch 模型做单图超分辨率与低光增强，从数据、训练、评测到部署全链路自建。
 </p>
 
@@ -41,7 +41,7 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 - **完整训练闭环**：数据加载、Adam + 余弦退火 + AMP 混合精度 + 可选 VGG 感知损失、PSNR/SSIM 评测、TorchScript 导出。
 - **量化对比**：用标准指标在同一批验证图上对比「经典基线 vs 自训模型」，脚本与逐 epoch 日志均可复算。
 - **优雅降级**：没有权重时自动走经典方法兜底，放上权重即切换 ML 引擎，`GET /api/health` 可查当前引擎。
-- **工程完备**：CI 三作业（测试 + 覆盖率 + 依赖审计 + 前端构建）、Docker 非 root 镜像、IP 限流、API 文档。
+- 工程细节也没落下：CI 三作业（测试 + 覆盖率 + 依赖审计 + 前端构建）、Docker 非 root 镜像、IP 限流、API 文档。
 
 ## 🖼️ 效果演示
 
@@ -51,7 +51,7 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 
 ![SR 4x comparison](assets/compare_sr_4x.png)
 
-> 自训 SRResNet 的 PSNR/SSIM 高于 bicubic（+0.77 dB），但肉眼观感反而更柔、更灰（客观测量：输出梯度均值 1.39 vs bicubic 1.45）。这是感知损失训练的常见现象——它优化特征空间相似度，而非像素锐度。**指标更高不等于更锐**，两者分开说明，不作粉饰。
+> 自训 SRResNet 的 PSNR/SSIM 高于 bicubic（+0.77 dB），但肉眼观感反而更柔、更灰（客观测量：输出梯度均值 1.39 vs bicubic 1.45）。这是感知损失训练的常见现象：它优化特征空间相似度，而非像素锐度。指标与观感在这里并不一致。
 
 **低光增强：暗光输入 → 自适应伽马基线 vs 自训 U-Net**
 
@@ -117,6 +117,15 @@ pnpm dev
 打开 http://localhost:3000，上传图片、选任务、点 Enhance，拖动滑块对比。
 想跳过本地环境？直接开 <https://pixelforge-image-restoration.streamlit.app/>（免费档会休眠，首访需唤醒）。
 
+**Docker**（仅后端）
+
+```bash
+docker build -t pixelforge-serve .
+docker run -p 8000:8000 pixelforge-serve
+```
+
+镜像内含自训权重，启动即 ML 模式。前端是另一个构建目标，不在这个镜像里。
+
 ## 🧪 本地测试
 
 ```bash
@@ -126,8 +135,9 @@ python -m pytest
 # 带覆盖率（阈值 75%，配置见 pyproject.toml）
 python -m pytest --cov --cov-report=term-missing
 
-# 前端单元测试
+# 前端单元测试 + 类型检查
 cd web && pnpm install && pnpm test
+cd web && pnpm exec tsc --noEmit
 ```
 
 预期 `32 passed, 1 skipped`（20 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
@@ -138,6 +148,8 @@ E2E 浏览器测试需真实浏览器与两个服务，默认在 pytest 下跳�
 pip install playwright && playwright install chromium
 python tests/e2e/test_e2e.py          # 或设 PIXELFORGE_RUN_E2E=1 经 pytest 运行
 ```
+
+CI（`.github/workflows/ci.yml`）跑三个作业：带覆盖率门槛的 pytest、针对 lock 文件的 `pip-audit`、以及前端的类型检查 + 测试 + 构建。
 
 ## 🧰 训练真实模型
 
@@ -176,7 +188,7 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
   - 经典基线用自适应伽马校正：暗图自动提亮、正常图基本不变。
 - **评测**：在 Y 通道（或 RGB）上计算 PSNR 与 SSIM，SSIM 用高斯窗实现以减少边界偏差。
 
-英文方法说明（含模型架构、训练细节、相关工作）见 `web/app/method/page.tsx`。
+英文方法说明（含模型架构、训练细节、相关工作）见 `web/app/method/page.tsx`，站点上渲染于 `/method`。
 
 ## 📁 项目结构
 
