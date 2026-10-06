@@ -31,7 +31,7 @@ MUTED = (150, 150, 160)
 ACCENT = (140, 220, 160)
 
 
-def _text(d: ImageDraw.ImageDraw, xy, s, fill=FG, size=16, anchor=None):
+def _text(d: ImageDraw.ImageDraw, xy, s, fill=FG, anchor=None):
     d.text(xy, s, fill=fill, anchor=anchor)
 
 
@@ -44,15 +44,15 @@ def compose(rows, out_name: str, note: str) -> None:
     d = ImageDraw.Draw(fig)
     for i, (title, path, cap, cap_color) in enumerate(rows):
         x0 = PAD + i * (W_PANEL + PAD)
-        _text(d, (x0 + W_PANEL // 2, 8), title, fill=FG, size=18,
+        _text(d, (x0 + W_PANEL // 2, 8), title, fill=FG,
               anchor="ma")
         img = Image.open(os.path.join(ASSETS, path)).convert("RGB")
         img = img.resize((W_PANEL, H_PANEL), Image.LANCZOS)
         fig.paste(img, (x0, TITLE_H))
         _text(d, (x0 + W_PANEL // 2, TITLE_H + H_PANEL + 8), cap,
-              fill=cap_color, size=15, anchor="ma")
+              fill=cap_color, anchor="ma")
     _text(d, (W // 2, TITLE_H + H_PANEL + CAP_H + 6), note,
-          fill=MUTED, size=13, anchor="ma")
+          fill=MUTED, anchor="ma")
     out = os.path.join(ASSETS, out_name)
     fig.save(out)
     print(f"  {out_name:26s} {os.path.getsize(out):>8d} bytes")

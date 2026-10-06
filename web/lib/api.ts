@@ -7,6 +7,9 @@ export type PredictResult = {
   before: string; // base64 PNG
   after: string; // base64 PNG
   note: string;
+  // Optional: only the SR path returns the model's actual low-res input, for
+  // 3-panel frontends. The Next.js site is 2-panel and ignores it.
+  lr?: string; // base64 PNG
 };
 
 export async function predict(

@@ -33,9 +33,6 @@ web/vercel/
 # Misc
 .DS_Store
 *.log
-# Exception: retrain evidence logs ARE committed — they are the raw
-# output behind the reported metrics.
-!docs/retrain_journey/*.log
 
 # Packed source archives (avoid committing redundant zips)
 pixelforge-source.zip
