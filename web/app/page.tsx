@@ -8,7 +8,10 @@ type Task = "sr" | "lowlight";
 
 export default function Home() {
   const [task, setTask] = useState<Task>("sr");
-  const [scale, setScale] = useState(2);
+  // Defaults to x4: that is the only scale with a trained weight, so it is what
+  // most users want. Starting on x2 showed a bicubic result under an "AI
+  // upscaling" heading.
+  const [scale, setScale] = useState(4);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<PredictResult | null>(null);
