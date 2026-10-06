@@ -143,6 +143,29 @@ torch 版本: 2.4.1+cpu
 
 即：CUDA 包归零，torch 钉在 2.4.1，且装的是 `+cpu` 构建。
 
+### 线上验证（重新部署日志，2026-10-06）
+
+沙箱 dry-run 只能证明"依赖解析会装什么"；修复是否生效最终以
+**Streamlit Cloud 真实重部署日志**为准。修复提交推送后重部署，两份日志对照：
+
+| 项 | 修复前（13:29 部署） | 修复后（14:39 部署） |
+|---|---|---|
+| 解析包数 | `Resolved 63 packages` | `Resolved 43 packages` |
+| torch | `+ torch==2.14.1`（漂移版） | `+ torch==2.4.1+cpu` |
+| torchvision | （CUDA 依赖随 torch 拉入） | `+ torchvision==0.19.1+cpu` |
+| `nvidia-*` / `cuda-*` / `triton` 行 | **19 行** | **0 行** |
+| `torch.jit.load` FutureWarning | 有 | 无（2.4.1 未弃用） |
+| 服务启动 | `Uvicorn server started on :::8501` | 同左 |
+| 崩溃 | 曾发生（不留 traceback） | **未发生**，日志正常收尾 |
+
+包数 63 → 43，减少的 20 个正是 torch 的 CUDA 依赖链（19 个
+`nvidia-*`/`cuda-*`/`triton` 包 + torch 换为 `+cpu` 构建后的差异）。
+安装阶段从 27.51s 缩到 6.86s，启动后内存中不再加载任何 CUDA 运行库。
+
+> 至此闭环：**现象（崩溃）→ 证据（4 组日志）→ 根因（CUDA 包白装 +
+> 版本漂移挤占内存）→ 修复（CPU-only 索引 + 钉版本）→ 线上验证（对照表）**。
+> 后续若再崩溃，按下方"已知缺口"的顺位继续排查。
+
 ---
 
 ## 已知缺口（本轮未修）
