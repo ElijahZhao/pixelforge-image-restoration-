@@ -45,7 +45,7 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 
 ## 🖼️ 效果演示
 
-> 下方为 CPU 上用本仓库真实权重跑出的输出。左侧为低质量输入 / 经典基线，右侧为 PixelForge 自训模型。
+> 下方为 CPU 上用本仓库真实权重跑出的输出。前两张为并排对比图（左：低质量输入 / 经典基线，右：PixelForge 自训模型），最后一张为公开 Demo 的线上实跑截图。
 
 **超分辨率 4×：Bicubic 基线 vs 自训 SRResNet**
 
@@ -60,6 +60,12 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 > 自训 U-Net 在同口径下 PSNR 提升 +10.41 dB、SSIM +0.547，亮度恢复与结构保留均明显优于伽马基线。
 
 > 对比图由 `scripts/make_demo.py` + `scripts/make_compare.py` 用仓库内真实权重生成，运行即可复现。
+
+**线上实跑** —— 公开 Demo 界面，低光任务处理真实照片。从左到右：你的输入、自适应伽马经典基线、自训 U-Net。服务自动选用 ML 引擎，在 CPU 上跑的真实权重。
+
+![线上 Demo 低光三栏对比](assets/demo_live_lowlight.png)
+
+> Demo 地址：<https://pixelforge-image-restoration.streamlit.app/>。带中英双语界面、暗/亮主题切换，以及上图这个三栏视图——让模型**实际看到的低分辨率输入**也可见，而不是藏起来。
 
 ## 📊 评测结果
 
@@ -213,7 +219,7 @@ pixelforge-image-restoration/
 ├── web/               # 前端（Next.js + Tailwind）
 ├── scripts/           # 辅助脚本（生成 demo 图、评测、准备数据）
 ├── tests/             # API 冒烟 + 真实权重集成测试 + E2E
-├── docs/              # API.md（接口）、OPERATIONS.md（运维）
+├── docs/              # API.md（接口）、OPERATIONS.md（运维）、DEPLOY_DIAGNOSIS.md（部署诊断）
 ├── Dockerfile         # 推理服务镜像
 ├── DEPLOY.md          # 部署指南
 ├── CHANGELOG.md       # 版本变更记录

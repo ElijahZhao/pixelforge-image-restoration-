@@ -4,7 +4,24 @@
 # the string "stretch" is rejected and the whole result area raises. Do NOT lower
 # this floor back to 1.30/1.40.
 streamlit>=1.49
-torch>=2.0
-torchvision>=0.15
+
+# ---- torch: CPU-only, pinned ----
+#
+# Streamlit Community Cloud gives this app ~2.7 GB RAM and NO GPU, so
+# `torch.cuda.is_available()` is always False and the CUDA runtime is dead weight.
+# A plain `pip install torch` pulls the CUDA build, which drags in 19 nvidia/cuda
+# packages (nvidia-cublas, nvidia-cudnn-cu13, cuda-toolkit, triton, ...) that are
+# never executed here but still occupy memory on a tier that cannot spare it.
+# The deploy logs list all 19; see docs/DEPLOY_DIAGNOSIS.md for the evidence.
+#
+# `--extra-index-url` makes pip prefer the CPU wheels from PyTorch's own index.
+# The upper bounds pin the version: without them a redeploy silently picks up
+# whatever is newest (the live app had drifted to torch 2.14.1, whose
+# `torch.jit.load` is already deprecated). The weights are TorchScript and
+# hardware-independent, so the CPU build produces bit-identical output.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0,<2.5
+torchvision>=0.15,<0.20
+
 numpy>=1.23
 Pillow>=9.0
