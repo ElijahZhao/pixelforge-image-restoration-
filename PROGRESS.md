@@ -11,7 +11,7 @@
 |---|---|---|
 | 训练侧代码（PyTorch 模型 / 数据 / 指标 / 脚本） | 已完成 | 结构可跑，已在 GPU 上真实训练 |
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | 已完成 | 无权重时自动走基线，有权重自动切 ML |
-| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 29 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
+| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 32 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
 | 前端（Next.js 交互 Demo） | 已完成 | `next build` + `tsc` + vitest 已进 CI |
 | 依赖与接口安全 | 已完成 | CI 跑 pip-audit；`/api/predict` 带按 IP 限流 |
 | 文档（README / API / 运维 / LICENSE） | 已完成 | 中文主文档 + `README.en.md` + `docs/API.md` + `docs/OPERATIONS.md` |
@@ -81,7 +81,7 @@
 
 - 收紧 CORS：`serve/app.py` 支持 `ALLOWED_ORIGINS` 环境变量。
 - 接口限流：`/api/predict` 按 IP 令牌桶限流，超限 429（默认 30 突发 / 0.5 补充每秒）。
-- 测试：`train/tests/`（20）+ `tests/test_api_smoke.py`（9），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）与 API 全路径守卫；pytest 29 passed。
+- 测试：`train/tests/`（20）+ `tests/test_api_smoke.py`（9）+ `tests/test_inference_integration.py`（3），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）与 API 全路径守卫；集成测试用真实权重跑通推理链路；pytest 32 passed。
 - 覆盖率：`pytest-cov` 门槛 75%，当前 79.7%（配置见 `pyproject.toml`）。
 - 前端测试：`web/lib/api.test.ts`（vitest）覆盖请求构造与错误映射。
 - 浏览器 E2E：`tests/e2e/test_e2e.py`（Playwright + Chromium）跑通「上传 → Enhance → 拖动滑块」全流程；不在 CI 内运行。
