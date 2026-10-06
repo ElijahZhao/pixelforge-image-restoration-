@@ -19,7 +19,7 @@
 - 覆盖率门槛：`pytest-cov`，阈值 75%（配置在 `pyproject.toml`），当前实测 79.7%。
 - `/api/predict` 的按 IP 令牌桶限流（进程内内存实现，内置默认值可用环境变量调整），超限返回 429。
 - `Dockerfile` + `.dockerignore`：推理服务的容器镜像（Python 3.11-slim，非 root 运行，带 `HEALTHCHECK`，内置权重）。前端不在该镜像内。
-- `README.en.md`：英文入口文档。中文 `README.md` 仍是主文档。
+- `README.md` 为英文主文档，中文版见 `README.zh-CN.md`。
 
 ### Changed
 
