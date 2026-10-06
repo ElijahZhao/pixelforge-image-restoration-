@@ -47,7 +47,7 @@ Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 
 ## 🖼️ Showcase
 
-> Outputs below are produced on CPU with the repo's real weights. The first two are side-by-side comparisons (left: low-quality input / classical baseline, right: PixelForge self-trained model); the last is a screenshot of the public demo running live.
+> Outputs below are produced on CPU with the repo's real weights. The first two are side-by-side comparisons (left: low-quality input / classical baseline, right: PixelForge self-trained model); the last two are screenshots of the public demo running live, one per task.
 
 **Super-resolution ×4: Bicubic baseline vs. self-trained SRResNet**
 
@@ -68,6 +68,10 @@ Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 ![Live demo, low-light three-panel view](assets/demo_live_lowlight.png)
 
 > The demo is at <https://pixelforge-image-restoration.streamlit.app/>. It ships a bilingual UI, a dark/light theme toggle, and the three-panel view above so the low-res input the model actually sees is visible, not hidden.
+
+**Running live, super-resolution ×4** — same demo, other task. Left to right: your upload, the model input (LR 180×261, upscaled for display), and the true ×4 output from the self-trained SRResNet. The sidebar keeps the training provenance on display.
+
+![Live demo, SR three-panel view](assets/demo_live_sr.png)
 
 ## 📊 Results
 
