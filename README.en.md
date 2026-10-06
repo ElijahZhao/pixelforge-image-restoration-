@@ -54,7 +54,7 @@ serve/         FastAPI inference service + classical fallbacks + TorchScript wei
 deploy/        Streamlit demo and an HF Spaces alternative
 web/           Next.js 14 + Tailwind frontend (upload + before/after slider)
 scripts/       evaluation, demo image generation, data setup
-docs/          API + operations docs, development history, retrain evidence
+docs/          API + operations docs
 ```
 
 Request flow: `web/` → `POST /api/predict` → `serve/app.py` picks the ML engine if a
@@ -100,7 +100,7 @@ build target and is not part of this image.
 ## Tests
 
 ```bash
-python -m pytest --cov --cov-report=term-missing   # 29 passed, coverage gate 75%
+python -m pytest --cov --cov-report=term-missing   # 32 passed, coverage gate 75%
 cd web && pnpm test                                # frontend unit tests
 cd web && pnpm exec tsc --noEmit                   # type-check
 ```
