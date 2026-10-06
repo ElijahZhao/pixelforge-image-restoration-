@@ -1,12 +1,13 @@
 """Load exported TorchScript models and run inference.
 
-Export real trained weights with ``train/export.py`` into ``serve/models/``:
-    serve/models/sr_srcnn_scale2.pt
+Export real trained weights with ``train/export.py`` into ``serve/models/``.
+The two committed weights are:
     serve/models/sr_generator_scale4.pt
     serve/models/lowlight.pt
 
-When a weight file is missing, the corresponding task silently falls back to
-``classical.py`` in ``app.py``.
+Super-resolution is shipped at x4 only; x2 has no trained weight and falls
+back to the classical bicubic baseline. When a weight file is missing, the
+corresponding task silently falls back to ``classical.py`` in ``app.py``.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import threading
 import warnings
 from pathlib import Path
 
+import numpy as np
 import torch
 from PIL import Image
 import torchvision.transforms.functional as TF
@@ -130,8 +132,6 @@ def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[
     w, h = img.size
     pw, ph = (-w) % m, (-h) % m
     if pw or ph:
-        import numpy as np
-
         arr = np.pad(np.asarray(img.convert("RGB")), ((0, ph), (0, pw), (0, 0)),
                      mode="reflect")
         img = Image.fromarray(arr, "RGB")
@@ -169,8 +169,6 @@ LOWLIGHT_MIN_GAIN = 0.005
 
 
 def mean_luminance(img: Image.Image) -> float:
-    import numpy as np
-
     arr = np.asarray(img.convert("RGB"), dtype="float32") / 255.0
     lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
     return float(lum.mean())
@@ -178,8 +176,6 @@ def mean_luminance(img: Image.Image) -> float:
 
 def looks_underexposed(img: Image.Image) -> tuple[bool, dict]:
     """Heuristically decide whether ``img`` is a genuinely low-light photo."""
-    import numpy as np
-
     arr = np.asarray(img.convert("RGB"), dtype="float32") / 255.0
     lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
     mean_lum = float(lum.mean())
