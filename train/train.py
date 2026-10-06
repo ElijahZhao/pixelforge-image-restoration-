@@ -127,8 +127,14 @@ def train(args):
     train_loader = get_dataloader(args.task, args.data_root, "train",
                                   batch_size=args.batch_size, scale=args.scale,
                                   seed=SEED)
+    # Validation reuses the training loader's deterministic path (`seed=SEED`):
+    # the SR/LOL val splits have fewer images than one batch, so `shuffle` and
+    # `drop_last` never apply, and what remains is exactly the guarantee we want
+    # -- `_seed_worker` fixes every worker RNG, so the metric cannot drift
+    # between epochs for reasons unrelated to the weights.
     val_loader = get_dataloader(args.task, args.data_root, "val",
-                                batch_size=args.batch_size, scale=args.scale)
+                                batch_size=args.batch_size, scale=args.scale,
+                                seed=SEED)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, args.epochs)

@@ -26,7 +26,7 @@ from PIL import Image
 sys.path.insert(0, "./train")
 
 from metrics import psnr  # noqa: E402
-from datasets import LowLightDataset  # noqa: E402
+from datasets import LowLightDataset, SuperResolutionDataset  # noqa: E402
 
 
 # --------------------------------------------------------------------------- #
@@ -247,6 +247,66 @@ def test_lowlight_val_is_deterministic():
     b = ds[0]
     assert all(torch.equal(x, y) for x, y in zip(a, b)), \
         "validation fetch is not deterministic"
+
+
+def test_lowlight_val_keeps_aspect_ratio():
+    """The val branch must not squash a non-square image into a square.
+
+    LOL-v1 images are 400x600. Resizing them to a 128x128 square changed the
+    width to 21% and the height to 32% of their original scale -- a different
+    picture from the one ``scripts/eval_baseline.py`` scores. The two numbers
+    were therefore not comparable, which made it impossible to check training
+    against evaluation results.
+    """
+    base = tempfile.mkdtemp()
+    rng = np.random.default_rng(1)
+    _write(f"{base}/low/0.png", (rng.random((400, 600, 3)) * 40).astype("uint8"))
+    _write(f"{base}/high/0.png", (rng.random((400, 600, 3)) * 200).astype("uint8"))
+    ds = LowLightDataset(base, "", augment=False)
+    low, high = ds[0]
+    assert tuple(low.shape) == tuple(high.shape) == (3, 400, 600), \
+        f"val must keep the native 400x600 size, got {tuple(low.shape)}"
+
+
+def test_lowlight_val_upscales_uniformly_when_small():
+    """A uniformly upscaled image is still the same picture; a squashed one is not."""
+    base = tempfile.mkdtemp()
+    rng = np.random.default_rng(2)
+    _write(f"{base}/low/0.png", (rng.random((80, 40, 3)) * 40).astype("uint8"))
+    _write(f"{base}/high/0.png", (rng.random((80, 40, 3)) * 200).astype("uint8"))
+    ds = LowLightDataset(base, "", augment=False)
+    low, _ = ds[0]
+    assert low.shape[1] / low.shape[2] == 80 / 40, \
+        "small val images must be upscaled uniformly, preserving aspect ratio"
+    assert min(low.shape[1], low.shape[2]) == ds.crop_size
+
+
+def test_sr_val_is_deterministic():
+    """Two validation fetches of the same index must be identical.
+
+    The crop position was drawn from ``torch.randint`` regardless of ``augment``,
+    so each validation epoch saw a different part of every image. Measured on
+    DIV2K val that moved PSNR by 7.35 dB peak-to-peak, against a real training
+    gain of +0.46 dB over 200 epochs.
+    """
+    base = tempfile.mkdtemp()
+    rng = np.random.default_rng(3)
+    _write(f"{base}/val/0.png", (rng.random((300, 400, 3)) * 255).astype("uint8"))
+    ds = SuperResolutionDataset(base, "val", scale=4, crop_size=96)
+    a = ds[0]
+    b = ds[0]
+    assert all(torch.equal(x, y) for x, y in zip(a, b)), \
+        "SR validation fetch is not deterministic"
+
+
+def test_sr_train_still_random_crops():
+    """Validation was fixed, not the augmentation: training must stay random."""
+    base = tempfile.mkdtemp()
+    rng = np.random.default_rng(4)
+    _write(f"{base}/train/0.png", (rng.random((300, 400, 3)) * 255).astype("uint8"))
+    ds = SuperResolutionDataset(base, "train", scale=4, crop_size=64)
+    patches = {ds[0][1].numpy().tobytes() for _ in range(20)}
+    assert len(patches) > 1, "training crops must still vary between fetches"
 
 
 # --------------------------------------------------------------------------- #
