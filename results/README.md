@@ -3,8 +3,7 @@
 Training logs and quantitative results live here.
 
 - `train_log_<task>_<model>.csv` — per-epoch `epoch, train_loss, val_psnr, val_ssim, time_s`.
-  The CSV header also records the training objective and best-checkpoint criterion
-  (see `docs/history/PIXELFORGE_FIX_PLAN.md`).
+  The CSV header also records the training objective and best-checkpoint criterion.
 - These logs are committed (via `.gitignore` whitelist) so the reported numbers are
   reproducible, not just reported.
 
@@ -12,8 +11,8 @@ Training logs and quantitative results live here.
 
 > All PSNR/SSIM below are measured on the same validation set with the same metric
 > implementation by `scripts/eval_baseline.py`, so the model and the baseline differ
-> only in method. Full report: `docs/history/PIXELFORGE_RETRAIN_RESULTS.md`.
-> Process evidence (platform receipts, GPU traces, logs): `docs/retrain_journey/`.
+> only in method. Reproduce with `python scripts/eval_baseline.py --task sr --scale 4`
+> and `python scripts/eval_baseline.py --task lowlight`.
 
 Super-Resolution ×4 (full-image validation)
 

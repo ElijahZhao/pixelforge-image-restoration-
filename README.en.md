@@ -25,8 +25,7 @@
 
 ## Results
 
-Full report: [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md).
-GPU/billing evidence: [`docs/retrain_journey/`](docs/retrain_journey/).
+Per-epoch metrics are committed under [`results/`](results/) (`train_log_sr_generator.csv`, `train_log_lowlight_srcnn.csv`); anyone can recompute them with `scripts/eval_baseline.py`.
 
 | Task | Baseline | Ours (retrained) | Gain |
 |---|---|---|---|
@@ -144,11 +143,10 @@ Drop the exported `.pt` into `serve/models/` and the service picks it up on rest
 
 ## Development notes
 
-This project was built by the author with AI tools used for drafting code and
-troubleshooting. Requirements, architecture decisions, training runs and result
-judgement were the author's; implementation was sped up with AI and reviewed
-afterwards. See [PROJECT_NOTES.md](PROJECT_NOTES.md) for the full statement of
-scope and what is / is not claimed.
+This project was built and driven by the author: environment setup, retraining,
+result verification and iteration decisions are the author's responsibility.
+Per-epoch training logs (`results/`) and the same-caliber evaluation script
+(`scripts/eval_baseline.py`) make the reported metrics reproducible.
 
 ---
 

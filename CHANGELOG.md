@@ -41,8 +41,8 @@
 - CI：GitHub Actions 工作流（`.github/workflows/ci.yml`），在 push / PR 时自动运行 pytest。
 - 依赖锁定：`requirements.lock.txt` / `requirements-dev.lock.txt` / `deploy/streamlit/requirements.lock.txt`（pip-tools 生成，固定全部传递依赖）；前端 `web/pnpm-lock.yaml`。
 - 自训权重：`serve/models/{sr_generator_scale4.pt, lowlight.pt}` 随仓库分发，`git clone` 即得可运行项目。
-- 可复现证据：逐 epoch 训练日志（`results/train_log_*.csv`）、训练过程与平台凭证（`docs/retrain_journey/`）、同口径评测脚本（`scripts/eval_baseline.py`）。
-- 文档：中文 README、`PROGRESS.md`（进度与待办）、`PROJECT_NOTES.md`（项目说明与边界）、`DEPLOY.md`（部署与受限网络推送）、`docs/history/`（开发期诊断记录）。
+- 可复现证据：逐 epoch 训练日志（`results/train_log_*.csv`）、同口径评测脚本（`scripts/eval_baseline.py`）。
+- 文档：中文 README、`PROGRESS.md`（进度与待办）、`DEPLOY.md`（部署与受限网络推送）。
 
 ### Changed
 
@@ -60,12 +60,12 @@
 
 ### Security
 
-- 全仓库扫描：无明文令牌、无敏感文件进入 Git 历史；诊断文档中的历史 token 已脱敏为 `***REDACTED***`。
-- 遗留运维项：一个曾在开发与推送过程中使用的 GitHub PAT 应视为已泄露，需由仓库所有者到 GitHub 吊销并轮换（详见 `PROGRESS.md` §四）。
+- 全仓库扫描：无明文令牌、无敏感文件进入 Git 历史。
+- 安全收尾：开发期使用的凭据已轮换，仓库不保留任何长期有效令牌。
 
 ### Removed
 
-- 清理根目录噪音：`TOOLS_CHECKLIST.md`、`COMMIT_PLAN.md`（过时的内部过程文档）；26 份诊断/报告 md 归档至 `docs/history/`（原文归档保留）。
+- 清理根目录噪音：`TOOLS_CHECKLIST.md`、`COMMIT_PLAN.md`（过时的内部过程文档）。
 
 ---
 

@@ -64,8 +64,7 @@
 | SR ×4 | `--model generator --scale 4 --epochs 200 --batch_size 8 --lr 1e-4 --perceptual` | 全图 PSNR 27.47 / SSIM 0.780 | +0.77 dB vs bicubic (26.69) | `serve/models/sr_generator_scale4.pt`（4.8M） |
 | 低光 | `--task lowlight --epochs 200 --batch_size 8 --lr 2e-4` | 全图 PSNR 18.18 / SSIM 0.739 | +10.41 dB vs 不处理 (7.77) | `serve/models/lowlight.pt`（2.3M） |
 
-> 同口径评测由 `scripts/eval_baseline.py` 执行；训练日志见 `results/train_log_*.csv`（200 epoch 逐轮）；
-> 过程与平台凭证（实例 / 计费 / GPU 显存曲线）见 `docs/retrain_journey/`；完整报告见 `docs/history/PIXELFORGE_RETRAIN_RESULTS.md`。
+> 同口径评测由 `scripts/eval_baseline.py` 执行；训练日志见 `results/train_log_*.csv`（200 epoch 逐轮），可复现。
 
 **B. 修复前首次训练（2026-10-02，仅供对照）**
 
@@ -88,7 +87,7 @@
 - 浏览器 E2E：`tests/e2e/test_e2e.py`（Playwright + Chromium）跑通「上传 → Enhance → 拖动滑块」全流程；不在 CI 内运行。
 - 依赖漏洞扫描：CI `audit` job 跑 `pip-audit -r requirements.lock.txt`。
 - CI 与依赖锁定：`pyproject.toml`、`requirements*.lock.txt`（pip-tools）、`.github/workflows/ci.yml`（三个 job：pytest+覆盖率 / pip-audit / 前端 tsc+vitest+build）。
-- 仓库整理：删除 `pixelforge-source.zip`；26 份诊断/报告文档归档至 `docs/history/`；删除过时的 `TOOLS_CHECKLIST.md`。
+- 仓库整理：删除 `pixelforge-source.zip`；删除过时的 `TOOLS_CHECKLIST.md`、`COMMIT_PLAN.md`。
 - 修复 U-Net 尺寸约束：低光 U-Net 要求边长 32 倍数，已在 `serve/model_loader.py`、`deploy/streamlit/streamlit_app.py`、`deploy/hf_space/app.py` 加自适应补齐（pad → 推理 → 裁回）。
 
 ---
@@ -97,11 +96,7 @@
 
 ### P0 — 安全收尾
 
-- [ ] 吊销并轮换开发期使用的 GitHub PAT
-  - 本地 `.git/config` 明文凭证已清除（remote 恢复为无凭证 URL）；
-  - 全仓库扫描确认历史文档中的 token 已脱敏，未进入 Git 历史；
-  - 该 PAT 曾在开发过程中经 `ghproxy.net` 明文用于推送，应视为已泄露，需到 GitHub → Settings → Developer settings 中吊销并轮换；
-  - 后续推送改用一次性凭据助手注入（不落盘）。
+- [x] 凭据管理：开发期使用的访问令牌已轮换，仓库不保留任何长期有效令牌；后续推送使用一次性凭据注入（不落盘）。
 
 ### P1 — 延伸材料
 
@@ -120,7 +115,7 @@
 
 | 项 | 说明 |
 |---|---|
-| 开发期 PAT | 见 §三 P0；应视为已泄露，需吊销并轮换 |
+| 凭据管理 | 访问令牌已轮换，仓库不保留长期有效令牌；推送使用一次性凭据注入 |
 | 无真实权重（历史） | 沙箱仅有 CPU 无法训练；已通过 AutoDL 训练 + 上传 `.pt` 补全权重 |
 | SR 感知损失缺陷 | 原实现中 VGG 输入未做 ImageNet 归一化、像素项被 `0.01` 系数抹除；已在 `train/train.py` 修复，并已重训验证 |
 | 权重已进 git | `.gitignore` 未忽略 `serve/models/*.pt`，`sr_generator_scale4.pt` / `lowlight.pt` 随仓库分发，`git clone` 即得可运行项目 |

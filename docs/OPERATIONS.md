@@ -37,8 +37,7 @@ Streamlit app 不调它，`web/lib/api.ts` 只调 `/api/predict`。
 
 - **推理服务**：直接走 uvicorn 的 stdout/stderr。没有接日志聚合，没有结构化日志。
   `uvicorn serve.app:app` 会在控制台打印每条请求的访问行。
-- **训练**：逐 epoch 指标写在 `results/train_log_*.csv`，完整 stdout 在
-  `docs/retrain_journey/train_*.log`。这两个是**随仓库提交的证据文件**，
+- **训练**：逐 epoch 指标写在 `results/train_log_*.csv`，随仓库提交，
   不是运行期日志——别把它们当实时日志源。
 
 ---

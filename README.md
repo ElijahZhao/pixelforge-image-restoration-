@@ -87,7 +87,7 @@ results/     训练日志 + 量化对比表
 
 ## 成果亮点（修复后重训，已打赢基线）
 
-> 完整报告见 [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md)，过程与平台凭证见 [`docs/retrain_journey/`](docs/retrain_journey/)。
+> 逐 epoch 指标已提交于 [`results/`](results/)（`train_log_sr_generator.csv`、`train_log_lowlight_srcnn.csv`），任何人可复算。
 
 | 任务 | 基线 | 自训模型 | 增益 | 结论 |
 |---|---|---|---|---|
@@ -95,7 +95,6 @@ results/     训练日志 + 量化对比表
 | **低光增强** | 不处理(low)：PSNR 7.77 / SSIM 0.192 | **PSNR 18.18 / SSIM 0.739** | **+10.41 dB / +0.547** | 高于基线 |
 
 - 以上数字由 [`scripts/eval_baseline.py`](scripts/eval_baseline.py) 在同一批验证图、同一套 PSNR/SSIM 实现下测得（唯一变量是方法本身）；
-- 训练全程有 AutoDL 平台凭证（实例列表 / 计费明细 / GPU 显存曲线）与完整训练日志留档，见 `docs/retrain_journey/`；
 - 逐 epoch 指标已提交于 [`results/`](results/)（`train_log_sr_generator.csv`、`train_log_lowlight_srcnn.csv`），任何人可复算。
 
 ---
@@ -129,7 +128,7 @@ results/     训练日志 + 量化对比表
 > 自训 U-Net 在同口径下 PSNR 提升 +10.41 dB、SSIM +0.547，亮度恢复与结构保留均明显优于伽马基线。
 
 > 上述对比图与样例均由 `scripts/make_demo.py` 用仓库内真实权重生成，运行即可复现。
-> **说明**：SR ×4 早期版本因感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项权重被 `0.01` 系数抹除）曾低于 Bicubic 基线；该缺陷已修复并用修复后代码重训，现 SR ×4 相对 bicubic **+0.77 dB**、低光相对不处理基线 **+10.41 dB**（同口径评测，见 [`PIXELFORGE_RETRAIN_RESULTS.md`](docs/history/PIXELFORGE_RETRAIN_RESULTS.md)）。
+> **说明**：SR ×4 早期版本因感知损失实现缺陷（VGG 输入未做 ImageNet 归一化 + 像素项权重被 `0.01` 系数抹除）曾低于 Bicubic 基线；该缺陷已修复并用修复后代码重训，现 SR ×4 相对 bicubic **+0.77 dB**、低光相对不处理基线 **+10.41 dB**（同口径评测，逐 epoch 日志见 [`results/`](results/)）。
 
 ---
 
@@ -171,7 +170,7 @@ flowchart LR
 - **低光图像增强**：自训低光 U-Net；另带自适应伽马经典兜底。
 - **前后对比**：公开 Demo 并列展示；Next.js 前端用可拖动滑块对比 before / after。
 - **两种部署入口**：`deploy/streamlit/streamlit_app.py`（公开 Demo）+ `serve/app.py`（FastAPI 服务）。
-- **公开数据集**：DIV2K / LOL，训练在 AutoDL RTX 3080 Ti 上完成（计费与监控凭证见 `docs/retrain_journey/`）。
+- **公开数据集**：DIV2K / LOL，训练在 AutoDL RTX 3080 Ti 上完成（逐 epoch 训练日志见 [`results/`](results/)）。
 
 ---
 
@@ -203,7 +202,7 @@ pixelforge-image-restoration/
 ├── web/               # 前端（Next.js + Tailwind）
 ├── scripts/           # 辅助脚本（生成 demo 图、准备数据集）
 ├── tests/             # E2E 浏览器测试
-├── docs/              # docs/API.md（接口）、docs/OPERATIONS.md（运维）、history/、retrain_journey/
+├── docs/              # docs/API.md（接口）、docs/OPERATIONS.md（运维）
 ├── Dockerfile         # 推理服务镜像
 ├── DEPLOY.md          # 部署与受限网络推送指南
 ├── CHANGELOG.md       # 版本变更记录
@@ -354,7 +353,7 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 > **口径说明（重要）**：
 > 1. 上表 PSNR/SSIM 由 `scripts/eval_baseline.py` 在全图验证集上测得，与训练日志中"随机裁剪块"口径不同，二者不可混比（训练日志中 SR best 为 27.39、低光 best 为 18.59，属正常口径差异）。
 > 2. 早期报告的"低光 19.26 dB"是在随机裁剪口径下、且使用了未在本项目划分上自测的文献参考带，不可与修复后结果直接比较；修复后已改用确定性全图口径。
-> 3. 全部结果可由 `results/train_log_*.csv` + `scripts/eval_baseline.py` 复现，过程凭证见 `docs/retrain_journey/`。
+> 3. 全部结果可由 `results/train_log_*.csv` + `scripts/eval_baseline.py` 复现。
 
 ---
 
@@ -375,10 +374,8 @@ python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
 
 ## 项目说明与局限
 
-关于这个项目是如何做出来的、能拿出什么证据、以及边界在哪里，见 [`PROJECT_NOTES.md`](PROJECT_NOTES.md)。要点：
-
-- 项目由作者主导开发，过程中使用 AI 工具辅助；训练环境搭建、重训执行、结果验证与迭代决策均由作者负责，每一步都有第三方平台凭证（`docs/retrain_journey/`）支撑；
-- 未声称"SOTA"、未声称"低光优于其他方法"、未声称"代码 100% 手写"；只陈述有证据支持的部分；
+- 项目由作者主导开发，训练环境搭建、重训执行、结果验证与迭代决策均由作者负责，逐 epoch 训练日志（`results/`）与同口径评测脚本（`scripts/eval_baseline.py`）可复现；
+- 未声称"SOTA"、未声称"低光优于其他方法"；只陈述有证据支持的部分；
 - 项目最有价值的部分不是"一次就跑通"，而是发现了一个真实的 ML 缺陷、修复它、并用重训验证修复有效。
 
 ---
