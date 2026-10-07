@@ -21,10 +21,14 @@ models/ckpt/
 # The trained TorchScript weights (sr_generator_scale4.pt, lowlight.pt)
 # are committed so `git clone` gives a runnable project out of the box.
 results/*.csv
-# Exception: the two full training logs ARE committed — they make the reported
-# PSNR/SSIM reproducible.
+# Exception: the full training logs ARE committed — they make the reported
+# PSNR/SSIM reproducible. Historical batch8 runs + the 2026-10-07 batch16 rerun
+# (three-run best-of selection, see results/README.md).
 !results/train_log_sr_generator_scale4.csv
 !results/train_log_lowlight_srcnn_scale2.csv
+!results/train_log_sr_generator_scale4_batch16_20261007.csv
+!results/train_log_sr_generator_scale2_batch16_20261007.csv
+!results/train_log_lowlight_srcnn_scale2_batch16_20261007.csv
 
 # Node / Next.js
 node_modules/
@@ -36,6 +40,9 @@ web/vercel/
 # Misc
 .DS_Store
 *.log
+# Exception: batch16 training-run logs (2026-10-07) are committed for
+# reproducibility — must come AFTER the global *.log rule to take effect.
+!results/logs_batch16_20261007/*.log
 
 # Packed source archives (avoid committing redundant zips)
 pixelforge-source.zip

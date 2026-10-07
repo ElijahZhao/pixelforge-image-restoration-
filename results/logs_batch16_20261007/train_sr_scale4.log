@@ -1,0 +1,310 @@
+[sr/generator] params=1.22M device=cuda
+[auto-resume] 无断点，从头开始训练
+Epoch 001 | loss=0.1898 | val PSNR=15.12 SSIM=0.2302 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 002 | loss=0.0922 | val PSNR=18.73 SSIM=0.3653 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 003 | loss=0.0730 | val PSNR=19.63 SSIM=0.4516 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 004 | loss=0.0649 | val PSNR=20.72 SSIM=0.4949 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 005 | loss=0.0594 | val PSNR=20.95 SSIM=0.5422 | 21.6s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 006 | loss=0.0530 | val PSNR=21.49 SSIM=0.5819 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 007 | loss=0.0531 | val PSNR=21.60 SSIM=0.5921 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 008 | loss=0.0481 | val PSNR=21.77 SSIM=0.6042 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 009 | loss=0.0482 | val PSNR=21.85 SSIM=0.6168 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 010 | loss=0.0470 | val PSNR=21.89 SSIM=0.6307 | 21.6s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 10)
+Epoch 011 | loss=0.0454 | val PSNR=22.14 SSIM=0.6393 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 012 | loss=0.0419 | val PSNR=22.19 SSIM=0.6436 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 013 | loss=0.0418 | val PSNR=22.33 SSIM=0.6576 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 014 | loss=0.0407 | val PSNR=22.41 SSIM=0.6628 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 015 | loss=0.0404 | val PSNR=22.43 SSIM=0.6607 | 21.6s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 016 | loss=0.0387 | val PSNR=22.48 SSIM=0.6661 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 017 | loss=0.0385 | val PSNR=22.59 SSIM=0.6718 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 018 | loss=0.0394 | val PSNR=22.53 SSIM=0.6736 | 21.6s
+Epoch 019 | loss=0.0378 | val PSNR=22.63 SSIM=0.6796 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 020 | loss=0.0364 | val PSNR=22.62 SSIM=0.6802 | 21.6s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 20)
+Epoch 021 | loss=0.0370 | val PSNR=22.69 SSIM=0.6836 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 022 | loss=0.0368 | val PSNR=22.77 SSIM=0.6884 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 023 | loss=0.0366 | val PSNR=22.73 SSIM=0.6855 | 21.2s
+Epoch 024 | loss=0.0354 | val PSNR=22.77 SSIM=0.6879 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 025 | loss=0.0342 | val PSNR=22.82 SSIM=0.6922 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 026 | loss=0.0343 | val PSNR=22.88 SSIM=0.6964 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 027 | loss=0.0353 | val PSNR=22.82 SSIM=0.6961 | 21.4s
+Epoch 028 | loss=0.0346 | val PSNR=22.89 SSIM=0.6977 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 029 | loss=0.0345 | val PSNR=22.89 SSIM=0.6974 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 030 | loss=0.0343 | val PSNR=22.91 SSIM=0.6985 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 30)
+Epoch 031 | loss=0.0334 | val PSNR=22.96 SSIM=0.7009 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 032 | loss=0.0344 | val PSNR=22.92 SSIM=0.7014 | 21.6s
+Epoch 033 | loss=0.0325 | val PSNR=22.98 SSIM=0.7026 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 034 | loss=0.0326 | val PSNR=23.00 SSIM=0.7037 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 035 | loss=0.0331 | val PSNR=22.98 SSIM=0.7048 | 21.2s
+Epoch 036 | loss=0.0332 | val PSNR=23.01 SSIM=0.7052 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 037 | loss=0.0317 | val PSNR=23.01 SSIM=0.7070 | 21.4s
+Epoch 038 | loss=0.0330 | val PSNR=22.99 SSIM=0.7066 | 21.1s
+Epoch 039 | loss=0.0321 | val PSNR=23.03 SSIM=0.7068 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 040 | loss=0.0329 | val PSNR=23.04 SSIM=0.7086 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 40)
+Epoch 041 | loss=0.0334 | val PSNR=23.02 SSIM=0.7102 | 21.4s
+Epoch 042 | loss=0.0334 | val PSNR=23.06 SSIM=0.7076 | 21.7s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 043 | loss=0.0332 | val PSNR=23.07 SSIM=0.7093 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 044 | loss=0.0331 | val PSNR=23.03 SSIM=0.7097 | 21.2s
+Epoch 045 | loss=0.0316 | val PSNR=23.10 SSIM=0.7110 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 046 | loss=0.0317 | val PSNR=23.05 SSIM=0.7113 | 21.3s
+Epoch 047 | loss=0.0324 | val PSNR=23.09 SSIM=0.7119 | 21.5s
+Epoch 048 | loss=0.0333 | val PSNR=23.11 SSIM=0.7120 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 049 | loss=0.0319 | val PSNR=23.10 SSIM=0.7122 | 21.2s
+Epoch 050 | loss=0.0316 | val PSNR=23.06 SSIM=0.7133 | 21.4s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 50)
+Epoch 051 | loss=0.0331 | val PSNR=23.08 SSIM=0.7135 | 21.1s
+Epoch 052 | loss=0.0310 | val PSNR=23.13 SSIM=0.7138 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 053 | loss=0.0309 | val PSNR=23.05 SSIM=0.7142 | 21.3s
+Epoch 054 | loss=0.0313 | val PSNR=23.11 SSIM=0.7127 | 21.3s
+Epoch 055 | loss=0.0327 | val PSNR=23.14 SSIM=0.7137 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 056 | loss=0.0322 | val PSNR=23.15 SSIM=0.7143 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 057 | loss=0.0309 | val PSNR=23.15 SSIM=0.7152 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 058 | loss=0.0311 | val PSNR=23.16 SSIM=0.7157 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 059 | loss=0.0311 | val PSNR=23.16 SSIM=0.7159 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 060 | loss=0.0300 | val PSNR=23.18 SSIM=0.7165 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 60)
+Epoch 061 | loss=0.0310 | val PSNR=23.17 SSIM=0.7163 | 21.2s
+Epoch 062 | loss=0.0300 | val PSNR=23.18 SSIM=0.7166 | 21.0s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 063 | loss=0.0304 | val PSNR=23.17 SSIM=0.7167 | 21.5s
+Epoch 064 | loss=0.0306 | val PSNR=23.17 SSIM=0.7166 | 21.4s
+Epoch 065 | loss=0.0319 | val PSNR=23.19 SSIM=0.7178 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 066 | loss=0.0321 | val PSNR=23.14 SSIM=0.7160 | 21.2s
+Epoch 067 | loss=0.0312 | val PSNR=23.20 SSIM=0.7183 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 068 | loss=0.0308 | val PSNR=23.18 SSIM=0.7174 | 21.6s
+Epoch 069 | loss=0.0314 | val PSNR=23.20 SSIM=0.7184 | 21.2s
+Epoch 070 | loss=0.0303 | val PSNR=23.20 SSIM=0.7180 | 21.2s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 70)
+Epoch 071 | loss=0.0304 | val PSNR=23.21 SSIM=0.7191 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 072 | loss=0.0306 | val PSNR=23.22 SSIM=0.7193 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 073 | loss=0.0299 | val PSNR=23.20 SSIM=0.7190 | 21.4s
+Epoch 074 | loss=0.0316 | val PSNR=23.22 SSIM=0.7195 | 21.6s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 075 | loss=0.0293 | val PSNR=23.22 SSIM=0.7199 | 21.3s
+Epoch 076 | loss=0.0305 | val PSNR=23.22 SSIM=0.7197 | 21.3s
+Epoch 077 | loss=0.0304 | val PSNR=23.23 SSIM=0.7202 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 078 | loss=0.0301 | val PSNR=23.23 SSIM=0.7200 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 079 | loss=0.0310 | val PSNR=23.21 SSIM=0.7204 | 21.4s
+Epoch 080 | loss=0.0304 | val PSNR=23.23 SSIM=0.7204 | 21.4s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 80)
+Epoch 081 | loss=0.0313 | val PSNR=23.24 SSIM=0.7210 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 082 | loss=0.0304 | val PSNR=23.23 SSIM=0.7206 | 21.3s
+Epoch 083 | loss=0.0296 | val PSNR=23.25 SSIM=0.7208 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 084 | loss=0.0285 | val PSNR=23.23 SSIM=0.7199 | 21.5s
+Epoch 085 | loss=0.0303 | val PSNR=23.24 SSIM=0.7204 | 21.6s
+Epoch 086 | loss=0.0301 | val PSNR=23.24 SSIM=0.7204 | 21.5s
+Epoch 087 | loss=0.0300 | val PSNR=23.25 SSIM=0.7210 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 088 | loss=0.0301 | val PSNR=23.25 SSIM=0.7215 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 089 | loss=0.0297 | val PSNR=23.25 SSIM=0.7212 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 090 | loss=0.0300 | val PSNR=23.26 SSIM=0.7220 | 21.6s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 90)
+Epoch 091 | loss=0.0295 | val PSNR=23.26 SSIM=0.7223 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 092 | loss=0.0307 | val PSNR=23.26 SSIM=0.7220 | 21.3s
+Epoch 093 | loss=0.0306 | val PSNR=23.24 SSIM=0.7221 | 21.2s
+Epoch 094 | loss=0.0303 | val PSNR=23.26 SSIM=0.7223 | 21.3s
+Epoch 095 | loss=0.0295 | val PSNR=23.26 SSIM=0.7224 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 096 | loss=0.0297 | val PSNR=23.27 SSIM=0.7226 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 097 | loss=0.0297 | val PSNR=23.27 SSIM=0.7221 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 098 | loss=0.0301 | val PSNR=23.27 SSIM=0.7225 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 099 | loss=0.0299 | val PSNR=23.27 SSIM=0.7230 | 21.4s
+Epoch 100 | loss=0.0315 | val PSNR=23.25 SSIM=0.7216 | 21.3s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 100)
+Epoch 101 | loss=0.0301 | val PSNR=23.27 SSIM=0.7230 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 102 | loss=0.0298 | val PSNR=23.28 SSIM=0.7235 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 103 | loss=0.0276 | val PSNR=23.28 SSIM=0.7232 | 21.2s
+Epoch 104 | loss=0.0297 | val PSNR=23.28 SSIM=0.7230 | 21.0s
+Epoch 105 | loss=0.0308 | val PSNR=23.27 SSIM=0.7230 | 21.4s
+Epoch 106 | loss=0.0318 | val PSNR=23.29 SSIM=0.7240 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 107 | loss=0.0295 | val PSNR=23.28 SSIM=0.7235 | 21.3s
+Epoch 108 | loss=0.0293 | val PSNR=23.28 SSIM=0.7234 | 21.6s
+Epoch 109 | loss=0.0298 | val PSNR=23.29 SSIM=0.7240 | 21.2s
+Epoch 110 | loss=0.0295 | val PSNR=23.29 SSIM=0.7241 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 110)
+Epoch 111 | loss=0.0300 | val PSNR=23.29 SSIM=0.7240 | 21.6s
+Epoch 112 | loss=0.0298 | val PSNR=23.29 SSIM=0.7237 | 21.2s
+Epoch 113 | loss=0.0302 | val PSNR=23.29 SSIM=0.7244 | 21.0s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 114 | loss=0.0308 | val PSNR=23.30 SSIM=0.7244 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 115 | loss=0.0302 | val PSNR=23.29 SSIM=0.7241 | 21.6s
+Epoch 116 | loss=0.0308 | val PSNR=23.29 SSIM=0.7241 | 21.4s
+Epoch 117 | loss=0.0303 | val PSNR=23.29 SSIM=0.7244 | 21.3s
+Epoch 118 | loss=0.0300 | val PSNR=23.30 SSIM=0.7245 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 119 | loss=0.0294 | val PSNR=23.29 SSIM=0.7244 | 21.3s
+Epoch 120 | loss=0.0297 | val PSNR=23.29 SSIM=0.7250 | 21.3s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 120)
+Epoch 121 | loss=0.0301 | val PSNR=23.30 SSIM=0.7247 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 122 | loss=0.0296 | val PSNR=23.29 SSIM=0.7242 | 21.5s
+Epoch 123 | loss=0.0298 | val PSNR=23.30 SSIM=0.7247 | 21.3s
+Epoch 124 | loss=0.0298 | val PSNR=23.30 SSIM=0.7242 | 21.2s
+Epoch 125 | loss=0.0294 | val PSNR=23.30 SSIM=0.7248 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 126 | loss=0.0296 | val PSNR=23.30 SSIM=0.7250 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 127 | loss=0.0290 | val PSNR=23.31 SSIM=0.7251 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 128 | loss=0.0295 | val PSNR=23.31 SSIM=0.7250 | 21.2s
+Epoch 129 | loss=0.0294 | val PSNR=23.31 SSIM=0.7254 | 21.5s
+Epoch 130 | loss=0.0297 | val PSNR=23.31 SSIM=0.7257 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 130)
+Epoch 131 | loss=0.0295 | val PSNR=23.31 SSIM=0.7253 | 21.4s
+Epoch 132 | loss=0.0295 | val PSNR=23.30 SSIM=0.7250 | 21.4s
+Epoch 133 | loss=0.0310 | val PSNR=23.32 SSIM=0.7255 | 21.5s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 134 | loss=0.0297 | val PSNR=23.31 SSIM=0.7255 | 21.5s
+Epoch 135 | loss=0.0300 | val PSNR=23.32 SSIM=0.7255 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 136 | loss=0.0300 | val PSNR=23.32 SSIM=0.7257 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 137 | loss=0.0288 | val PSNR=23.31 SSIM=0.7252 | 21.2s
+Epoch 138 | loss=0.0297 | val PSNR=23.32 SSIM=0.7256 | 21.3s
+Epoch 139 | loss=0.0291 | val PSNR=23.31 SSIM=0.7254 | 21.2s
+Epoch 140 | loss=0.0289 | val PSNR=23.32 SSIM=0.7259 | 21.2s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 140)
+Epoch 141 | loss=0.0293 | val PSNR=23.32 SSIM=0.7257 | 21.3s
+Epoch 142 | loss=0.0287 | val PSNR=23.32 SSIM=0.7260 | 21.2s
+Epoch 143 | loss=0.0292 | val PSNR=23.32 SSIM=0.7255 | 21.6s
+Epoch 144 | loss=0.0296 | val PSNR=23.32 SSIM=0.7257 | 21.5s
+Epoch 145 | loss=0.0287 | val PSNR=23.31 SSIM=0.7255 | 21.4s
+Epoch 146 | loss=0.0293 | val PSNR=23.32 SSIM=0.7261 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 147 | loss=0.0298 | val PSNR=23.33 SSIM=0.7263 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 148 | loss=0.0285 | val PSNR=23.32 SSIM=0.7262 | 21.5s
+Epoch 149 | loss=0.0304 | val PSNR=23.32 SSIM=0.7261 | 21.4s
+Epoch 150 | loss=0.0296 | val PSNR=23.32 SSIM=0.7257 | 21.2s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 150)
+Epoch 151 | loss=0.0293 | val PSNR=23.33 SSIM=0.7262 | 21.3s
+Epoch 152 | loss=0.0291 | val PSNR=23.32 SSIM=0.7256 | 21.2s
+Epoch 153 | loss=0.0302 | val PSNR=23.33 SSIM=0.7263 | 21.1s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 154 | loss=0.0291 | val PSNR=23.32 SSIM=0.7261 | 21.4s
+Epoch 155 | loss=0.0298 | val PSNR=23.33 SSIM=0.7262 | 21.2s
+Epoch 156 | loss=0.0295 | val PSNR=23.32 SSIM=0.7263 | 21.2s
+Epoch 157 | loss=0.0294 | val PSNR=23.33 SSIM=0.7267 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 158 | loss=0.0292 | val PSNR=23.33 SSIM=0.7266 | 21.3s
+Epoch 159 | loss=0.0287 | val PSNR=23.32 SSIM=0.7261 | 21.4s
+Epoch 160 | loss=0.0286 | val PSNR=23.33 SSIM=0.7267 | 21.4s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 160)
+Epoch 161 | loss=0.0278 | val PSNR=23.33 SSIM=0.7264 | 21.3s
+Epoch 162 | loss=0.0286 | val PSNR=23.33 SSIM=0.7267 | 21.1s
+Epoch 163 | loss=0.0290 | val PSNR=23.33 SSIM=0.7268 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 164 | loss=0.0294 | val PSNR=23.33 SSIM=0.7266 | 21.3s
+Epoch 165 | loss=0.0303 | val PSNR=23.33 SSIM=0.7266 | 21.6s
+Epoch 166 | loss=0.0295 | val PSNR=23.33 SSIM=0.7265 | 21.3s
+Epoch 167 | loss=0.0303 | val PSNR=23.33 SSIM=0.7265 | 21.0s
+Epoch 168 | loss=0.0276 | val PSNR=23.33 SSIM=0.7266 | 21.3s
+Epoch 169 | loss=0.0297 | val PSNR=23.33 SSIM=0.7266 | 21.2s
+Epoch 170 | loss=0.0293 | val PSNR=23.33 SSIM=0.7267 | 21.6s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 170)
+Epoch 171 | loss=0.0281 | val PSNR=23.33 SSIM=0.7264 | 21.4s
+Epoch 172 | loss=0.0274 | val PSNR=23.33 SSIM=0.7266 | 21.1s
+Epoch 173 | loss=0.0295 | val PSNR=23.33 SSIM=0.7266 | 21.5s
+Epoch 174 | loss=0.0293 | val PSNR=23.33 SSIM=0.7266 | 21.1s
+Epoch 175 | loss=0.0296 | val PSNR=23.33 SSIM=0.7268 | 21.7s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 176 | loss=0.0278 | val PSNR=23.33 SSIM=0.7263 | 21.8s
+Epoch 177 | loss=0.0298 | val PSNR=23.34 SSIM=0.7269 | 21.3s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 178 | loss=0.0280 | val PSNR=23.34 SSIM=0.7270 | 21.1s
+Epoch 179 | loss=0.0299 | val PSNR=23.33 SSIM=0.7268 | 21.2s
+Epoch 180 | loss=0.0295 | val PSNR=23.33 SSIM=0.7265 | 21.4s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 180)
+Epoch 181 | loss=0.0284 | val PSNR=23.33 SSIM=0.7268 | 21.5s
+Epoch 182 | loss=0.0303 | val PSNR=23.33 SSIM=0.7268 | 21.2s
+Epoch 183 | loss=0.0296 | val PSNR=23.33 SSIM=0.7265 | 21.3s
+Epoch 184 | loss=0.0290 | val PSNR=23.34 SSIM=0.7271 | 21.0s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 185 | loss=0.0282 | val PSNR=23.33 SSIM=0.7264 | 21.0s
+Epoch 186 | loss=0.0289 | val PSNR=23.33 SSIM=0.7266 | 21.4s
+Epoch 187 | loss=0.0292 | val PSNR=23.34 SSIM=0.7270 | 21.3s
+Epoch 188 | loss=0.0293 | val PSNR=23.33 SSIM=0.7266 | 21.5s
+Epoch 189 | loss=0.0297 | val PSNR=23.33 SSIM=0.7266 | 21.2s
+Epoch 190 | loss=0.0282 | val PSNR=23.33 SSIM=0.7267 | 21.0s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 190)
+Epoch 191 | loss=0.0287 | val PSNR=23.34 SSIM=0.7271 | 21.4s
+  -> saved best checkpoint: models/sr_generator_scale4_best.pth
+Epoch 192 | loss=0.0285 | val PSNR=23.34 SSIM=0.7270 | 21.4s
+Epoch 193 | loss=0.0292 | val PSNR=23.33 SSIM=0.7269 | 21.1s
+Epoch 194 | loss=0.0293 | val PSNR=23.34 SSIM=0.7269 | 21.2s
+Epoch 195 | loss=0.0288 | val PSNR=23.33 SSIM=0.7267 | 21.4s
+Epoch 196 | loss=0.0294 | val PSNR=23.33 SSIM=0.7269 | 21.4s
+Epoch 197 | loss=0.0298 | val PSNR=23.34 SSIM=0.7270 | 21.6s
+Epoch 198 | loss=0.0287 | val PSNR=23.33 SSIM=0.7268 | 21.5s
+Epoch 199 | loss=0.0299 | val PSNR=23.33 SSIM=0.7265 | 21.1s
+Epoch 200 | loss=0.0297 | val PSNR=23.33 SSIM=0.7268 | 21.3s
+  -> resume point saved: models/ckpt/sr_generator_scale4_last.pt (epoch 200)
+Training finished. Best val PSNR: 23.34
