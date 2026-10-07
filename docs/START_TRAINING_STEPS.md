@@ -94,31 +94,33 @@ cd /root/autodl-tmp/pixelforge
 > 旧目录改名成 `pixelforge_old` 保留——如果之前下过数据（`pixelforge_old/data/`），
 > 稍后可以搬进新目录复用，不用重新下载几个 GB。
 
-装依赖：
+装依赖（**安全**：`requirements.txt` 已不含 torch，不会动镜像的 CUDA torch）：
 
 ```bash
 # ☁️ AutoDL 实例终端
 pip install -r requirements.txt
 ```
 
-> AutoDL 的 PyTorch 镜像通常已带 CUDA 版 torch。但本仓库的 `requirements.txt`
-> 默认从 PyPI 装 **CPU 版** torch——若镜像自带的 CUDA torch 被换成了 CPU 版，
-> 训练会退回 CPU、慢到不可用。**装完必须验证 GPU：**
+> 本仓库现在**不声明 torch/torchvision**——直接复用 AutoDL 镜像自带的 CUDA torch
+> （如 2.8.0+cu128）。所以 `pip install -r requirements.txt` 只装 numpy/pillow/fastapi
+> 等，绝不会把 CUDA torch 降级成 PyPI 的 CPU 版（之前那个致命坑已根除）。
+> 装完顺手验证一下 GPU 确实可用：
 
 ```bash
 # ☁️ AutoDL 实例终端
-python -c "import torch; print('cuda:', torch.cuda.is_available(), torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO GPU')"
+python -c "import torch; print('torch', torch.__version__, '| cuda:', torch.cuda.is_available(), '|', (torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'NO GPU'))"
 ```
 
-若打印 `cuda: False`，说明 torch 是 CPU 版，立刻换回 CUDA 版（**先卸载再装，否则 pip 认为已满足版本号不会换**）：
+应看到 `cuda: True` 和你的显卡名（如 `RTX 4080`）。**若罕见地出现 `cuda: False`**
+（镜像自带的是 CPU torch），先卸载再装 CUDA 版，版本对齐镜像的 cu128：
 
 ```bash
 pip uninstall -y torch torchvision
-pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121
+pip install torch==2.8.0 torchvision==0.23.0 --index-url https://download.pytorch.org/whl/cu128
 ```
 
-> ⚠️ 换好 CUDA torch 后，**不要再跑 `pip install -r requirements.txt`**——
-> 它会再把 torch 换回 CPU 版。其余依赖（fastapi/gradio 等）已经装好了。
+> 由于 `requirements.txt` 已不含 torch，这里装好 CUDA torch 后**也不需要再跑**
+> `pip install -r requirements.txt` 来"补其余依赖"——上面那一次就已经装全了。
 
 **验证代码是对的**（能对上提交说明就说明是含修复的版本）：
 

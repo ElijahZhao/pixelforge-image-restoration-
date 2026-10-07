@@ -1,14 +1,11 @@
 # ---- Training & inference ----
-# 默认从 PyPI 装的是 CPU 版 torch（够跑测试/开发）。
-# PyTorch 的 CUDA wheel 不在 PyPI，而在 pytorch 的 cuXXX 索引。
-# - GPU 实例（AutoDL/Colab 等）务必先装 CUDA 版 torch，再装其余依赖：
-#     pip uninstall -y torch torchvision
-#     pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121
-#   装完 CUDA torch 后，不要再跑 `pip install -r requirements.txt` 重装 torch，
-#   否则 PyPI 会把你换回 CPU 版。
-# - 纯 CPU/开发机：直接 `pip install -r requirements.txt` 即可。
-torch>=2.0,<2.5
-torchvision>=0.15,<0.20
+# ⚠️ 不要在这里声明 torch/torchvision！
+# - AutoDL/Colab 等 GPU 镜像【已预装 CUDA 版 torch】（如 2.8.0+cu128）。
+#   直接 `pip install -r requirements.txt` 即可，本文件不含 torch，
+#   因此不会把镜像的 CUDA torch 降级/换成 PyPI 的 CPU 版（之前的致命坑）。
+# - 纯 CPU/开发机若镜像没带 torch，再单独装：
+#     pip install torch torchvision   # PyPI CPU 版，仅够测试/开发
+# 本项目代码已在 torch 2.8 / 2.10(+cu128) 上验证通过（39 测试全过），无需锁 <2.5。
 numpy>=1.23
 Pillow>=9.0
 
