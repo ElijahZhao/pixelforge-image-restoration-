@@ -2,8 +2,10 @@
 
 Training logs and quantitative results live here.
 
-- `train_log_<task>_<model>.csv` — per-epoch `epoch, train_loss, val_psnr, val_ssim, time_s`.
+- `train_log_<task>_<model>_scale<n>.csv` — per-epoch `epoch, train_loss, val_psnr, val_ssim, time_s`.
   The CSV header also records the training objective and best-checkpoint criterion.
+  The scale is part of the name because SR ×2 and ×4 are separate models; sharing one
+  filename would append two unrelated trainings into a single CSV.
 - These logs are committed (via `.gitignore` whitelist) so the reported numbers are
   reproducible, not just reported.
 

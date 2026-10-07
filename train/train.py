@@ -17,7 +17,8 @@ Low-Light Enhancement:
 Outputs
 -------
   models/<task>_<model>_scale<scale>_best.pth   (best validation checkpoint)
-  results/train_log_<task>_<model>.csv          (epoch, train_loss, val_psnr, val_ssim)
+  results/train_log_<task>_<model>_scale<n>.csv (epoch, train_loss, val_psnr, val_ssim)
+  models/ckpt/<task>_<model>_scale<n>_last.pt   (resume point, written every --save_every)
 
 Note: for low-light, ``<model>`` is whatever ``--model`` you passed (default
 ``srcnn``), and ``<scale>`` is ``--scale`` (default 2), e.g.
@@ -116,6 +117,7 @@ def train(args):
     seed_everything(SEED)
     os.makedirs("models", exist_ok=True)
     os.makedirs("results", exist_ok=True)
+    os.makedirs("models/ckpt", exist_ok=True)
 
     model = build_model(args.task, scale=args.scale,
                         advanced=(args.model == "generator")).to(DEVICE)
@@ -142,20 +144,68 @@ def train(args):
     percep = VGGPerceptualLoss() if args.perceptual else None
 
     best_psnr = -1.0
-    log_path = f"results/train_log_{args.task}_{args.model}.csv"
+    start_epoch = 1
+    # The scale is part of the filename: SR x2 and x4 are different models with
+    # different objectives, and without it the second run would silently append
+    # its epochs onto the first one's CSV, producing a log whose numbers come
+    # from two unrelated trainings.
+    log_path = f"results/train_log_{args.task}_{args.model}_scale{args.scale}.csv"
     # Record the training objective and the best-checkpoint criterion in the
     # same artifact, so the two can never silently diverge.
     best_criterion = "val_psnr"  # best checkpoint is selected by validation PSNR
     objective = (f"{args.w_pixel}*charbonnier + {args.w_percep}*vgg_perceptual"
                  if args.perceptual else "charbonnier")
-    with open(log_path, "w", newline="") as f:
-        w = csv.writer(f)
-        w.writerow([f"# objective={objective}"])
-        w.writerow([f"# best_criterion={best_criterion}"])
-        w.writerow([f"# perceptual_normalized={bool(args.perceptual)}"])
-        w.writerow(["epoch", "train_loss", "val_psnr", "val_ssim", "time_s"])
+    resume_path = f"models/ckpt/{args.task}_{args.model}_scale{args.scale}_last.pt"
 
-    for epoch in range(1, args.epochs + 1):
+    # ---- Resume support ---------------------------------------------------- #
+    # GPU boxes (AutoDL and friends) get reclaimed, and a 200-epoch run that
+    # restarts from zero each time may never finish. The optimizer/scheduler
+    # state is what makes a resume actually *resume* rather than restart with a
+    # warm-looking but wrong LR (the cosine schedule is a function of the epoch,
+    # so restoring only the weights would silently give the model a high LR at
+    # epoch 150 and undo its convergence).
+    if args.resume:
+        # `--resume` with no checkpoint is almost always a typo'd task/model/scale
+        # (the path is derived from them), and silently starting a fresh run would
+        # look like a successful resume while actually training a new model from
+        # scratch. Fail loudly instead.
+        if not os.path.exists(resume_path):
+            raise SystemExit(
+                f"--resume: no checkpoint at {resume_path}. "
+                f"Check --task/--model/--scale, or drop --resume to start fresh."
+            )
+        ckpt = torch.load(resume_path, map_location=DEVICE)
+        # A checkpoint silently loaded into a DIFFERENT configuration produces a
+        # plausible-looking but meaningless run, so validate the identity first.
+        if (ckpt.get("task"), ckpt.get("model"), ckpt.get("scale")) != (
+                args.task, args.model, args.scale):
+            raise SystemExit(
+                f"--resume: {resume_path} is for "
+                f"{ckpt.get('task')}/{ckpt.get('model')}/x{ckpt.get('scale')}, "
+                f"not {args.task}/{args.model}/x{args.scale}."
+            )
+        model.load_state_dict(ckpt["state_dict"])
+        optimizer.load_state_dict(ckpt["optimizer"])
+        scheduler.load_state_dict(ckpt["scheduler"])
+        if ckpt.get("scaler") is not None:
+            scaler.load_state_dict(ckpt["scaler"])
+        start_epoch = ckpt["epoch"] + 1
+        best_psnr = ckpt["best_psnr"]
+        print(f"[resume] 从 {resume_path} 恢复：第 {start_epoch} 轮继续，"
+              f"best PSNR {best_psnr:.2f}")
+
+    # Append when resuming so the log stays one continuous series; truncate only
+    # on a fresh start.
+    log_mode = "a" if start_epoch > 1 else "w"
+    with open(log_path, log_mode, newline="") as f:
+        if log_mode == "w":
+            w = csv.writer(f)
+            w.writerow([f"# objective={objective}"])
+            w.writerow([f"# best_criterion={best_criterion}"])
+            w.writerow([f"# perceptual_normalized={bool(args.perceptual)}"])
+            w.writerow(["epoch", "train_loss", "val_psnr", "val_ssim", "time_s"])
+
+    for epoch in range(start_epoch, args.epochs + 1):
         model.train()
         running = 0.0
         t0 = time.time()
@@ -206,6 +256,20 @@ def train(args):
                         "model": args.model}, ckpt)
             print(f"  -> saved best checkpoint: {ckpt}")
 
+        # Rolling resume point, written every epoch right after validation. Kept
+        # separate from the best checkpoint (which holds weights only): this one
+        # carries the full optimizer/scheduler/scaler state needed to continue.
+        if args.save_every and epoch % args.save_every == 0:
+            torch.save({
+                "epoch": epoch, "state_dict": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "scaler": scaler.state_dict() if DEVICE == "cuda" else None,
+                "best_psnr": best_psnr, "task": args.task,
+                "model": args.model, "scale": args.scale,
+            }, resume_path)
+            print(f"  -> resume point saved: {resume_path} (epoch {epoch})")
+
     print(f"Training finished. Best val PSNR: {best_psnr:.2f}")
 
 
@@ -230,6 +294,10 @@ def parse_args():
     p.add_argument("--batch_size", type=int, default=16)
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--perceptual", action="store_true")
+    p.add_argument("--resume", action="store_true",
+                   help="continue from models/ckpt/<task>_<model>_scale<n>_last.pt")
+    p.add_argument("--save_every", type=int, default=10,
+                   help="write a resume point every N epochs (0 = never)")
     p.add_argument("--w_pixel", type=float, default=DEFAULT_W_PIXEL,
                    help="weight for the pixel (Charbonnier) term")
     p.add_argument("--w_percep", type=float, default=DEFAULT_W_PERCEP,
