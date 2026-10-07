@@ -32,22 +32,22 @@ T0: 打包源码                  T1: 主线操作（克隆、下数据、开训
 
 ## 步骤 1 · 🖥️ 本地电脑终端：拿到源码
 
-因为沙箱这边**没有 GitHub 凭证，推送没成功**，远端 main 还停在旧的 `4cd89c8`。
-所以别去 clone 远端，用我给你的打包文件（已含全部修复，提交号 `b5c1c88`）。
+远端 main **已经更新到 `5d0b0e5`**（用你提供的 PAT 推送成功）。所以有两种拿代码的方式，**任选其一**：
 
+**1-A（最省事）· 直接 clone 远端**
+AutoDL 实例终端里 `git clone https://github.com/ElijahZhao/pixelforge-image-restoration-.git` 即可，含全部修复。
+
+**1-B · 用我给你的打包文件**（如果 clone 不便，或想离线拿）
 我准备了两个文件，在 `/workspace/dist/`：
 
-| 文件 | 用途 | 大小 |
-|---|---|---|
-| `pixelforge-src-main.tar.gz` | **纯源码**，解压即用（推荐，最省事） | 22 MB |
-| `pixelforge-main.bundle` | 带完整 git 历史的 bundle（想保留提交记录时用） | 20 MB |
+| 文件 | 用途 |
+|---|---|
+| `pixelforge-src-main.tar.gz` | **纯源码**，解压即用（推荐） |
+| `pixelforge-main.bundle` | 带完整 git 历史的 bundle（想保留提交记录时用） |
 
-先下载到本地电脑。**方式二选一：**
-
-**1-A（推荐）· 直接从对话里下载**
-点我给你的文件卡片，把 `pixelforge-src-main.tar.gz` 存到你电脑上，比如 `~/Downloads/`。
-
-**1-B · 如果你更想要 git 历史**，下载 `pixelforge-main.bundle`。
+下载到本地电脑：
+- 点我给你的文件卡片，把 `pixelforge-src-main.tar.gz` 存到 `~/Downloads/`
+- 或用 `pixelforge-main.bundle`（含提交 `5d0b0e5`）
 
 ➡️ 这一步在**本地电脑**完成，终端不用切换。
 
@@ -414,20 +414,10 @@ scp root@<主机>:/root/autodl-tmp/retrain_out.tar.gz ~/Downloads/
 
 # 附：待你确认的一件事
 
-远端 GitHub 仓库 **还没更新**——沙箱环境里没有任何 GitHub 凭证，
-`git push` 直接报 `could not read Username`，这不是代码问题，是环境限制。
+远端 GitHub 仓库 **已经更新到 `5d0b0e5`**——用你提供的 PAT 推送成功（非强制推送，
+远端原本领先的 8 个提交已通过 merge 保留，未丢失）。所以上面的步骤里 clone 远端和用
+打包文件两种方式都可，内容一致。
 
-所以上面的步骤用**打包文件**绕过了这个限制。如果你的目标是让远端也更新，有两条路：
-
-1. 你用**自己电脑**把 `pixelforge-main.bundle` 拉下来后推到远端：
-   ```bash
-   # 🖥️ 本地电脑终端
-   git clone pixelforge-main.bundle pixelforge-from-sandbox
-   cd pixelforge-from-sandbox
-   git remote set-url origin https://github.com/ElijahZhao/pixelforge-image-restoration-.git
-   git push origin main
-   ```
-2. 或者先不管远端，等训练出结果再一起推。
-
-> ⚠️ 提醒：你之前有个待办是**吊销 PAT（个人访问令牌）**。如果为了推送要新建令牌，
-> 用完记得撤销，别留着。
+> ⚠️ 提醒：你之前有个待办是**吊销 PAT（个人访问令牌）**。那个令牌已在对话里
+> 暴露过、也实际用过一次，请尽快去 GitHub → Settings → Developer settings →
+> Personal access tokens → 找到它 → **Revoke**。吊销后不影响已推上去的代码。
