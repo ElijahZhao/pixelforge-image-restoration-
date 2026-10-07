@@ -23,6 +23,7 @@
 | 16 | `16_VGG下载完成_27测全过_冒烟完成_SRx4正式训练中.png` | 步骤 11 | VGG16 权重 528M 下载完成（2h48m）；单测 **27/27 全 PASS**；冒烟 2 epoch 完成（Best PSNR 18.33）；旧产物备份至 `backup_old/`；**SR×4 正式训练进行中**——Epoch 1→4：loss 0.1898→0.0649 单调降，val PSNR 18.12→20.72、SSIM 0.2302→0.4949 单调升，约 21.4s/epoch |
 | 17 | `17_SRx4训练至Epoch17_PSNR22.59_连续刷新best.png` | 步骤 11 | SR×4 训练至 Epoch 17：loss 降至 0.0385，val PSNR 升至 22.59、SSIM 0.6718；**每个 epoch 都在刷新 best checkpoint**（曲线健康）；Epoch 10 时已写入断点 `ckpt/sr_generator_scale4_last.pt`（auto-resume 生效） |
 | 18 | `18_SRx4完成但仅23.34_发现batch16问题_SRx2接续中.png` | 步骤 11 | SR×4 200 epoch 跑完，但 Best val PSNR 仅 **23.34** / SSIM 0.727，远低于历史同口径 27.39 / 0.819（epoch 101）；对比历史日志定位根因：脚本默认 `BATCH=16`，历史训练用 `batch_size 8`——每 epoch 优化步数减半（50 vs 100）导致欠训练；SR×2 已自动接续（epoch 1）。截图含无害的 cuDNN plan UserWarning |
+| 19 | `19_SRx2训练至Epoch30_PSNR26.67_连续刷新best_每10ep存断点.png` | 步骤 11 | SR×2（新训练槽位，历史上从未训过、一直回退 bicubic）训练至 Epoch 30：PSNR 25.13→26.67、SSIM 0.8158→0.8723，loss 0.0365→0.0231，**每 epoch 刷新 best、每 10 epoch 存断点**；决定采用"按槽位择优"策略：SR×4 槽位沿用旧模型（backup_old/），SR×2/低光视新模型表现取舍 |
 | 14 | `14_数据归位完成_结构校验全过_800_100_485_15.png` | 步骤 8–9 | LOL 四路 `cp` 归位 + DIV2K 解压归位完成；`download_data.sh --check` 输出**六个 `[有]`：800 / 100 / 485 / 485 / 15 / 15**，全部达标，**数据准备阶段完成**，脚本提示可跑 `eval_baseline.py` 评估基线 |
 
 ## 关键佐证点
