@@ -2,8 +2,10 @@
 
 Training logs and quantitative results live here.
 
-- `train_log_<task>_<model>.csv` — per-epoch `epoch, train_loss, val_psnr, val_ssim, time_s`.
+- `train_log_<task>_<model>_scale<n>.csv` — per-epoch `epoch, train_loss, val_psnr, val_ssim, time_s`.
   The CSV header also records the training objective and best-checkpoint criterion.
+  The scale is part of the name because SR ×2 and ×4 are separate models; sharing one
+  filename would append two unrelated trainings into a single CSV.
 - These logs are committed (via `.gitignore` whitelist) so the reported numbers are
   reproducible, not just reported.
 
@@ -41,6 +43,12 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   not comparable with the current deterministic full-image protocol. Under the
 >   fair, same-protocol comparison the U-Net gains +10.41 dB over the no-op baseline.
 > - Training-log bests (random-crop protocol) were 27.39 (SR) / 18.59 (low-light);
->   the full-image protocol above yields 27.47 / 18.18 — a normal protocol difference.
+>   the full-image protocol above yields 27.47 / 18.18. These are NOT
+>   interchangeable, and the training-log figure is the LESS trustworthy of the two:
+>   the SR crop position was drawn at random for validation, which moved the reported
+>   PSNR by 7.35 dB peak-to-peak against a real training gain of +0.46 dB. The
+>   27.39 came from a single epoch whose neighbours were 25.3-26.6 -- its edge is
+>   crop luck, not model quality. The validation crop is now deterministic, so
+>   the numbers below (full-image, one fixed crop) are the ones to quote.
 > - Reproduce with: `python scripts/eval_baseline.py --task sr --scale 4` and
 >   `python scripts/eval_baseline.py --task lowlight`.

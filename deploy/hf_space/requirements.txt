@@ -1,5 +1,7 @@
+# CPU wheels by default: the Space runs on CPU.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0,<2.5
+torchvision>=0.15,<0.20
 gradio>=4.0
-torch>=2.0
-torchvision>=0.15
 numpy>=1.23
 Pillow>=9.0

@@ -1,6 +1,10 @@
 # ---- Training (run on Kaggle / Colab free GPU) ----
-torch>=2.0
-torchvision>=0.15
+# CPU wheels by default: this repo is developed and tested on CPU.
+# On a GPU host, install the matching CUDA build first, or drop the
+# --extra-index-url line below.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0,<2.5
+torchvision>=0.15,<0.20
 numpy>=1.23
 Pillow>=9.0
 

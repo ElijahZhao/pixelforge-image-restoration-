@@ -60,7 +60,7 @@ demo = gr.Interface(
     inputs=[
         gr.Image(type="pil", label="Input image"),
         gr.Radio(["sr", "lowlight"], value="sr", label="Task"),
-        gr.Radio(["2", "4"], value="2", label="SR scale"),
+        gr.Radio(["2", "4"], value="4", label="SR scale"),
     ],
     outputs=[gr.Image(label="Before"), gr.Image(label="After (enhanced)")],
     title="CV Image Restoration Demo",

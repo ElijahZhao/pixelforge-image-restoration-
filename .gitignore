@@ -15,13 +15,16 @@ coverage.xml
 data/div2k/
 data/lol/
 models/*.pth
+# Resume points (optimizer/scheduler state, tens of MB each). Local-only: they
+# exist so an interrupted GPU run can continue, not to be shared.
+models/ckpt/
 # The trained TorchScript weights (sr_generator_scale4.pt, lowlight.pt)
 # are committed so `git clone` gives a runnable project out of the box.
 results/*.csv
 # Exception: the two full training logs ARE committed — they make the reported
 # PSNR/SSIM reproducible.
-!results/train_log_sr_generator.csv
-!results/train_log_lowlight_srcnn.csv
+!results/train_log_sr_generator_scale4.csv
+!results/train_log_lowlight_srcnn_scale2.csv
 
 # Node / Next.js
 node_modules/

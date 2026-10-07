@@ -5,6 +5,28 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.1.1] - 2026-10-07
+
+修正依赖安装内容与训练/验证口径。模型结构与对外指标口径未改动；**已发布权重的重新训练在另行进行中**。
+
+### Fixed
+
+- 依赖锁定为 CPU 构建：根 `requirements.lock.txt` 此前解析出 CUDA 版 torch 并连带 38 个 `nvidia-*` / `cuda-*` / `triton` 包，与 CPU 部署环境不符。CI 安装与 `pip-audit` 审计的也是这一份。
+- `deploy/hf_space/requirements.txt` 的 torch 约束补上上限，与另两端一致。
+- 训练验证口径改为确定性：SR 验证集此前每轮随机裁剪，实测极差 7.35 dB，而 200 轮真实增益仅 +0.46 dB；低光验证集此前把 400x600 压成 128x128 正方形，后 100 轮指标标准差仅 0.0457，无法区分 checkpoint 优劣。两处均改为不引入随机性的口径。
+- 验证 loader 传入固定 seed，消除 worker 随机性。
+- 训练脚本支持断点续训（`--resume` / `--auto-resume` / `--save_every`），状态写入改为原子替换，避免中断产生截断文件导致续训崩溃。
+
+### Changed
+
+- 超分倍率默认值统一为 ×4（Web、FastAPI、Gradio、Streamlit、HF Space 五端）：×2 无训练权重，默认落在 bicubic 兜底上容易被误读为 AI 结果。
+- 训练日志文件名带上 scale，避免 ×2 与 ×4 互相追加。既有日志同步改名。
+- 移除正文中的自指性时间词（`DEPLOY_DIAGNOSIS.md`、`CHANGELOG.md`）。
+
+### Removed
+
+- `deploy/streamlit/requirements.lock.txt`：与实际安装内容不符，且 Streamlit 实际读取的是同目录的 `requirements.txt`。
+
 ## [1.1.0] - 2026-10-05
 
 补齐工程完备性：测试与 CI 覆盖到前端，加上依赖漏洞扫描、接口限流，并补了 API 与运维文档。核心指标与训练权重未改动。
@@ -25,7 +47,7 @@
 
 - README 功能特性按实际能力分述：4× 由自训 SRResNet 驱动，2× 走经典兜底（SRCNN ×2 未训练）。此前笼统写「支持 2×/4×」与实现不符。
 - E2E 脚本 `tests/e2e/e2e.py` 改名 `test_e2e.py`，并加模块级 `pytest.skip`，确保它不会被 CI 当成浏览器用例拉起。
-- 测试计数随本轮更新：28 → 29 passed（新增限流测试），另有 1 skipped（E2E）。
+- 测试计数更新：28 → 29 passed（新增限流测试），另有 1 skipped（E2E）。
 
 ## [1.0.0] - 2026-10-04
 

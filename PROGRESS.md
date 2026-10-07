@@ -11,7 +11,7 @@
 |---|---|---|
 | 训练侧代码（PyTorch 模型 / 数据 / 指标 / 脚本） | 已完成 | 结构可跑，已在 GPU 上真实训练 |
 | 推理侧代码（FastAPI + 经典兜底 + 导出） | 已完成 | 无权重时自动走基线，有权重自动切 ML |
-| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 32 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
+| 本地测试与 demo 图（CPU 可跑） | 已完成 | pytest 36 passed / 1 skipped；覆盖率 79.7%（门槛 75%）；前端 vitest 3 项 |
 | 前端（Next.js 交互 Demo） | 已完成 | `next build` + `tsc` + vitest 已进 CI |
 | 依赖与接口安全 | 已完成 | CI 跑 pip-audit；`/api/predict` 带按 IP 限流 |
 | 文档（README / API / 运维 / LICENSE） | 已完成 | 英文主文档 `README.md` + 中文 `README.zh-CN.md` + `docs/API.md` + `docs/OPERATIONS.md` + `docs/DEPLOY_DIAGNOSIS.md` |
@@ -71,17 +71,21 @@
 | 任务 | 指标 | 备注 |
 |---|---|---|
 | SR ×4 | val PSNR 17.20 / SSIM 0.217 | 低于 bicubic，成因是感知损失实现缺陷 |
-| 低光 | val PSNR 19.26 / SSIM ≈0.74–0.78 | 随机裁剪口径，与修复后全图口径不可比 |
+| 低光 | val PSNR 19.26 / SSIM ≈0.74–0.78 | 旧验证口径，与修复后全图口径不可比 |
 
 > SR×4 修复前为 17.20；补上 VGG 归一化与显式权重后重训达 27.47，高于 bicubic +0.77 dB。
-> 低光修复后同口径下相对不处理基线 +10.41 dB；此前"疑似退化"的结论（18.59 < 19.26）来自验证口径变化，已澄清。
+> 低光修复后同口径下相对不处理基线 +10.41 dB；此前"疑似退化"的结论（18.59 < 19.26）来自验证口径变化。
+> **该旧口径不只是"不同"，而是失效**：验证时把 400x600 压成 128x128，后 100 轮指标标准差仅 0.0457（近似常数），
+> 无法区分 checkpoint 优劣。同理 SR 的验证曾用随机裁剪，极差 7.35 dB 而真实增益仅 +0.46 dB，
+> 训练日志里的 27.39 来自一次幸运裁剪（邻居 25.3–26.6），不代表模型水平。
+> 两处验证均已在代码中改为确定性口径，权重需按新口径重训后其选点才可信。
 > 加载验证（CPU）：`GET /api/health` → `{"sr_scale2":"classical","sr_scale4":"ml","lowlight":"ml"}`。
 
 ### 2.5 工程收尾
 
 - 收紧 CORS：`serve/app.py` 支持 `ALLOWED_ORIGINS` 环境变量。
 - 接口限流：`/api/predict` 按 IP 令牌桶限流，超限 429（默认 30 突发 / 0.5 补充每秒）。
-- 测试：`train/tests/`（20）+ `tests/test_api_smoke.py`（9）+ `tests/test_inference_integration.py`（3），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性）与 API 全路径守卫；集成测试用真实权重跑通推理链路；pytest 32 passed。
+- 测试：`train/tests/`（24）+ `tests/test_api_smoke.py`（9）+ `tests/test_inference_integration.py`（3），覆盖模型 shape、PSNR/SSIM、正确性测试（VGG 归一化、损失权重量级、SR 输出尺寸契约、数据管线配对一致性、验证集确定性）与 API 全路径守卫；集成测试用真实权重跑通推理链路；pytest 36 passed。
 - 覆盖率：`pytest-cov` 门槛 75%，当前 79.7%（配置见 `pyproject.toml`）。
 - 前端测试：`web/lib/api.test.ts`（vitest）覆盖请求构造与错误映射。
 - 浏览器 E2E：`tests/e2e/test_e2e.py`（Playwright + Chromium）跑通「上传 → Enhance → 拖动滑块」全流程；不在 CI 内运行。

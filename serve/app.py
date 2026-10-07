@@ -130,7 +130,7 @@ async def predict(
     request: Request,
     image: UploadFile = File(...),
     task: str = Form("sr"),
-    scale: int = Form(2),
+    scale: int = Form(4),
 ):
     # Throttle before doing any work: this endpoint is unauthenticated and the
     # body read below is already cheap to abuse.
@@ -160,7 +160,9 @@ def _predict_sync(raw: bytes, task: str, scale: int):
             status_code=422, content={"error": "task must be 'sr' or 'lowlight'"}
         )
     if scale not in (2, 4):
-        scale = 2
+        # Fall back to x4, the only scale with a trained weight: an unknown
+        # scale should not silently land on the bicubic baseline.
+        scale = 4
 
     # Reject oversized uploads before decoding them.
     if len(raw) > MAX_UPLOAD_BYTES:
