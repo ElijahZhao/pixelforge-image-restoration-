@@ -19,6 +19,7 @@
 | 11 | `11_步骤7_新终端wget_DIV2K_train_HR.png` | 步骤 7 | 新开终端 `cd /root/autodl-tmp && mkdir -p zips && cd zips`，`wget -c DIV2K_train_HR.zip` **正在下载（37%）** |
 | 12 | `12_DIV2K下载_404弯路_换validation_release成功.png` | 步骤 7 | 训练集 3.29G 下载成功（35m34s）；验证集按官网原路径 `DIV2K_valid_HR.zip` 报 **404 Not Found**（ETH 已挪文件、官网链接未更新）；改用 `validation_release/` 子目录路径后 **200 OK**，428M 下载成功（5m10s）。**完整记录踩坑与排错过程** |
 | 13 | `13_LOL下载完成331M_解压确认顶层目录.png` | 步骤 7 | `lol_dataset.zip` 经 hf-mirror.com 下载完成（331M / 39m12s，走 302→OSS 中转）；`unzip` 后 `ls` 确认四个包齐全：`DIV2K_train_HR.zip`、`DIV2K_valid_HR.zip`、`lol_dataset/`、`lol_dataset.zip`，**全部原始数据就位** |
+| 14 | `14_数据归位完成_结构校验全过_800_100_485_15.png` | 步骤 8–9 | LOL 四路 `cp` 归位 + DIV2K 解压归位完成；`download_data.sh --check` 输出**六个 `[有]`：800 / 100 / 485 / 485 / 15 / 15**，全部达标，**数据准备阶段完成**，脚本提示可跑 `eval_baseline.py` 评估基线 |
 
 ## 关键佐证点
 
@@ -27,8 +28,7 @@
    验证了「从 requirements 移除 torch 声明」这一修复生效——不再出现旧实例中
    `Installing collected packages: torch` 把 `+cu128` 换成 `+cpu` 的致命降级。
 3. **代码版本正确**：`grep` 计数 4 / 3 与修复后代码一致（截图 09）。
-4. **进度**：三个原始数据包全部下载完毕（截图 11–13）——DIV2K train 3.29G、DIV2K valid 428M、LOL 331M；
-   其中验证集 404 的弯路（截图 12）已排错解决，下一步为步骤 8 解压归位 + 步骤 9 `--check` 校验。
+4. **进度**：数据准备阶段全部完成（截图 11–14）——三个数据包下载、解压归位、`--check` 六项校验全过（800/100/485/485/15/15）。下一步进入 tmux 开训（步骤 10–11）。
 
 ## 踩坑记录（排错证据）
 
