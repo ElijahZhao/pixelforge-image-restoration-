@@ -11,7 +11,7 @@
 #   bash retrain_autodl.sh
 #   Ctrl-B 然后 D 挂起（断线不掉）
 #
-# 中断后直接重跑本脚本即可：训练带 --resume，会从上次的断点继续。
+# 中断后直接重跑本脚本即可：训练带 --auto-resume，有断点就续、没有就开始。
 # 若某个阶段已完成、不想重跑，用开关跳过，例如：
 #   SKIP_SMOKE=1 SKIP_SR4=1 bash retrain_autodl.sh
 set -euo pipefail
@@ -27,7 +27,20 @@ SKIP_SR2="${SKIP_SR2:-0}"
 SKIP_LOWLIGHT="${SKIP_LOWLIGHT:-0}"
 
 # ===== Step 0 · 数据自检 + 跑测试 =====
-bash scripts/download_data.sh --check
+# `download_data.sh --check` exits 1 when data is missing, which under `set -e`
+# would kill this script mid-way through a wall of download instructions. Catch
+# it explicitly so the failure is one clear sentence pointing at the guide.
+if ! bash scripts/download_data.sh --check; then
+  echo
+  echo "================================================================"
+  echo "数据集未就绪，训练无法开始。"
+  echo "准备步骤见 docs/RETRAIN_DATA_GUIDE.md，或重跑："
+  echo "    bash scripts/download_data.sh      # 打印下载指引"
+  echo "    bash scripts/download_data.sh --check   # 校验结构"
+  echo "================================================================"
+  exit 1
+fi
+
 "$PY" -m train.tests.run_tests
 
 # ===== Step 1 · 备份旧产物 =====
@@ -48,7 +61,7 @@ fi
 if [[ "$SKIP_SR4" != "1" ]]; then
   "$PY" train/train.py --task sr --model generator --scale 4 \
     --data_root data --epochs "$EPOCHS" --batch_size "$BATCH" --lr 1e-4 --perceptual \
-    --save_every 10 --resume \
+    --save_every 10 --auto-resume \
     2>&1 | tee train_sr_scale4.log
   echo "[SR x4 完成] models/sr_generator_scale4_best.pth"
 fi
@@ -57,7 +70,7 @@ fi
 if [[ "$SKIP_SR2" != "1" ]]; then
   "$PY" train/train.py --task sr --model generator --scale 2 \
     --data_root data --epochs "$EPOCHS" --batch_size "$BATCH" --lr 1e-4 --perceptual \
-    --save_every 10 --resume \
+    --save_every 10 --auto-resume \
     2>&1 | tee train_sr_scale2.log
   echo "[SR x2 完成] models/sr_generator_scale2_best.pth"
 fi
@@ -68,7 +81,7 @@ fi
 if [[ "$SKIP_LOWLIGHT" != "1" ]]; then
   "$PY" train/train.py --task lowlight --model generator \
     --data_root data --epochs "$EPOCHS" --batch_size "$BATCH" --lr 2e-4 \
-    --save_every 10 --resume \
+    --save_every 10 --auto-resume \
     2>&1 | tee train_lowlight.log
   echo "[低光完成] models/lowlight_generator_scale2_best.pth"
 fi

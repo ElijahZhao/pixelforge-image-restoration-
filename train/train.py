@@ -164,35 +164,45 @@ def train(args):
     # warm-looking but wrong LR (the cosine schedule is a function of the epoch,
     # so restoring only the weights would silently give the model a high LR at
     # epoch 150 and undo its convergence).
-    if args.resume:
-        # `--resume` with no checkpoint is almost always a typo'd task/model/scale
-        # (the path is derived from them), and silently starting a fresh run would
-        # look like a successful resume while actually training a new model from
-        # scratch. Fail loudly instead.
+    if args.resume or args.auto_resume:
+        # `--resume` means "continue, and fail if there is nothing to continue
+        # from" -- a missing checkpoint usually means a typo'd task/model/scale,
+        # and silently starting fresh would look like a successful resume while
+        # actually training a new model.
+        #
+        # `--auto-resume` means "continue if a checkpoint exists, otherwise
+        # start fresh". This is what the retraining script wants: it runs the
+        # same command every time an instance gets reclaimed, and on the very
+        # first invocation there is legitimately nothing to resume from.
         if not os.path.exists(resume_path):
-            raise SystemExit(
-                f"--resume: no checkpoint at {resume_path}. "
-                f"Check --task/--model/--scale, or drop --resume to start fresh."
-            )
-        ckpt = torch.load(resume_path, map_location=DEVICE)
-        # A checkpoint silently loaded into a DIFFERENT configuration produces a
-        # plausible-looking but meaningless run, so validate the identity first.
-        if (ckpt.get("task"), ckpt.get("model"), ckpt.get("scale")) != (
-                args.task, args.model, args.scale):
-            raise SystemExit(
-                f"--resume: {resume_path} is for "
-                f"{ckpt.get('task')}/{ckpt.get('model')}/x{ckpt.get('scale')}, "
-                f"not {args.task}/{args.model}/x{args.scale}."
-            )
-        model.load_state_dict(ckpt["state_dict"])
-        optimizer.load_state_dict(ckpt["optimizer"])
-        scheduler.load_state_dict(ckpt["scheduler"])
-        if ckpt.get("scaler") is not None:
-            scaler.load_state_dict(ckpt["scaler"])
-        start_epoch = ckpt["epoch"] + 1
-        best_psnr = ckpt["best_psnr"]
-        print(f"[resume] 从 {resume_path} 恢复：第 {start_epoch} 轮继续，"
-              f"best PSNR {best_psnr:.2f}")
+            if args.resume:
+                raise SystemExit(
+                    f"--resume: no checkpoint at {resume_path}. "
+                    f"Check --task/--model/--scale, or drop --resume to start fresh."
+                )
+            print(f"[auto-resume] 无断点，从头开始训练")
+        else:
+            ckpt = torch.load(resume_path, map_location=DEVICE)
+            # A checkpoint silently loaded into a DIFFERENT configuration produces
+            # a plausible-looking but meaningless run, so validate identity first.
+            # Checked even under --auto-resume: starting over silently is worse
+            # than stopping, because the operator believes the run continued.
+            if (ckpt.get("task"), ckpt.get("model"), ckpt.get("scale")) != (
+                    args.task, args.model, args.scale):
+                raise SystemExit(
+                    f"--resume: {resume_path} is for "
+                    f"{ckpt.get('task')}/{ckpt.get('model')}/x{ckpt.get('scale')}, "
+                    f"not {args.task}/{args.model}/x{args.scale}."
+                )
+            model.load_state_dict(ckpt["state_dict"])
+            optimizer.load_state_dict(ckpt["optimizer"])
+            scheduler.load_state_dict(ckpt["scheduler"])
+            if ckpt.get("scaler") is not None:
+                scaler.load_state_dict(ckpt["scaler"])
+            start_epoch = ckpt["epoch"] + 1
+            best_psnr = ckpt["best_psnr"]
+            print(f"[resume] 从 {resume_path} 恢复：第 {start_epoch} 轮继续，"
+                  f"best PSNR {best_psnr:.2f}")
 
     # Append when resuming so the log stays one continuous series; truncate only
     # on a fresh start.
@@ -295,7 +305,10 @@ def parse_args():
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--perceptual", action="store_true")
     p.add_argument("--resume", action="store_true",
-                   help="continue from models/ckpt/<task>_<model>_scale<n>_last.pt")
+                   help="continue from models/ckpt/<task>_<model>_scale<n>_last.pt; "
+                        "error out if it does not exist")
+    p.add_argument("--auto-resume", dest="auto_resume", action="store_true",
+                   help="continue if a resume point exists, otherwise start fresh")
     p.add_argument("--save_every", type=int, default=10,
                    help="write a resume point every N epochs (0 = never)")
     p.add_argument("--w_pixel", type=float, default=DEFAULT_W_PIXEL,
