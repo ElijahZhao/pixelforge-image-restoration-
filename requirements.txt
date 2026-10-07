@@ -1,8 +1,12 @@
-# ---- Training (run on Kaggle / Colab free GPU) ----
-# CPU wheels by default: this repo is developed and tested on CPU.
-# On a GPU host, install the matching CUDA build first, or drop the
-# --extra-index-url line below.
---extra-index-url https://download.pytorch.org/whl/cpu
+# ---- Training & inference ----
+# 默认从 PyPI 装的是 CPU 版 torch（够跑测试/开发）。
+# PyTorch 的 CUDA wheel 不在 PyPI，而在 pytorch 的 cuXXX 索引。
+# - GPU 实例（AutoDL/Colab 等）务必先装 CUDA 版 torch，再装其余依赖：
+#     pip uninstall -y torch torchvision
+#     pip install torch==2.4.1 torchvision==0.19.1 --index-url https://download.pytorch.org/whl/cu121
+#   装完 CUDA torch 后，不要再跑 `pip install -r requirements.txt` 重装 torch，
+#   否则 PyPI 会把你换回 CPU 版。
+# - 纯 CPU/开发机：直接 `pip install -r requirements.txt` 即可。
 torch>=2.0,<2.5
 torchvision>=0.15,<0.20
 numpy>=1.23
