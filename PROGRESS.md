@@ -110,7 +110,7 @@
 
 ### P2 — 可选
 
-- [ ] `SRCNN ×2` 训练：当前为 `TBD`，可用 `train/train.py --model srcnn --scale 2` 补训。
+- [x] `SRCNN ×2` 训练：✅ 2026-10-07 AutoDL 完成（全图验证 **32.35 / 0.917**，胜 bicubic 31.04 +1.31 dB），已采纳为部署权重 `serve/models/sr_generator_scale2.pt`。
 - [ ] 前端部署：Vercel 导入 `web/`，`NEXT_PUBLIC_API_URL` 指向后端。
 
 ---
@@ -124,3 +124,26 @@
 | SR 感知损失缺陷 | 原实现中 VGG 输入未做 ImageNet 归一化、像素项被 `0.01` 系数抹除；已在 `train/train.py` 修复，并已重训验证 |
 | 权重已进 git | `.gitignore` 未忽略 `serve/models/*.pt`，`sr_generator_scale4.pt` / `lowlight.pt` 随仓库分发，`git clone` 即得可运行项目 |
 | 受限网络推送 | 沙箱直连 GitHub 被 egress 白名单拦截，已用 `ghproxy.net` 镜像解决（见 `DEPLOY.md` §4） |
+
+---
+
+## 五、三次训练对照记录（2026-10-07 收官）
+
+> 完整决策过程见 `docs/MODEL_SELECTION_TODO.md`，训练全程截图 11–27 见 `docs/autodl_screenshots/`。
+
+三次训练（同一代码、同一数据，batch8 vs batch16）构成超参敏感性对照实验；槽位决策一律以
+`scripts/eval_baseline.py` 全图同口径对比为准（训练日志 val 数字跨协议不可比：历史为随机
+裁剪协议，现行已改确定性）。
+
+| 轮次 | 环境 | 产出 | 全图口径成绩 | 采纳 |
+|---|---|---|---|---|
+| ① 历史 | 本地 batch8 | SR×4 SRResNet / 低光 U-Net | SR×4 27.47 / 低光 18.12 | ×4 ✅ |
+| ② 本批 | AutoDL 4090 batch16 | SR×4 重训 + **首个 SR×2** | SR×4 27.38 / ×2 **32.35**（+1.31 vs bicubic） | ×2 ✅ |
+| ③ 本批 | AutoDL 4090 batch16 | 低光重训 | **18.32**（PSNR / SSIM 双指标胜 ①） | ✅ |
+
+**最终部署阵容（三槽位全部打赢各自基线）**：SR×4 = **27.47** ｜ SR×2 = **32.35** ｜ 低光 = **18.32**。
+部署权重三份 md5 核验：`d15d8353`（×4）/ `f751611d`（×2）/ `56e2f98d`（低光），双端一致——
+`serve/models/`（API 共用）与 `deploy/streamlit/models/`（公开 demo）。新训 `.pth` 与续训
+ckpt 按 `.gitignore` 约定仅本地留存（`models/`）；训练 CSV / log 已入库（`results/`）。
+注：batch16 训练日志的 23.34 / 17.20 与历史日志名义差距主要是验证协议变更的假象，
+同口径下新模型与旧代持平（×4，-0.09 dB）或更优（×2、低光）。

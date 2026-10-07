@@ -5,6 +5,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] - 2026-10-07
+
+三次训练对照完成，按槽位择优更新部署权重；首个 ×2 超分权重上线。
+
+### Added
+
+- `serve/models/sr_generator_scale2.pt`：首个自训 ×2 超分权重（SRCNN，AutoDL RTX 4090 batch16）。全图验证 **32.35 / 0.917**，胜 bicubic 基线 31.04 +1.31 dB；此前 ×2 请求一直回退经典 bicubic（1.1.1 中"×2 无训练权重"的临时限制解除）。
+- `deploy/streamlit/models/sr_generator_scale2.pt`：Streamlit demo 同步上线 ×2 真模型档位（加载逻辑按 `sr_*_scale{scale}.pt` 自动识别，零代码改动）。
+- `results/train_log_*_batch16_20261007.csv` ×3 与 `results/logs_batch16_20261007/`：第 ②③ 次训练（batch16）完整日志留档，与第 ① 次（batch8）构成超参对照实验证据。
+- `docs/MODEL_SELECTION_TODO.md`：三次训练按槽位择优的决策记录（含评估口径说明、备份路径坑位与恢复验证）。
+
+### Changed
+
+- **低光部署权重更新**：`serve/models/lowlight.pt` 与 `deploy/streamlit/models/` 由第 ① 次权重（18.12 / 0.743）换为第 ③ 次权重（**18.32 / 0.746**，PSNR / SSIM 双指标同向胜出）。
+- **SR ×4 部署权重保持第 ① 次产物**：27.47 / 0.780（第 ② 次新训 27.38 以 0.09 dB 险负）。三个部署槽位在全图口径下全部打赢各自基线：SR×4 27.47 / SR×2 32.35 / 低光 18.32。
+- Streamlit demo 文案更新为三次训练择优结论（×2 / ×4 均标注自训模型与实测 PSNR）。
+- 修正评估叙事：训练日志 val 数字跨协议不可比（历史随机裁剪 vs 现行确定性协议，见 1.1.1），槽位决策一律以 `scripts/eval_baseline.py` 全图同口径对比为准；batch16 日志名义上的大幅落后（23.34 / 17.20）主要为协议差异假象，同口径下新模型与旧代持平（×4）或更优（×2、低光）。
+
 ## [1.1.1] - 2026-10-07
 
 修正依赖安装内容与训练/验证口径。模型结构与对外指标口径未改动；**已发布权重的重新训练在另行进行中**。

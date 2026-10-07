@@ -13,8 +13,9 @@ deploy/streamlit/
 ├── streamlit_app.py     # 自包含入口（classical 基线 + TorchScript 加载 + Streamlit UI）
 ├── requirements.txt     # 仅推理依赖
 └── models/
-    ├── sr_generator_scale4.pt
-    └── lowlight.pt
+    ├── sr_generator_scale4.pt   # 自训 SRResNet（三次训练择优：保留历史模型）
+    ├── sr_generator_scale2.pt   # 自训 SRCNN ×2（三次训练择优：采纳新训，此前 ×2 一直回退 bicubic）
+    └── lowlight.pt              # 自训 U-Net（三次训练择优：采纳新训）
 ```
 
 ## 部署步骤（5 分钟）
