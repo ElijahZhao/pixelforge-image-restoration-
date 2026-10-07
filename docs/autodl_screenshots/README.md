@@ -25,6 +25,7 @@
 | 18 | `18_SRx4完成但仅23.34_发现batch16问题_SRx2接续中.png` | 步骤 11 | SR×4 200 epoch 跑完，但 Best val PSNR 仅 **23.34** / SSIM 0.727，远低于历史同口径 27.39 / 0.819（epoch 101）；对比历史日志定位根因：脚本默认 `BATCH=16`，历史训练用 `batch_size 8`——每 epoch 优化步数减半（50 vs 100）导致欠训练；SR×2 已自动接续（epoch 1）。截图含无害的 cuDNN plan UserWarning |
 | 19 | `19_SRx2训练至Epoch30_PSNR26.67_连续刷新best_每10ep存断点.png` | 步骤 11 | SR×2（新训练槽位，历史上从未训过、一直回退 bicubic）训练至 Epoch 30：PSNR 25.13→26.67、SSIM 0.8158→0.8723，loss 0.0365→0.0231，**每 epoch 刷新 best、每 10 epoch 存断点**；决定采用"按槽位择优"策略：SR×4 槽位沿用旧模型（backup_old/），SR×2/低光视新模型表现取舍 |
 | 20 | `20_SRx2训练至Epoch45_PSNR27.07_持续刷新best.png` | 步骤 11 | SR×2 训练至 Epoch 45：PSNR 26.42→27.07、SSIM 0.8664→0.8866，loss 0.0256→0.0200，每个 epoch 继续刷新 best、每 10 epoch 存断点（epoch 40 已落盘）；同期建立 `docs/MODEL_SELECTION_TODO.md` 待办清单，固化"按槽位择优"决策：SR×4 弃新复旧，SR×2 跑完与 bicubic ×2 对比后再定 |
+| 21 | `21_SRx2训练完毕27.72_低光接续开局正常.png` | 步骤 11 | **SR×2 训练完毕**：200 epoch 跑完，Best val PSNR **27.72 / SSIM 0.8994**（ep195），产出 `models/sr_generator_scale2_best.pth`（史上首个 ×2 权重）；低光阶段自动接续（srcnn 0.50M 参数，无断点从头训练），ep1–12：PSNR 14.35→15.95、SSIM 0.6264→0.7159，开局优于历史（历史 ep1 仅 11.87），约 8.2s/epoch；同期确立硬约束：**不再重训**，三次训练留档形成对照系列 |
 | 14 | `14_数据归位完成_结构校验全过_800_100_485_15.png` | 步骤 8–9 | LOL 四路 `cp` 归位 + DIV2K 解压归位完成；`download_data.sh --check` 输出**六个 `[有]`：800 / 100 / 485 / 485 / 15 / 15**，全部达标，**数据准备阶段完成**，脚本提示可跑 `eval_baseline.py` 评估基线 |
 
 ## 关键佐证点
