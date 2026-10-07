@@ -309,6 +309,64 @@ def test_sr_train_still_random_crops():
     assert len(patches) > 1, "training crops must still vary between fetches"
 
 
+def test_sr_rejects_crop_smaller_than_scale():
+    """A crop below the scale factor would give a 1x1 LR patch.
+
+    That is not a super-resolution task, yet the loader would happily produce it
+    and the model would train into something useless without any error. Refusing
+    the configuration is the only way this surfaces.
+    """
+    base = tempfile.mkdtemp()
+    _write(f"{base}/val/0.png", np.zeros((100, 100, 3), "uint8"))
+    for crop in (1, 2, 3):
+        try:
+            SuperResolutionDataset(base, "val", scale=4, crop_size=crop)
+            raise AssertionError(f"crop_size={crop} with scale=4 must be rejected")
+        except ValueError:
+            pass
+
+
+def test_sr_rejects_crop_not_divisible_by_scale():
+    """A crop not divisible by the scale truncates the LR patch.
+
+    e.g. crop=98 / scale=4 -> LR 24, so the pair is really 24x4=96 rather than
+    98: the model is trained on a ratio its own output size contradicts.
+    """
+    base = tempfile.mkdtemp()
+    _write(f"{base}/val/0.png", np.zeros((200, 200, 3), "uint8"))
+    for crop, scale in ((98, 4), (97, 2), (100, 8)):
+        try:
+            SuperResolutionDataset(base, "val", scale=scale, crop_size=crop)
+            raise AssertionError(
+                f"crop_size={crop} with scale={scale} must be rejected"
+            )
+        except ValueError:
+            pass
+    # The default configuration must remain legal.
+    SuperResolutionDataset(base, "val", scale=4, crop_size=96)
+    SuperResolutionDataset(base, "val", scale=2, crop_size=96)
+
+
+def test_lowlight_rejects_crop_not_divisible_by_pad_multiple():
+    """The low-light U-Net downsamples by 32, so its training patches must be
+    multiples of 32 -- otherwise the decoder's concatenation fails on the first
+    batch with "Sizes of tensors must match", a message that points at the
+    network rather than at the real cause."""
+    base = tempfile.mkdtemp()
+    low_dir = os.path.join(base, "train", "low")
+    high_dir = os.path.join(base, "train", "high")
+    _write(os.path.join(low_dir, "0.png"), np.zeros((200, 200, 3), "uint8"))
+    _write(os.path.join(high_dir, "0.png"), np.zeros((200, 200, 3), "uint8"))
+    for crop in (100, 127, 33):
+        try:
+            LowLightDataset(base, "train", crop_size=crop)
+            raise AssertionError(f"crop_size={crop} is not a multiple of 32")
+        except ValueError:
+            pass
+    LowLightDataset(base, "train", crop_size=128)  # default stays legal
+    LowLightDataset(base, "train", crop_size=96)
+
+
 # --------------------------------------------------------------------------- #
 # Metrics: numeric correctness (not just finiteness).
 # --------------------------------------------------------------------------- #

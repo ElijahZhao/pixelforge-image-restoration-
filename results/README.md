@@ -43,6 +43,12 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   not comparable with the current deterministic full-image protocol. Under the
 >   fair, same-protocol comparison the U-Net gains +10.41 dB over the no-op baseline.
 > - Training-log bests (random-crop protocol) were 27.39 (SR) / 18.59 (low-light);
->   the full-image protocol above yields 27.47 / 18.18 — a normal protocol difference.
+>   the full-image protocol above yields 27.47 / 18.18. These are NOT
+>   interchangeable, and the training-log figure is the LESS trustworthy of the two:
+>   the SR crop position was drawn at random for validation, which moved the reported
+>   PSNR by 7.35 dB peak-to-peak against a real training gain of +0.46 dB. The
+>   27.39 came from a single epoch whose neighbours were 25.3-26.6 -- its edge is
+>   crop luck, not model quality. The validation crop is now deterministic, so
+>   the numbers below (full-image, one fixed crop) are the ones to quote.
 > - Reproduce with: `python scripts/eval_baseline.py --task sr --scale 4` and
 >   `python scripts/eval_baseline.py --task lowlight`.

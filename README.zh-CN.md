@@ -150,7 +150,7 @@ cd web && pnpm install && pnpm test
 cd web && pnpm exec tsc --noEmit
 ```
 
-预期 `32 passed, 1 skipped`（20 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
+预期 `36 passed, 1 skipped`（24 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
 
 E2E 浏览器测试需真实浏览器与两个服务，默认在 pytest 下跳过；要运行：
 

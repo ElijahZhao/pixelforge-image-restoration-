@@ -163,7 +163,7 @@ cd web && pnpm install && pnpm test
 cd web && pnpm exec tsc --noEmit
 ```
 
-Expected: `32 passed, 1 skipped` (20 training unit tests + 9 API smoke tests + 3 real-weight
+Expected: `36 passed, 1 skipped` (24 training unit tests + 9 API smoke tests + 3 real-weight
 integration tests; the skip is the E2E script). The integration tests load the real weights
 under `serve/models/` through the full inference path, confirming the ML engine actually serves
 rather than silently degrading to the classical baseline.

@@ -113,6 +113,22 @@ def l1_charbonnier(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-3):
     return torch.mean(torch.sqrt(diff * diff + eps * eps))
 
 
+def _atomic_save(obj, path: str) -> None:
+    """Save ``obj`` to ``path`` so a crash can never leave a partial file.
+
+    ``torch.save(obj, path)`` opens ``path`` and writes into it. If the process
+    dies mid-write (AutoDL reclaiming the instance, OOM-kill, Ctrl-C), the file
+    left behind is truncated -- and that is precisely the file the next
+    ``--auto-resume`` run tries to read, turning one interruption into a
+    permanent crash loop. Writing to a sibling temp file and ``os.replace``-ing
+    it into place is atomic on POSIX: readers see either the old complete file
+    or the new complete one, never a half-written one.
+    """
+    tmp = f"{path}.tmp"
+    torch.save(obj, tmp)
+    os.replace(tmp, path)
+
+
 def train(args):
     seed_everything(SEED)
     os.makedirs("models", exist_ok=True)
@@ -182,27 +198,50 @@ def train(args):
                 )
             print(f"[auto-resume] 无断点，从头开始训练")
         else:
-            ckpt = torch.load(resume_path, map_location=DEVICE)
-            # A checkpoint silently loaded into a DIFFERENT configuration produces
-            # a plausible-looking but meaningless run, so validate identity first.
-            # Checked even under --auto-resume: starting over silently is worse
-            # than stopping, because the operator believes the run continued.
-            if (ckpt.get("task"), ckpt.get("model"), ckpt.get("scale")) != (
-                    args.task, args.model, args.scale):
-                raise SystemExit(
-                    f"--resume: {resume_path} is for "
-                    f"{ckpt.get('task')}/{ckpt.get('model')}/x{ckpt.get('scale')}, "
-                    f"not {args.task}/{args.model}/x{args.scale}."
-                )
-            model.load_state_dict(ckpt["state_dict"])
-            optimizer.load_state_dict(ckpt["optimizer"])
-            scheduler.load_state_dict(ckpt["scheduler"])
-            if ckpt.get("scaler") is not None:
-                scaler.load_state_dict(ckpt["scaler"])
-            start_epoch = ckpt["epoch"] + 1
-            best_psnr = ckpt["best_psnr"]
-            print(f"[resume] 从 {resume_path} 恢复：第 {start_epoch} 轮继续，"
-                  f"best PSNR {best_psnr:.2f}")
+            # A resume point can be TRUNCATED: `torch.save` writes in place, so a
+            # kill (instance reclaimed / OOM / Ctrl-C) mid-write leaves a partial
+            # file. On AutoDL that is exactly the moment we then try to resume --
+            # an unhandled load error here would crash the unattended script on
+            # every restart, never making progress. Under --auto-resume we treat
+            # an unreadable checkpoint as "no checkpoint"; under --resume (manual,
+            # explicit) we stop and report, because silently discarding a file the
+            # operator pointed at is worse than failing.
+            try:
+                ckpt = torch.load(resume_path, map_location=DEVICE)
+                if not isinstance(ckpt, dict) or "state_dict" not in ckpt:
+                    raise ValueError("not a training checkpoint")
+            except Exception as exc:  # noqa: BLE001
+                if args.resume:
+                    raise SystemExit(
+                        f"--resume: {resume_path} is unreadable "
+                        f"({type(exc).__name__}: {exc}). Delete it to start fresh."
+                    ) from exc
+                print(f"[auto-resume] {resume_path} 损坏（{type(exc).__name__}），"
+                      f"忽略并从头开始训练")
+                ckpt = None
+
+            if ckpt is not None:
+                # A checkpoint silently loaded into a DIFFERENT configuration
+                # produces a plausible-looking but meaningless run, so validate
+                # identity first. Checked even under --auto-resume: starting over
+                # silently is worse than stopping, because the operator believes
+                # the run continued.
+                if (ckpt.get("task"), ckpt.get("model"), ckpt.get("scale")) != (
+                        args.task, args.model, args.scale):
+                    raise SystemExit(
+                        f"--resume: {resume_path} is for "
+                        f"{ckpt.get('task')}/{ckpt.get('model')}/x{ckpt.get('scale')}, "
+                        f"not {args.task}/{args.model}/x{args.scale}."
+                    )
+                model.load_state_dict(ckpt["state_dict"])
+                optimizer.load_state_dict(ckpt["optimizer"])
+                scheduler.load_state_dict(ckpt["scheduler"])
+                if ckpt.get("scaler") is not None:
+                    scaler.load_state_dict(ckpt["scaler"])
+                start_epoch = ckpt["epoch"] + 1
+                best_psnr = ckpt["best_psnr"]
+                print(f"[resume] 从 {resume_path} 恢复：第 {start_epoch} 轮继续，"
+                      f"best PSNR {best_psnr:.2f}")
 
     # Append when resuming so the log stays one continuous series; truncate only
     # on a fresh start.
@@ -262,15 +301,15 @@ def train(args):
         if val_psnr > best_psnr:
             best_psnr = val_psnr
             ckpt = f"models/{args.task}_{args.model}_scale{args.scale}_best.pth"
-            torch.save({"state_dict": model.state_dict(), "scale": args.scale,
-                        "model": args.model}, ckpt)
+            _atomic_save({"state_dict": model.state_dict(), "scale": args.scale,
+                          "model": args.model}, ckpt)
             print(f"  -> saved best checkpoint: {ckpt}")
 
         # Rolling resume point, written every epoch right after validation. Kept
         # separate from the best checkpoint (which holds weights only): this one
         # carries the full optimizer/scheduler/scaler state needed to continue.
         if args.save_every and epoch % args.save_every == 0:
-            torch.save({
+            _atomic_save({
                 "epoch": epoch, "state_dict": model.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
