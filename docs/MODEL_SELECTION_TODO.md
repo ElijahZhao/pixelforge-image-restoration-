@@ -13,9 +13,9 @@
 | 项 | 说明 |
 |---|---|
 | 为什么 | 本次 SR×4（BATCH=16）200 epoch 跑完 Best val PSNR 仅 **23.34 / SSIM 0.727**，远低于历史同口径 **27.39 / 0.819**，甚至低于 bicubic 基线 26.69 —— 欠训练，不能要 |
-| 旧模型在哪 | AutoDL 实例 `/root/autodl-tmp/backup_old/`（开训前脚本自动备份，含 `results/ models/ serve/models/` 三份） |
+| 旧模型在哪 | AutoDL 实例 `/root/autodl-tmp/backup_old/models/`（开训前脚本自动备份；注：`cp -r results models serve/models` 两个 models 同名被 GNU cp 合并，serve/models 的旧部署权重与训练权重平铺在 `backup_old/models/` 下） |
 | 新的坏权重在哪 | `/root/autodl-tmp/pixelforge/models/sr_generator_scale4_best.pth`（**不要下载、不要导出、不要覆盖旧模型**） |
-| 恢复动作 | 从 `backup_old/serve/models/sr_generator_scale4.pt` 恢复部署权重；本地仓库同样保留旧 `sr_generator_scale4.pt`，不被新产物覆盖 |
+| 恢复动作 | 从 `/root/autodl-tmp/backup_old/models/sr_generator_scale4.pt` 恢复部署权重；本地仓库同样保留旧 `sr_generator_scale4.pt`，不被新产物覆盖 |
 | 佐证截图 | `docs/autodl_screenshots/18_SRx4完成但仅23.34_发现batch16问题_SRx2接续中.png` |
 
 ## 🟡 文档说明：仓库更新时必须写明
@@ -34,13 +34,16 @@
 
 | 槽位 | 新模型成绩 | 对照基准 | 决策 |
 |---|---|---|---|
-| SR×4 | 23.34 / 0.727（ep200） | 历史 27.39 / 0.819（同口径）；bicubic 26.69 | ❌ 弃用，**恢复旧模型** |
-| SR×2 | **27.72 / 0.8994（ep195，已训完）** | bicubic ×2 基线（跑 `python scripts/eval_baseline.py --task sr --scale 2` 获取，约 31+） | ⏳ 大概率低于 bicubic → 移除部署权重回退 bicubic（训练产物 `models/sr_generator_scale2_best.pth` 留档作对照） |
-| 低光 | **17.20（ep200，已训完）** | 历史最佳 **18.59 / 0.7963**（ep100） | ❌ 低于历史 1.4 dB，弃用，**恢复旧模型** |
+| SR×4 | val 口径 23.34 / 0.727（ep200）；eval 口径 **27.38 / 0.7771**（胜 bicubic +0.69） | 历史 val 口径 27.39 / 0.819；bicubic eval 口径 26.69 | ❌ 仍以 val 口径差 4 dB 为主依据，弃新；**恢复旧模型后补测 eval 口径**，与 27.38 同口径对比复核（防两口径矛盾） |
+| SR×2 | val 口径 27.72 / 0.8994；eval 口径 **32.35 / 0.9165** | bicubic ×2 eval 口径 **31.04 / 0.8935** | ✅ **采纳新模型**（+1.31 dB，SSIM +0.0231，脚本判定打赢基线）——三次训练中首个转正，史上首个 ×2 部署权重 |
+| 低光 | val 口径 17.20；eval 口径 **18.32 / 0.7457**（较不处理 +10.55 dB） | 历史 val 口径 18.59 / 0.7963 | ❌ val 口径仍低 1.4 dB，弃新；**恢复旧模型后补测 eval 口径**，与 18.32 同口径对比复核 |
 
-**最终阵容（收尾恢复后应为）**：SR×4 = 旧 27.47 ＋ SR×2 = bicubic 回退（或新模型若反超）＋ 低光 = 旧 18.59。三个槽位**全部不低于历史水平**，新训产物全部转为对照实验材料。
+**最终阵容（当前判定）**：SR×4 = 旧 27.47（待 eval 复核）＋ SR×2 = **新模型 32.35** ✅ ＋ 低光 = 旧 18.59（待 eval 复核）。
 
-> 恢复来源（AutoDL）：`/root/autodl-tmp/backup_old/serve/models/`（旧 `sr_generator_scale4.pt` + 旧 `lowlight.pt`）。
+> 恢复来源（AutoDL，**已实测修正**）：备份脚本把备份放在 `/root/autodl-tmp/backup_old/`，
+> 且 `cp -r results models serve/models` 中两个 models 目录同名，GNU cp 将 serve/models 的内容
+> **合并进了 `backup_old/models/`**（与训练权重 .pth 平铺在一起，本地已复现验证）。
+> 故旧部署权重实际路径：`/root/autodl-tmp/backup_old/models/sr_generator_scale4.pt`、`.../lowlight.pt`。
 > 本地仓库 `serve/models/` 同样存有旧权重，双保险。
 
 ## 🟢 三次训练对照系列（证明材料，写文档时用）
