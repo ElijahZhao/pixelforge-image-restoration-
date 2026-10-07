@@ -161,8 +161,13 @@ mkdir -p zips && cd zips
 
 # DIV2K 超分数据（瑞士服务器，国内可能慢）
 wget -c https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_train_HR.zip
-wget -c https://data.vision.ee.ethz.ch/cvl/DIV2K/DIV2K_valid_HR.zip
+wget -c https://data.vision.ee.ethz.ch/cvl/DIV2K/validation_release/DIV2K_valid_HR.zip
 ```
+
+> ⚠️ **验证集的路径多一层 `validation_release/`！** 官网页面给的链接是
+> `.../DIV2K/DIV2K_valid_HR.zip`（**会 404**），ETH 实际把文件放到了
+> `.../DIV2K/validation_release/DIV2K_valid_HR.zip`（200 可下）。
+> 训练集 `DIV2K_train_HR.zip` 仍在主目录下，不受影响。
 
 > `-c` 是断点续传，断了重跑同一条命令接着下。
 > **不要下 `DIV2K_train_LR_bicubic.zip`** —— 我们训练时用代码实时造低清图，
@@ -420,6 +425,8 @@ scp root@<主机>:/root/autodl-tmp/retrain_out.tar.gz ~/Downloads/
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
+| `DIV2K_valid_HR.zip` 报 404 | 官网链接失效，文件已挪到 `validation_release/` | 用 `.../DIV2K/validation_release/DIV2K_valid_HR.zip` |
+| `bash: 步骤: command not found` | 把中文标题也粘进终端了 | 无害，忽略；只粘代码块 |
 | `tmux: command not found` | 镜像没装 tmux | `apt-get install -y tmux` |
 | Step 0 报「数据集未就绪」 | 数量不足 | 按 `[少]` 提示补齐；确实用子集则加 `--allow-partial` |
 | Step 2 报 `CUDA out of memory` | 卡太小 | `BATCH=8 bash retrain_autodl.sh` |
