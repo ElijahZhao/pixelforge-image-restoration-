@@ -82,17 +82,17 @@ scp ~/Downloads/pixelforge-src-main.tar.gz root@<主机>:/root/autodl-tmp/
 ```bash
 # ☁️ AutoDL 实例终端
 cd /root/autodl-tmp
-tar xzf pixelforge-src-main.tar.gz
-ls -d pixelforge*          # 看解压出来的目录名
-```
-
-`git archive` 打出来的包，解压后**通常是一层干净的目录**。确认目录名后：
-
-```bash
-# 如果解压出来不叫 pixelforge，就改名——脚本里写死了这个路径
-mv <解压出来的目录名> pixelforge
+mv pixelforge pixelforge_old 2>/dev/null   # 若已有旧目录，先改名备份
+mkdir -p pixelforge
+tar xzf pixelforge-src-main.tar.gz -C pixelforge
 cd /root/autodl-tmp/pixelforge
 ```
+
+> ⚠️ **这个包没有顶层目录**（`git archive` 默认行为）。必须先 `mkdir pixelforge`
+> 再 `tar xzf ... -C pixelforge` 解进去，**不要直接在 `/root/autodl-tmp` 下解压**，
+> 否则文件会散一地、和旧文件混在一起。
+> 旧目录改名成 `pixelforge_old` 保留——如果之前下过数据（`pixelforge_old/data/`），
+> 稍后可以搬进新目录复用，不用重新下载几个 GB。
 
 装依赖：
 
