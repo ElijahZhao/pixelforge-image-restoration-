@@ -41,6 +41,10 @@ web/vercel/
 pixelforge-source.zip
 *.zip
 
+# Locally packed release artifacts (git bundle + source tarball) handed to the
+# GPU box; regenerated on demand, not part of the repo.
+dist/
+
 # E2E test artifacts
 tests/e2e/screenshots/
 tests/e2e/*.png

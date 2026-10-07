@@ -6,8 +6,9 @@
 # 它做的是：建好目录、打印下载地址、最后校验结构是否就位。
 #
 # 用法：
-#   bash scripts/download_data.sh          # 检查与提示
-#   bash scripts/download_data.sh --check  # 只校验，不打印下载指引
+#   bash scripts/download_data.sh                        # 检查与提示
+#   bash scripts/download_data.sh --check                # 只校验，实测数量是否达标
+#   bash scripts/download_data.sh --check --allow-partial  # 有意只用子集时放行数量不足
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -47,31 +48,55 @@ EOF
 fi
 
 echo "=== 结构校验 ==="
+# 期望数量（官方划分）。少于这个数说明解压/拷贝中途漏了文件——
+# 只看"目录非空"是不够的：漏掉 400 张图不会报错，只会让结果悄悄变差。
+ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
+if [[ "${2:-}" == "--allow-partial" || "${1:-}" == "--allow-partial" ]]; then
+  ALLOW_PARTIAL=1
+fi
+
 missing=0
+partial=0
 count() { find "$1" -type f \( -iname "*.png" -o -iname "*.jpg" \) 2>/dev/null | wc -l | tr -d ' '; }
 
-check_dir() {  # $1=路径 $2=说明
+check_dir() {  # $1=路径 $2=说明 $3=期望数量
   local n; n="$(count "$1")"
   if [[ "$n" -eq 0 ]]; then
-    echo "  [缺] $2 ($1)"
+    echo "  [缺] $2 ($1)  期望 $3"
     missing=1
+  elif [[ "$n" -lt "$3" ]]; then
+    if [[ "$ALLOW_PARTIAL" == "1" ]]; then
+      echo "  [少] $2: $n 个文件（期望 $3，已用 --allow-partial 放行）"
+    else
+      echo "  [少] $2: $n 个文件，期望 $3"
+      partial=1
+    fi
+  elif [[ "$n" -gt "$3" ]]; then
+    echo "  [多] $2: $n 个文件（期望 $3，多余文件会被忽略，通常无害）"
   else
     echo "  [有] $2: $n 个文件"
   fi
 }
 
-check_dir "$DIV2K_DIR/train" "DIV2K 训练图"
-check_dir "$DIV2K_DIR/val"   "DIV2K 验证图"
-check_dir "$LOL_DIR/train/low"  "LOL 训练 low"
-check_dir "$LOL_DIR/train/high" "LOL 训练 high"
-check_dir "$LOL_DIR/val/low"    "LOL 验证 low"
-check_dir "$LOL_DIR/val/high"   "LOL 验证 high"
+check_dir "$DIV2K_DIR/train"    "DIV2K 训练图"    800
+check_dir "$DIV2K_DIR/val"      "DIV2K 验证图"    100
+check_dir "$LOL_DIR/train/low"  "LOL 训练 low"    485
+check_dir "$LOL_DIR/train/high" "LOL 训练 high"   485
+check_dir "$LOL_DIR/val/low"    "LOL 验证 low"    15
+check_dir "$LOL_DIR/val/high"   "LOL 验证 high"   15
 
 echo
-if [[ "$missing" -eq 0 ]]; then
+if [[ "$missing" -eq 0 && "$partial" -eq 0 ]]; then
   echo "数据就绪。可以跑评测："
   echo "  python scripts/eval_baseline.py --task sr --scale 4"
   echo "  python scripts/eval_baseline.py --task lowlight"
+elif [[ "$missing" -eq 0 && "$partial" -eq 1 ]]; then
+  echo "数据不完整：有些目录的文件数少于官方划分。"
+  echo "少一半的图不会在训练时报错，只会让结果悄悄变差。"
+  echo "请确认解压/拷贝是否完整，补齐后重跑 --check。"
+  echo "若你确实有意只用子集，可显式放行："
+  echo "  bash scripts/download_data.sh --check --allow-partial"
+  exit 1
 else
   echo "数据未就绪。按上面的说明补齐后重跑本脚本的 --check 即可。"
   echo "注意：只想跑推理服务的话不需要这些数据，serve/ 自带权重，开箱即用。"

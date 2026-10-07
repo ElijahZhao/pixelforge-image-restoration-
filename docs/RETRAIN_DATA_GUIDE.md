@@ -110,7 +110,7 @@ cd /root/autodl-tmp/pixelforge
 bash scripts/download_data.sh --check
 ```
 
-期望输出：
+这个命令会**同时核对目录结构和文件数量**，期望输出：
 
 ```
   [有] DIV2K 训练图: 800 个文件
@@ -122,7 +122,18 @@ bash scripts/download_data.sh --check
 数据就绪。
 ```
 
-**数目对不上就别开训**——少一半的图不会报错，只会让结果悄悄变差。
+**数目对不上就别开训**——少一半的图不会报错，只会让结果悄悄变差。这就是为什么
+校验不满足于"目录非空"，而是逐个核对到上面的数字：
+
+- 文件数**不足** → 打印 `[少]` 并以退出码 1 结束，`retrain_autodl.sh` 会在 Step 0 停下。
+- 文件数**超出** → 打印 `[多]`，但放行（多余文件不会被读到）。
+- 你**确实有意只用子集**（例如先用 100 张跑通流程）→ 需要显式放行：
+
+  ```bash
+  bash scripts/download_data.sh --check --allow-partial
+  ```
+
+  这种情况下训练能跑，但结果不具备与论文数字的可比性，别拿它下结论。
 
 ## 六、开训
 
@@ -181,10 +192,16 @@ batch 变小不影响能否跑通，只影响速度与梯度稳定性。**不要
 ```
 results/train_log_sr_generator_scale4.csv
 results/train_log_sr_generator_scale2.csv
-results/train_log_lowlight_generator_scale2.csv
+results/train_log_lowlight_srcnn_scale2.csv
 train_sr_scale4.log  train_sr_scale2.log  train_lowlight.log
 serve/models/ 下三个 .pt
 ```
+
+> **低光的文件名里带 `srcnn`，别被它误导。** 低光任务无论传什么 `--model` 都构建
+> `LowLightUNet`（见 `train/models.py`），那个 token 只进文件名、不进网络结构。
+> 脚本刻意不传 `--model`，好让新产物与已提交的权重 `lowlight_srcnn_scale2_best.pth`
+> 和既有日志同名——否则同一份模型会出现 `_srcnn_` 与 `_generator_` 两种叫法，
+> 后面对不上账。
 
 拿到日志后我会做两件事：
 1. **确认验证曲线是否真的可比**（中心裁剪后应表现为连续波动，而不是旧那种孤峰）

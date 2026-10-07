@@ -3,8 +3,8 @@
 #
 # 前置：
 #   1. 项目已在 /root/autodl-tmp/pixelforge
-#   2. data/ 下已放好 DIV2K 与 LOL-v1（见 data/README.md）
-#      自检：bash scripts/download_data.sh --check
+#   2. data/ 下已放好 DIV2K 与 LOL-v1（见 docs/RETRAIN_DATA_GUIDE.md）
+#      自检：bash scripts/download_data.sh --check   （会核对文件数量）
 #
 # 跑法：
 #   tmux new -s train
@@ -35,8 +35,9 @@ if ! bash scripts/download_data.sh --check; then
   echo "================================================================"
   echo "数据集未就绪，训练无法开始。"
   echo "准备步骤见 docs/RETRAIN_DATA_GUIDE.md，或重跑："
-  echo "    bash scripts/download_data.sh      # 打印下载指引"
-  echo "    bash scripts/download_data.sh --check   # 校验结构"
+  echo "    bash scripts/download_data.sh               # 打印下载指引"
+  echo "    bash scripts/download_data.sh --check       # 校验结构与文件数量"
+  echo "如果你有意只用数据子集，加 --allow-partial 显式放行数量不足。"
   echo "================================================================"
   exit 1
 fi
@@ -78,12 +79,16 @@ fi
 # ===== Step 5 · 低光重训 =====
 # 旧权重的验证管线把 400x600 压成 128x128，后 100 轮指标近乎常数（标准差 0.0457）
 # ——那是管线失效，不是收敛。尺子坏了，选出来的 checkpoint 就不可信。
+#
+# 不传 --model：低光一律构建 LowLightUNet（见 train/models.py 的 build_model），
+# 该参数对结构没有影响，只决定产物文件名里的那个 token。省略它＝沿用默认
+# `srcnn`，与已提交的权重名和日志名保持一致，避免同一份模型出现两种叫法。
 if [[ "$SKIP_LOWLIGHT" != "1" ]]; then
-  "$PY" train/train.py --task lowlight --model generator \
+  "$PY" train/train.py --task lowlight \
     --data_root data --epochs "$EPOCHS" --batch_size "$BATCH" --lr 2e-4 \
     --save_every 10 --auto-resume \
     2>&1 | tee train_lowlight.log
-  echo "[低光完成] models/lowlight_generator_scale2_best.pth"
+  echo "[低光完成] models/lowlight_srcnn_scale2_best.pth"
 fi
 
 # ===== Step 6 · 导出 TorchScript =====
@@ -92,7 +97,7 @@ fi
   --out serve/models/sr_generator_scale4.pt --task sr --scale 4
 "$PY" train/export.py --checkpoint models/sr_generator_scale2_best.pth \
   --out serve/models/sr_generator_scale2.pt --task sr --scale 2
-"$PY" train/export.py --checkpoint models/lowlight_generator_scale2_best.pth \
+"$PY" train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
   --out serve/models/lowlight.pt --task lowlight --scale 2
 
 # ===== Step 7 · 导出后自检 =====
@@ -116,6 +121,6 @@ echo "===== DONE ====="
 echo "发回以下文件以便复算指标："
 echo "  results/train_log_sr_generator_scale4.csv"
 echo "  results/train_log_sr_generator_scale2.csv"
-echo "  results/train_log_lowlight_generator_scale2.csv"
+echo "  results/train_log_lowlight_srcnn_scale2.csv"
 echo "  train_sr_scale4.log  train_sr_scale2.log  train_lowlight.log"
 echo "  serve/models/ 下三个 .pt"
