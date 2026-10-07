@@ -35,8 +35,13 @@
 | 槽位 | 新模型成绩 | 对照基准 | 决策 |
 |---|---|---|---|
 | SR×4 | 23.34 / 0.727（ep200） | 历史 27.39 / 0.819（同口径）；bicubic 26.69 | ❌ 弃用，**恢复旧模型** |
-| SR×2 | **27.72 / 0.8994（ep195，已训完）** | bicubic ×2 基线（跑 `python scripts/eval_baseline.py --task sr --scale 2` 获取） | ⏳ ≥bicubic → 用新；否则维持 bicubic 回退（不重训） |
-| 低光 | 训练中（ep12 时 15.95 / 0.7159；开局优于历史：ep1 14.35 vs 历史 11.87） | 历史最佳 18.59 / 0.7963（ep100） | ⏳ 跑完对比历史，取更优 |
+| SR×2 | **27.72 / 0.8994（ep195，已训完）** | bicubic ×2 基线（跑 `python scripts/eval_baseline.py --task sr --scale 2` 获取，约 31+） | ⏳ 大概率低于 bicubic → 移除部署权重回退 bicubic（训练产物 `models/sr_generator_scale2_best.pth` 留档作对照） |
+| 低光 | **17.20（ep200，已训完）** | 历史最佳 **18.59 / 0.7963**（ep100） | ❌ 低于历史 1.4 dB，弃用，**恢复旧模型** |
+
+**最终阵容（收尾恢复后应为）**：SR×4 = 旧 27.47 ＋ SR×2 = bicubic 回退（或新模型若反超）＋ 低光 = 旧 18.59。三个槽位**全部不低于历史水平**，新训产物全部转为对照实验材料。
+
+> 恢复来源（AutoDL）：`/root/autodl-tmp/backup_old/serve/models/`（旧 `sr_generator_scale4.pt` + 旧 `lowlight.pt`）。
+> 本地仓库 `serve/models/` 同样存有旧权重，双保险。
 
 ## 🟢 三次训练对照系列（证明材料，写文档时用）
 
