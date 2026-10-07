@@ -32,7 +32,7 @@ T0: 打包源码                  T1: 主线操作（克隆、下数据、开训
 
 ## 步骤 1 · 🖥️ 本地电脑终端：拿到源码
 
-远端 main **已经更新到 `5d0b0e5`**（用你提供的 PAT 推送成功）。所以有两种拿代码的方式，**任选其一**：
+远端 main **已经更新到 `43f0717`**（最新修复：移除 torch 声明，根除 CPU 污染）。所以有两种拿代码的方式，**任选其一**：
 
 **1-A（最省事）· 直接 clone 远端**
 AutoDL 实例终端里 `git clone https://github.com/ElijahZhao/pixelforge-image-restoration-.git` 即可，含全部修复。
@@ -47,7 +47,7 @@ AutoDL 实例终端里 `git clone https://github.com/ElijahZhao/pixelforge-image
 
 下载到本地电脑：
 - 点我给你的文件卡片，把 `pixelforge-src-main.tar.gz` 存到 `~/Downloads/`
-- 或用 `pixelforge-main.bundle`（含提交 `5d0b0e5`）
+- 或用 `pixelforge-main.bundle`（含提交 `43f0717`）
 
 ➡️ 这一步在**本地电脑**完成，终端不用切换。
 
@@ -432,7 +432,7 @@ scp root@<主机>:/root/autodl-tmp/retrain_out.tar.gz ~/Downloads/
 
 # 附：待你确认的一件事
 
-远端 GitHub 仓库 **已经更新到 `5d0b0e5`**——用你提供的 PAT 推送成功（非强制推送，
+远端 GitHub 仓库 **已经更新到 `43f0717`**——最新修复已推送（非强制推送，
 远端原本领先的 8 个提交已通过 merge 保留，未丢失）。所以上面的步骤里 clone 远端和用
 打包文件两种方式都可，内容一致。
 
