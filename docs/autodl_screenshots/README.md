@@ -20,6 +20,7 @@
 | 12 | `12_DIV2K下载_404弯路_换validation_release成功.png` | 步骤 7 | 训练集 3.29G 下载成功（35m34s）；验证集按官网原路径 `DIV2K_valid_HR.zip` 报 **404 Not Found**（ETH 已挪文件、官网链接未更新）；改用 `validation_release/` 子目录路径后 **200 OK**，428M 下载成功（5m10s）。**完整记录踩坑与排错过程** |
 | 13 | `13_LOL下载完成331M_解压确认顶层目录.png` | 步骤 7 | `lol_dataset.zip` 经 hf-mirror.com 下载完成（331M / 39m12s，走 302→OSS 中转）；`unzip` 后 `ls` 确认四个包齐全：`DIV2K_train_HR.zip`、`DIV2K_valid_HR.zip`、`lol_dataset/`、`lol_dataset.zip`，**全部原始数据就位** |
 | 15 | `15_tmux开训_单测全PASS_下载VGG16感知损失权重.png` | 步骤 10–11 | tmux 会话 `train` 已建立（底部绿色状态栏）；`retrain_autodl.sh` 启动，`test_metrics` 5 项 PASS，进入 `test_correctness` 时触发一次性下载 VGG16 权重（528M，感知损失用，三阶段共用缓存） |
+| 16 | `16_VGG下载完成_27测全过_冒烟完成_SRx4正式训练中.png` | 步骤 11 | VGG16 权重 528M 下载完成（2h48m）；单测 **27/27 全 PASS**；冒烟 2 epoch 完成（Best PSNR 18.33）；旧产物备份至 `backup_old/`；**SR×4 正式训练进行中**——Epoch 1→4：loss 0.1898→0.0649 单调降，val PSNR 18.12→20.72、SSIM 0.2302→0.4949 单调升，约 21.4s/epoch |
 | 14 | `14_数据归位完成_结构校验全过_800_100_485_15.png` | 步骤 8–9 | LOL 四路 `cp` 归位 + DIV2K 解压归位完成；`download_data.sh --check` 输出**六个 `[有]`：800 / 100 / 485 / 485 / 15 / 15**，全部达标，**数据准备阶段完成**，脚本提示可跑 `eval_baseline.py` 评估基线 |
 
 ## 关键佐证点
@@ -29,7 +30,7 @@
    验证了「从 requirements 移除 torch 声明」这一修复生效——不再出现旧实例中
    `Installing collected packages: torch` 把 `+cu128` 换成 `+cpu` 的致命降级。
 3. **代码版本正确**：`grep` 计数 4 / 3 与修复后代码一致（截图 09）。
-4. **进度**：数据准备完成（截图 11–14，`--check` 六项全过）；已进入 tmux 训练阶段（截图 15）——单测全 PASS，正在下载 VGG16 权重（一次性）。
+4. **进度**：已进入正式训练（截图 16）——VGG 下载完成、27/27 单测全过、冒烟通过，SR×4（200 epoch）训练中，损失与指标走势正常。
 
 ## 踩坑记录（排错证据）
 
