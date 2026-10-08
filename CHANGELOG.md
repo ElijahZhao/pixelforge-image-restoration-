@@ -85,7 +85,7 @@ README 展示页全面换新（低光 ×2 / SR×4 / SR×2 三档实测截图与�
 ### Added
 
 - `docs/API.md`：手写接口参考（端点、字段、错误码、环境变量），不再只依赖 FastAPI 自动生成的 `/docs`。
-- `docs/OPERATIONS.md`：部署形态、健康检查、日志、回滚方式与已知缺口清单。
+- `archive_private/docs/OPERATIONS.md`（已移出主仓库至私有归档）：部署形态、健康检查、日志、回滚方式与已知缺口清单。
 - `scripts/download_data.sh`：建数据集目录结构 + 打印下载地址 + 校验就位情况（不自动下大文件）。
 - 前端单元测试（`web/lib/api.test.ts`，vitest），覆盖 `predict()` 的端点选择与错误映射。
 - CI 新增 `audit`（pip-audit 扫锁定依赖）与 `frontend`（tsc + vitest + next build）两个 job。
