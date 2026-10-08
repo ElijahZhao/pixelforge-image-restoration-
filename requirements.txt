@@ -14,6 +14,3 @@ fastapi>=0.110
 uvicorn[standard]>=0.27
 python-multipart>=0.0.9
 # torch is shared with training
-
-# ---- Optional quick demo ----
-gradio>=4.0   # only needed for serve/gradio_demo.py

@@ -5,6 +5,22 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.2] - 2026-10-08
+
+项目审查（提示词库 5.0 · 任务④ 修缮清单 R1–R6）落地：补全上传守卫时序缺口、清理死依赖、固化 CI 覆盖率门禁、修正文档与过时测试。
+
+### Fixed
+
+- **Streamlit 上传守卫时序缺口（R1，修订 1.2.1 的 OOM 修复）**：1.2.1 的守卫在 `Image.open(uploaded).convert("RGB")` **解码之后**才检查尺寸，超大图在解码阶段（如 8000×8000 ≈ 192MB RGB）已分配全图内存才被拦，仍可能压垮免费档 ~1GB 内存而 "Oh no." 反复重启。改为**先读 header `.size` 再决定**：超限图先等比缩小（LANCZOS）后解码；并新增 `Image.MAX_IMAGE_PIXELS = 50_000_000` 硬上限 + 显式 header 尺寸判断，超过 50 Mpx 在**解码前**直接拒绝（双语 `bomb_error` 提示 + `st.stop()`），绝不分配其位图。本机 playwright 实测：4000×3000 → 缩至 1265×949 正常出图；9000×9000 → 解码前拒绝、零崩溃。
+- **`serve/model_loader.py` 注释与过时集成测试（R5）**：注释原称 "x2 has no trained weight / falls back to bicubic"，但 `serve/models/` 确有 `sr_generator_scale2.pt`、`get_sr_model(2)` 加载真模型——已更正为「SR 两档均发真权重，无 bicubic 回退」。随之修正 `tests/test_inference_integration.py` 中已**失败**的 `test_sr_scale2_falls_back_to_classical`（旧假设残留）→ `test_sr_scale2_uses_ml_engine_and_keeps_resolution`，并扩展 `_require_weight` 支持 `sr2`。CI 此前该测试红，现已绿。
+
+### Changed
+
+- **清除死依赖 gradio（R2）**：`requirements.txt` 移除 `gradio>=4.0`（仅服务于已删的 `serve/gradio_demo.py`）；`requirements.lock.txt` 手术式剪除 gradio 独占依赖闭包（gradio / gradio-client / hf-gradio，共享依赖如 fastapi/pydantic/httpx 保留），避免镜像徒增无用包。
+- **CI 覆盖率门禁显式化（R3）**：pytest 命令加 `--cov-fail-under=75`，与 `pyproject.toml` 既有 `fail_under` 对齐，使门禁不依赖 pytest-cov 版本行为。
+- **CI 纳入训练单元测试（R4）**：test job 新增 `python -m train.tests.run_tests` 显式步骤，训练逻辑回归在独立带标签的 gate 下暴露（离线缺失依赖时 skip 非 fail）。
+- **`deploy/streamlit/requirements.txt` 加独立说明（R6）**：注明该文件为何独立于根 `requirements.txt`/`requirements.lock.txt`（Community Cloud 仅 CPU、pin CPU-only torch，避免把 CUDA/nvidia 19 个包拖进免费档）。
+
 ## [1.2.1] - 2026-10-08
 
 README 展示页全面换新（低光 ×2 / SR×4 / SR×2 三档实测截图与案例图）；修复公开 Demo 反复崩溃（上传大图 OOM）。

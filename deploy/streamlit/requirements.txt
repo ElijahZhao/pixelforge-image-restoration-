@@ -1,3 +1,16 @@
+# ---------------------------------------------------------------------------
+# WHY THIS FILE EXISTS SEPARATELY FROM THE ROOT requirements.txt / requirements.lock.txt
+# ---------------------------------------------------------------------------
+# This is the dependency set for the Streamlit Community Cloud demo only. It is
+# intentionally NOT derived from the root lock because the two runtimes differ:
+#   * The root lock serves the FastAPI inference service + training scripts and
+#     pulls the CUDA-capable torch that training/serve expect.
+#   * This app runs CPU-only on Community Cloud (~2.7 GB RAM, no GPU), so it pins
+#     a CPU-only torch (see below) and carries nothing training-related.
+# Keeping the two independent avoids dragging CUDA/nvidia packages (19 of them)
+# into the free tier, where they are dead weight that can OOM the pod. If you
+# change torch here, re-pin both lines together; do not "reuse" the root lock.
+# ---------------------------------------------------------------------------
 # st.image(..., width="stretch") — used throughout the result panels — needs the
 # modern width API, which landed in 1.49.0 (it is `width: Width = "content"`).
 # In 1.40–1.48 `width` is `int | None` and only `use_container_width` existed, so

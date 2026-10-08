@@ -81,6 +81,8 @@ def _require_weight(scale_or_task: str):
     """Skip the test when the weight it depends on is not committed."""
     if scale_or_task == "sr4":
         p = model_loader.MODELS_DIR / "sr_generator_scale4.pt"
+    elif scale_or_task == "sr2":
+        p = model_loader.MODELS_DIR / "sr_generator_scale2.pt"
     else:
         p = model_loader.MODELS_DIR / "lowlight.pt"
     if not p.exists():
@@ -106,18 +108,20 @@ def test_sr_scale4_uses_ml_engine_and_upscales_4x():
     assert out.size == (64, 64), f"unexpected SR output size {out.size}"
 
 
-def test_sr_scale2_falls_back_to_classical():
-    """SR x2 has no committed weight; the service must say so via `classical`."""
+def test_sr_scale2_uses_ml_engine_and_keeps_resolution():
+    """SR x2 ships a committed weight (sr_generator_scale2.pt); the service
+    must load it and report `ml` as the engine, same size out."""
+    _require_weight("sr2")
     resp = client.post(
         "/api/predict",
         files={"image": ("in.png", _png_bytes((64, 64)), "image/png")},
         data={"task": "sr", "scale": "2"},
     )
     assert resp.status_code == 200, resp.text
-    assert resp.json()["engine"] == "classical"
-    # The classical baseline output is resized to match `before` (the input
-    # upscaled by the classical path), so the comparison slider stays aligned.
-    # For a 64x64 upload that is 64x64, not orig*scale.
+    assert resp.json()["engine"] == "ml", (
+        "committed SR x2 weight did not load; service fell back to classical"
+    )
+    # Model's true output is lr_size * 2 = (64//2) * 2 = 64.
     out = _decode_png(resp.json()["after"])
     assert out.size == (64, 64), f"unexpected SR x2 output size {out.size}"
 

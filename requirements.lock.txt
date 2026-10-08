@@ -7,6 +7,7 @@
 --index-url https://mirrors.tencent.com/pypi/simple/
 --extra-index-url https://download.pytorch.org/whl/cpu
 
+uvicorn[standard]==0.54.0
 annotated-doc==0.0.5
     # via
     #   fastapi
@@ -43,12 +44,6 @@ fsspec==2026.9.0
     #   gradio-client
     #   huggingface-hub
     #   torch
-gradio==6.29.1
-    # via -r requirements.txt
-gradio-client==2.7.2
-    # via
-    #   gradio
-    #   hf-gradio
 groovy==0.1.2
     # via gradio
 h11==0.16.0
@@ -56,8 +51,6 @@ h11==0.16.0
     #   httpcore
     #   httpcore2
     #   uvicorn
-hf-gradio==0.4.1
-    # via gradio
 hf-xet==1.6.0
     # via huggingface-hub
 httpcore==1.0.9
@@ -197,7 +190,6 @@ typing-inspection==0.4.4
     # via
     #   fastapi
     #   pydantic
-uvicorn[standard]==0.54.0
     # via
     #   -r requirements.txt
     #   gradio

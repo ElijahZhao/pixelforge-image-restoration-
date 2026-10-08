@@ -1,13 +1,15 @@
 """Load exported TorchScript models and run inference.
 
 Export real trained weights with ``train/export.py`` into ``serve/models/``.
-The two committed weights are:
-    serve/models/sr_generator_scale4.pt
-    serve/models/lowlight.pt
+The committed weights are:
+    serve/models/sr_generator_scale2.pt   (SR ×2)
+    serve/models/sr_generator_scale4.pt   (SR ×4)
+    serve/models/lowlight.pt              (low-light U-Net)
 
-Super-resolution is shipped at x4 only; x2 has no trained weight and falls
-back to the classical bicubic baseline. When a weight file is missing, the
-corresponding task silently falls back to ``classical.py`` in ``app.py``.
+Both SR scales ship a trained weight: ``get_sr_model(scale)`` globs
+``sr_*_scale{scale}.pt`` and returns the real model, so SR has no bicubic
+fallback. When a weight file is missing, the task silently falls back to
+``classical.py`` in ``app.py``.
 """
 
 from __future__ import annotations

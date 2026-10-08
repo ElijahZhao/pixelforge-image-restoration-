@@ -47,6 +47,13 @@ MODELS_DIR = Path(__file__).resolve().parent / "models"
 # still being plenty for a demo; bigger uploads are downscaled, never rejected.
 MAX_INPUT_PIXELS = 1_200_000
 
+# Hard ceiling so PIL itself refuses to decode a "decompression bomb" instead of
+# OOM-killing the pod. Set well above MAX_INPUT_PIXELS: photos that exceed the
+# working budget are still downscaled gracefully below, while a true bomb
+# (e.g. 30000×30000) is rejected at load time with a clear error. Without this,
+# Image.open(...).convert("RGB") on a bomb would allocate the whole bitmap first.
+Image.MAX_IMAGE_PIXELS = 50_000_000
+
 # --------------------------------------------------------------------------- #
 # Bilingual UI strings. English is the default; ``LANG`` selects the active set.
 # Keys are shared across both languages so switching never leaves a blank.
@@ -73,6 +80,7 @@ TEXTS = {
         ),
         "upload_label": "Upload an image",
         "resized_note": "Image is {w}×{h} — larger than the {limit_mpx:.1f} Mpx memory budget on Streamlit Community Cloud's free tier (~1 GB RAM). Auto-downscaled to {nw}×{nh} before inference to keep the app from being OOM-killed.",
+        "bomb_error": "🚫 This image is too large to process safely on the free tier (~1 GB RAM) and was rejected to avoid crashing the app. Please upload an image under ~50 Mpx (e.g. downscale it first).",
         "spinner": "Running inference…",
         "tag_ml": "ML model",
         "tag_classical": "classical baseline",
@@ -162,6 +170,7 @@ TEXTS = {
         ),
         "upload_label": "上传图片",
         "resized_note": "图片为 {w}×{h}，超过 Streamlit Community Cloud 免费档（约 1GB 内存）的 {limit_mpx:.1f} Mpx 内存预算；已在推理前自动等比缩小到 {nw}×{nh}，避免应用被 OOM 杀掉（表现为反复崩溃 / \"Oh no.\" 空白页）。",
+        "bomb_error": "🚫 这张图太大，免费档（约 1GB 内存）无法安全处理，已拒绝以免应用崩溃。请上传约 50 Mpx 以下的图片（或先缩图再传）。",
         "spinner": "推理中…",
         "tag_ml": "ML 自训模型",
         "tag_classical": "classical 基线",
@@ -823,19 +832,40 @@ st.markdown(
 )
 
 if uploaded is not None:
-    img = Image.open(uploaded).convert("RGB")
-    # OOM guard: cap the working image at MAX_INPUT_PIXELS before ANY task
-    # touches it. See the constant's comment for why this prevents crashes.
-    if img.width * img.height > MAX_INPUT_PIXELS:
-        _ratio = (MAX_INPUT_PIXELS / (img.width * img.height)) ** 0.5
-        _new_size = (max(1, round(img.width * _ratio)),
-                     max(1, round(img.height * _ratio)))
-        _orig_size = (img.width, img.height)
-        img = img.resize(_new_size, Image.LANCZOS)
-        st.caption(T["resized_note"].format(
-            w=_orig_size[0], h=_orig_size[1],
-            limit_mpx=MAX_INPUT_PIXELS / 1_000_000,
-            nw=_new_size[0], nh=_new_size[1]))
+    # OOM guard — inspect the header BEFORE decoding. Image.open() is lazy: it
+    # only reads metadata, so .size is free and the full RGB bitmap is not
+    # allocated until .load()/.convert()/.thumbnail(). The previous code ran
+    # Image.open(uploaded).convert("RGB") first, which decoded the entire image
+    # and only THEN checked its size — a huge upload (e.g. 8000×8000 ≈ 192 MB
+    # RGB) blew the ~1 GB Streamlit Community Cloud RAM before this guard could
+    # ever run. We cap the working image at MAX_INPUT_PIXELS up front; a true
+    # decompression bomb is rejected by Image.MAX_IMAGE_PIXELS (set at import).
+    try:
+        img = Image.open(uploaded)
+        pw, ph = img.width, img.height
+        if pw * ph > MAX_INPUT_PIXELS:
+            # Anything above Image.MAX_IMAGE_PIXELS (50 Mpx) is rejected *before*
+            # any decode, so we never even allocate its bitmap. (Some Pillow
+            # builds only warn on the limit instead of raising
+            # DecompressionBombError, so we gate on the header size explicitly.)
+            if pw * ph > Image.MAX_IMAGE_PIXELS:
+                st.error(T["bomb_error"])
+                st.stop()
+            _ratio = (MAX_INPUT_PIXELS / (pw * ph)) ** 0.5
+            _new_size = (max(1, round(pw * _ratio)),
+                         max(1, round(ph * _ratio)))
+            _orig_size = (pw, ph)
+            img.thumbnail(_new_size, Image.LANCZOS)
+            img = img.convert("RGB")
+            st.caption(T["resized_note"].format(
+                w=_orig_size[0], h=_orig_size[1],
+                limit_mpx=MAX_INPUT_PIXELS / 1_000_000,
+                nw=_new_size[0], nh=_new_size[1]))
+        else:
+            img = img.convert("RGB")
+    except Image.DecompressionBombError:
+        st.error(T["bomb_error"])
+        st.stop()
     use_sr = st.session_state.task == "sr"
     scale = st.session_state.scale
 
