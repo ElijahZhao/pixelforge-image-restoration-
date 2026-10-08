@@ -46,7 +46,7 @@ README 展示页全面换新（低光 ×2 / SR×4 / SR×2 三档实测截图与�
 - `serve/models/sr_generator_scale2.pt`：首个自训 ×2 超分权重（SRCNN，AutoDL RTX 4090 batch16）。全图验证 **32.35 / 0.917**，胜 bicubic 基线 31.04 +1.31 dB；此前 ×2 请求一直回退经典 bicubic（1.1.1 中"×2 无训练权重"的临时限制解除）。
 - `deploy/streamlit/models/sr_generator_scale2.pt`：Streamlit demo 同步上线 ×2 真模型档位（加载逻辑按 `sr_*_scale{scale}.pt` 自动识别，零代码改动）。
 - `results/train_log_*_batch16_20261007.csv` ×3 与 `results/logs_batch16_20261007/`：第 ②③ 次训练（batch16）完整日志留档，与第 ① 次（batch8）构成超参对照实验证据。
-- `docs/MODEL_SELECTION_TODO.md`：三次训练按槽位择优的决策记录（含评估口径说明、备份路径坑位与恢复验证）。
+- `archive_private/docs/MODEL_SELECTION_TODO.md`（已移出主仓库至私有归档）：三次训练按槽位择优的决策记录（含评估口径说明、备份路径坑位与恢复验证）。
 
 ### Changed
 
