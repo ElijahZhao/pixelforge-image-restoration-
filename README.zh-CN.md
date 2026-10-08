@@ -33,7 +33,6 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 ```
 
 每一环都是自己写的、能跑的。两个自训权重（`sr_generator_scale4.pt`、`lowlight.pt`）随仓库分发，克隆即可运行。
-当前进度与分级待办见 [PROGRESS.md](PROGRESS.md)。
 
 ## ✨ 核心亮点
 
@@ -229,17 +228,16 @@ pixelforge-image-restoration/
 │   ├── classical.py   # 经典方法兜底
 │   ├── model_loader.py# 权重加载与 U-Net 尺寸适配
 │   └── models/        # 自训 TorchScript 权重（随仓库分发）
-├── deploy/            # 部署包：streamlit/（已上线）、hf_space/（备选）
+├── deploy/            # 部署包：streamlit/（已上线）
 ├── web/               # 前端（Next.js + Tailwind）
 ├── scripts/           # 辅助脚本（生成 demo 图、评测、准备数据）
 ├── tests/             # API 冒烟 + 真实权重集成测试 + E2E
-├── docs/              # API.md（接口）、OPERATIONS.md（运维）、DEPLOY_DIAGNOSIS.md（部署诊断）
+├── docs/              # API.md（接口参考）
 ├── Dockerfile         # 推理服务镜像
 ├── DEPLOY.md          # 部署指南
 ├── CHANGELOG.md       # 版本变更记录
 ├── CONTRIBUTING.md    # 贡献指南
 ├── CITATION.cff       # 引用元数据
-├── PROGRESS.md        # 项目进度与分级待办
 └── README.md          # English README
 ```
 
@@ -258,13 +256,13 @@ pixelforge-image-restoration/
 
 **公开 Demo（已上线）**：Streamlit Community Cloud 直接从仓库部署，入口 `deploy/streamlit/streamlit_app.py`（自包含）。步骤见 [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
 
-**本地 / 自托管**：后端 `serve/app.py` 可跑在 VPS 或 Hugging Face Spaces（备选包见 `deploy/hf_space/`）；前端 `web/` 可直接部署到 Vercel，设 `NEXT_PUBLIC_API_URL` 指向后端。详见 [DEPLOY.md](DEPLOY.md)。
+**本地 / 自托管**：后端 `serve/app.py` 可跑在 VPS；前端 `web/` 可直接部署到 Vercel，设 `NEXT_PUBLIC_API_URL` 指向后端。详见 [DEPLOY.md](DEPLOY.md)。
 
 受网络限制无法直连 GitHub 时，参考 [DEPLOY.md](DEPLOY.md) 用镜像通道推送。
 
 ## 🗺️ 路线图
 
-工程已竣工并上线，剩余为可选扩展项（完整分级见 [PROGRESS.md](PROGRESS.md)）：
+工程已竣工并上线，剩余为可选扩展项：
 
 - `SRCNN ×2` 补训：当前为 `TBD`（未训练），可用 `train/train.py --model srcnn --scale 2` 补训，让 2× 也走 ML 引擎。
 - 延伸材料：英文项目报告 / 答辩幻灯片。

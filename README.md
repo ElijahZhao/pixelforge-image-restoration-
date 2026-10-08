@@ -35,7 +35,6 @@ data → training → evaluation → export (TorchScript) → backend inference 
 
 Every stage is written from scratch and runnable. Two self-trained weights
 (`sr_generator_scale4.pt`, `lowlight.pt`) ship with the repo, so a clone runs out of the box.
-Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 
 ## ✨ Highlights
 
@@ -240,17 +239,16 @@ pixelforge-image-restoration/
 │   ├── classical.py   # classical fallbacks
 │   ├── model_loader.py# weight loading + U-Net size adaptation
 │   └── models/        # self-trained TorchScript weights (committed)
-├── deploy/            # streamlit/ (live), hf_space/ (alternative)
+├── deploy/            # streamlit/ (live demo)
 ├── web/               # frontend (Next.js + Tailwind)
 ├── scripts/           # helpers (demo figures, evaluation, data setup)
 ├── tests/             # API smoke + real-weight integration + E2E
-├── docs/              # API.md (interface), OPERATIONS.md (ops), DEPLOY_DIAGNOSIS.md
+├── docs/              # API.md (interface reference)
 ├── Dockerfile         # inference service image
 ├── DEPLOY.md          # deployment guide
 ├── CHANGELOG.md       # version history
 ├── CONTRIBUTING.md    # contribution guide
 ├── CITATION.cff       # citation metadata
-├── PROGRESS.md        # status and graded TODOs
 └── README.zh-CN.md    # 中文 README
 ```
 
@@ -271,8 +269,7 @@ pixelforge-image-restoration/
 `deploy/streamlit/streamlit_app.py` (self-contained). Steps in
 [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md).
 
-**Local / self-hosted**: the backend `serve/app.py` runs on a VPS or Hugging Face Spaces
-(alternative package in `deploy/hf_space/`); the frontend `web/` deploys to Vercel with
+**Local / self-hosted**: the backend `serve/app.py` runs on a VPS; the frontend `web/` deploys to Vercel with
 `NEXT_PUBLIC_API_URL` pointing at your backend. See [DEPLOY.md](DEPLOY.md).
 
 Behind a restricted network that cannot reach GitHub directly, see [DEPLOY.md](DEPLOY.md) for
@@ -280,8 +277,7 @@ pushing via a mirror.
 
 ## 🗺️ Roadmap
 
-The engineering is complete and live; the remaining items are optional extensions (graded
-detail in [PROGRESS.md](PROGRESS.md)):
+The engineering is complete and live; the remaining items are optional extensions (graded):
 
 - `SRCNN ×2` training: currently `TBD` (untrained); train one with `train/train.py --model srcnn --scale 2` so ×2 also runs the ML engine.
 - Extended materials: English project report / slides.

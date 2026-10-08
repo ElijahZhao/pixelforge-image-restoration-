@@ -3,7 +3,7 @@
 #
 # 前置：
 #   1. 项目已在 /root/autodl-tmp/pixelforge
-#   2. data/ 下已放好 DIV2K 与 LOL-v1（见 docs/RETRAIN_DATA_GUIDE.md）
+#   2. data/ 下已放好 DIV2K 与 LOL-v1（数据准备说明见私有归档 archive_private/docs/RETRAIN_DATA_GUIDE.md）
 #      自检：bash scripts/download_data.sh --check   （会核对文件数量）
 #
 # 跑法：
@@ -34,7 +34,7 @@ if ! bash scripts/download_data.sh --check; then
   echo
   echo "================================================================"
   echo "数据集未就绪，训练无法开始。"
-  echo "准备步骤见 docs/RETRAIN_DATA_GUIDE.md，或重跑："
+  echo "准备步骤见私有归档 archive_private/docs/RETRAIN_DATA_GUIDE.md，或重跑："
   echo "    bash scripts/download_data.sh               # 打印下载指引"
   echo "    bash scripts/download_data.sh --check       # 校验结构与文件数量"
   echo "如果你有意只用数据子集，加 --allow-partial 显式放行数量不足。"

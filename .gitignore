@@ -62,3 +62,6 @@ tests/e2e/*.png
 # TypeScript incremental build cache
 *.tsbuildinfo
 .playwright-cli/
+
+# Private archive (错题本): process evidence moved out of the public repo
+archive_private/

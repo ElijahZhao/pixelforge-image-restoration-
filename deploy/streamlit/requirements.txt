@@ -12,7 +12,7 @@ streamlit>=1.49
 # A plain `pip install torch` pulls the CUDA build, which drags in 19 nvidia/cuda
 # packages (nvidia-cublas, nvidia-cudnn-cu13, cuda-toolkit, triton, ...) that are
 # never executed here but still occupy memory on a tier that cannot spare it.
-# The deploy logs list all 19; see docs/DEPLOY_DIAGNOSIS.md for the evidence.
+# The deploy logs list all 19 (the diagnostic write-up is kept in the private archive).
 #
 # `--extra-index-url` makes pip prefer the CPU wheels from PyTorch's own index.
 # The upper bounds pin the version: without them a redeploy silently picks up
