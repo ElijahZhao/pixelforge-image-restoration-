@@ -319,7 +319,7 @@ Yes — see [DEPLOY.md](DEPLOY.md) for pushing the image via a mirror when GitHu
 
 The engineering is complete and live; the remaining items are optional extensions:
 
-- Extended materials: English project report / slides.
+- Extended materials: English project report ([REPORT.md](REPORT.md)); slides remain optional.
 - (The ×2 SRCNN slot is already trained and shipped — no further work needed there.)
 
 ## 📝 Changelog
