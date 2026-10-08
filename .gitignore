@@ -61,3 +61,4 @@ tests/e2e/*.png
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+.playwright-cli/

@@ -37,6 +37,16 @@ from PIL import Image, ImageFilter
 
 MODELS_DIR = Path(__file__).resolve().parent / "models"
 
+# Memory budget for user uploads on Streamlit Community Cloud (~1 GB RAM).
+# Inference cost scales with pixels: the low-light U-Net runs at FULL input
+# resolution (activations alone reach hundreds of MB on a 4K photo), and an
+# SR ×4 output tensor costs width*height*12 bytes of float32. Without a cap a
+# single large upload gets the process OOM-killed -- on Community Cloud this
+# shows up as the app crashing / restarting with a bare "Oh no." page. 1.2 Mpx
+# (e.g. ~1254×957) keeps peak memory comfortably inside the free tier while
+# still being plenty for a demo; bigger uploads are downscaled, never rejected.
+MAX_INPUT_PIXELS = 1_200_000
+
 # --------------------------------------------------------------------------- #
 # Bilingual UI strings. English is the default; ``LANG`` selects the active set.
 # Keys are shared across both languages so switching never leaves a blank.
@@ -62,6 +72,7 @@ TEXTS = {
             "· Low-light — **18.32**"
         ),
         "upload_label": "Upload an image",
+        "resized_note": "Image is {w}×{h} — larger than the {limit_mpx:.1f} Mpx memory budget on Streamlit Community Cloud's free tier (~1 GB RAM). Auto-downscaled to {nw}×{nh} before inference to keep the app from being OOM-killed.",
         "spinner": "Running inference…",
         "tag_ml": "ML model",
         "tag_classical": "classical baseline",
@@ -150,6 +161,7 @@ TEXTS = {
             "· 低光 — **18.32**"
         ),
         "upload_label": "上传图片",
+        "resized_note": "图片为 {w}×{h}，超过 Streamlit Community Cloud 免费档（约 1GB 内存）的 {limit_mpx:.1f} Mpx 内存预算；已在推理前自动等比缩小到 {nw}×{nh}，避免应用被 OOM 杀掉（表现为反复崩溃 / \"Oh no.\" 空白页）。",
         "spinner": "推理中…",
         "tag_ml": "ML 自训模型",
         "tag_classical": "classical 基线",
@@ -812,6 +824,18 @@ st.markdown(
 
 if uploaded is not None:
     img = Image.open(uploaded).convert("RGB")
+    # OOM guard: cap the working image at MAX_INPUT_PIXELS before ANY task
+    # touches it. See the constant's comment for why this prevents crashes.
+    if img.width * img.height > MAX_INPUT_PIXELS:
+        _ratio = (MAX_INPUT_PIXELS / (img.width * img.height)) ** 0.5
+        _new_size = (max(1, round(img.width * _ratio)),
+                     max(1, round(img.height * _ratio)))
+        _orig_size = (img.width, img.height)
+        img = img.resize(_new_size, Image.LANCZOS)
+        st.caption(T["resized_note"].format(
+            w=_orig_size[0], h=_orig_size[1],
+            limit_mpx=MAX_INPUT_PIXELS / 1_000_000,
+            nw=_new_size[0], nh=_new_size[1]))
     use_sr = st.session_state.task == "sr"
     scale = st.session_state.scale
 

@@ -5,6 +5,22 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.2.1] - 2026-10-08
+
+README 展示页全面换新（低光 ×2 / SR×4 / SR×2 三档实测截图与案例图）；修复公开 Demo 反复崩溃（上传大图 OOM）。
+
+### Added
+
+- `assets/` 新增 7 张真实素材：低光 Demo 截图 ×2（暗色主题）、SR×4 Demo 截图 ×1（亮色主题，LR 111×170）、SR×2 Demo 截图 + ×2 案例三联图（原始上传 446×683 / 模型输入 LR 223×341 / ×2 输出 446×682）。`README.md` 与 `README.zh-CN.md` 的 "Running live" 展示段按任务分档重写，旧 `demo_live_lowlight.png` / `demo_live_sr.png` 移除。
+
+### Fixed
+
+- **公开 Demo 反复崩溃（根因：上传大图 OOM）**：`deploy/streamlit/streamlit_app.py` 此前对上传图片无像素上限，低光 U-Net 以全分辨率跑激活、SR×4 输出张量按 宽×高×12 字节膨胀，一张大图即可把 Community Cloud 免费档（约 1GB 内存）进程 OOM 杀掉，表现为 "Oh no." 空白页并反复重启。现新增 `MAX_INPUT_PIXELS = 1_200_000` 上传守卫：超限图自动等比缩小（LANCZOS）后再推理，并以双语 `st.caption` 明示缩放前后尺寸；只缩不放、绝不拒绝用户图。经本机 playwright 实测：1600×1200 上传 → 自动缩至 1265×949，SR×4 与低光均正常推理无崩溃。
+
+### Changed
+
+- （随 8092fff / f63b9f9 补记）Streamlit demo UI：侧栏训练注释逐行卡片化排列；新增模型输入 PNG 下载按钮；三面板说明改为逐面板图例式排版（中英）；修复 `st.info` 不支持 `unsafe_allow_html` 导致的说明区渲染失败（改用 markdown 硬换行）。
+
 ## [1.2.0] - 2026-10-07
 
 三次训练对照完成，按槽位择优更新部署权重；首个 ×2 超分权重上线。

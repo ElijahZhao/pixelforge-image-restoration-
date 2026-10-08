@@ -61,15 +61,25 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 
 > 对比图由 `scripts/make_demo.py` + `scripts/make_compare.py` 用仓库内真实权重生成，运行即可复现。
 
-**线上实跑** —— 公开 Demo 界面，低光任务处理真实照片。从左到右：你的输入、自适应伽马经典基线、自训 U-Net。服务自动选用 ML 引擎，在 CPU 上跑的真实权重。
+**线上实跑** —— 公开 Demo 界面，低光任务处理真实照片。从左到右：你的输入、自适应伽马经典基线、自训 U-Net。服务自动选用 ML 引擎，在 CPU 上跑的真实权重。截图为 Demo 暗色主题。
 
-![线上 Demo 低光三栏对比](assets/demo_live_lowlight.png)
+![线上 Demo 低光三栏对比 (1/2)](assets/demo_live_lowlight_1.png)
+
+![线上 Demo 低光三栏对比 (2/2)](assets/demo_live_lowlight_2.png)
 
 > Demo 地址：<https://pixelforge-image-restoration.streamlit.app/>。带中英双语界面、暗/亮主题切换，以及上图这个三栏视图——让模型**实际看到的低分辨率输入**也可见，而不是藏起来。
 
-**线上实跑·超分 4×** —— 同一个 Demo 的另一条任务线。从左到右：你的上传、模型输入（LR 180×261，仅展示时放大）、自训 SRResNet 的真实 4× 输出。侧边栏保留了训练出处信息。
+**线上实跑·超分 4×** —— 同一个 Demo 的亮色主题。从左到右：你的上传、模型输入（LR 111×170，仅展示时放大）、自训 SRResNet 的真实 4× 输出。侧边栏保留了训练出处信息。
 
-![线上 Demo 超分三栏对比](assets/demo_live_sr.png)
+![线上 Demo 超分 4× 三栏对比](assets/demo_live_sr4.png)
+
+**线上实跑·超分 2×** —— ×2 槽位跑的是自训 SRCNN（同口径 PSNR 32.35，胜 bicubic 基线 31.04）。先看 Demo 界面，再通过 Demo 暴露的下载入口拿到 ×2 案例的三张原图：原始上传、模型输入（LR 223×341）、×2 输出（446×682）。
+
+![线上 Demo 超分 2× 三栏对比](assets/demo_live_sr2.png)
+
+| 原始上传 | 模型输入（LR 223×341） | PixelForge ×2 输出 |
+|:---:|:---:|:---:|
+| ![SR ×2 原图](assets/demo_sr2_original.png) | ![SR ×2 模型输入](assets/demo_sr2_model_input.png) | ![SR ×2 输出](assets/demo_sr2_output.png) |
 
 ## 📊 评测结果
 
