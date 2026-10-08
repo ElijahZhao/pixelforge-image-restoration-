@@ -94,12 +94,12 @@ TEXTS = {
             "seeing the **classical adaptive-gamma baseline**, which brightens."
         ),
         "info_ll_3panel": (
-            "**🧭 How to read the three panels**<br>"
-            "① **Input** — your upload, untouched.<br>"
+            "**🧭 How to read the three panels**  \n"
+            "① **Input** — your upload, untouched.  \n"
             "② **Classical baseline** — adaptive gamma; reliably brightens "
-            "any image.<br>"
+            "any image.  \n"
             "③ **Self-trained U-Net** — trained on LOL-v1 real night "
-            "*photographs*.<br>"
+            "*photographs*.  \n"
             "⚠️ *Where ③ is darker than ①, the model is fighting an input it "
             "was not trained for (see the note above) — ② is the safer choice "
             "for that image.*"
@@ -112,13 +112,13 @@ TEXTS = {
         "sec_upload": "Upload",
         "sec_result": "Result",
         "info_3panel": (
-            "**🧭 How to read the three panels**<br>"
+            "**🧭 How to read the three panels**  \n"
             "① **Original** — your upload; already high-res, the reference. "
-            "SR neither can nor claims to beat its true detail.<br>"
+            "SR neither can nor claims to beat its true detail.  \n"
             "② **Model input** — your image downscaled ×{scale}. The only "
-            "pixels the model ever saw.<br>"
+            "pixels the model ever saw.  \n"
             "③ **SR output** — the reconstruction from ②; it should look much "
-            "sharper than ②.<br>"
+            "sharper than ②.  \n"
             "💡 *For a fair comparison, upload a **low-resolution** image — or "
             "simply compare ② → ③.*"
         ),
@@ -176,10 +176,10 @@ TEXTS = {
             "**classical 自适应伽马基线**，它是正常提亮的。"
         ),
         "info_ll_3panel": (
-            "**🧭 三张图怎么看**<br>"
-            "① **输入** — 你上传的图片，未做任何处理。<br>"
-            "② **classical 基线** — 自适应伽马；对任何图像都能稳定提亮。<br>"
-            "③ **自训 U-Net** — 在 LOL-v1 真实夜间**照片**上训练。<br>"
+            "**🧭 三张图怎么看**  \n"
+            "① **输入** — 你上传的图片，未做任何处理。  \n"
+            "② **classical 基线** — 自适应伽马；对任何图像都能稳定提亮。  \n"
+            "③ **自训 U-Net** — 在 LOL-v1 真实夜间**照片**上训练。  \n"
             "⚠️ *若 ③ 比 ① 还暗，说明模型正在处理一张它没被训练过的输入"
             "（见上方说明）——对该图而言 ② 是更稳妥的选择。*"
         ),
@@ -191,12 +191,12 @@ TEXTS = {
         "sec_upload": "上传",
         "sec_result": "结果",
         "info_3panel": (
-            "**🧭 三张图怎么看**<br>"
+            "**🧭 三张图怎么看**  \n"
             "① **原图** — 你上传的图片，本身就是高清参考；超分不会、也不该"
-            "声称能超过它的真实细节。<br>"
+            "声称能超过它的真实细节。  \n"
             "② **模型实际输入** — 由原图降采样 ×{scale} 得到；模型只见过"
-            "这里的像素。<br>"
-            "③ **超分输出** — 模型根据 ② 重建的结果，应明显比 ② 清晰。<br>"
+            "这里的像素。  \n"
+            "③ **超分输出** — 模型根据 ② 重建的结果，应明显比 ② 清晰。  \n"
             "💡 *想看公平对比，请上传**低分辨率**图片，或直接比较 ② → ③。*"
         ),
         "download": "⬇️ 下载结果 PNG",
@@ -778,7 +778,7 @@ with st.sidebar:
              key="task")
     st.radio(T["scale_label"], ["2", "4"], index=1, help=T["scale_help"], key="scale")
     st.divider()
-    st.caption(T["trained_caption"])
+    st.caption(T["trained_caption"], unsafe_allow_html=True)
 
 st.markdown(f'<p class="pf-section-title">{T["sec_upload"]}</p>',
             unsafe_allow_html=True)
