@@ -54,7 +54,13 @@ TEXTS = {
         "task_lowlight": "Low-Light Enhancement",
         "scale_label": "SR scale",
         "scale_help": "×2 and ×4 both run self-trained models (best-of selection across three training runs)",
-        "trained_caption": "Three training runs · best-of selection per slot · full-image validation PSNR: SR×4 27.38 (AutoDL 4090 batch16, temp swap for visual compare) · SR×2 32.35 · Low-light 18.32",
+        "trained_caption": (
+            "**Three training runs** · best-of selection per slot<br>"
+            "Full-image validation PSNR:<br>"
+            "· SR×4 — **27.47**<br>"
+            "· SR×2 — **32.35**<br>"
+            "· Low-light — **18.32**"
+        ),
         "upload_label": "Upload an image",
         "spinner": "Running inference…",
         "tag_ml": "ML model",
@@ -88,10 +94,15 @@ TEXTS = {
             "seeing the **classical adaptive-gamma baseline**, which brightens."
         ),
         "info_ll_3panel": (
-            "**How to read these three panels**: ① your input, ② the classical "
-            "adaptive-gamma baseline, ③ the self-trained U-Net. Where ③ is "
-            "darker than ①, the model is fighting an input it was not trained "
-            "for (see the note above); ② is the safer choice for that image."
+            "**🧭 How to read the three panels**<br>"
+            "① **Input** — your upload, untouched.<br>"
+            "② **Classical baseline** — adaptive gamma; reliably brightens "
+            "any image.<br>"
+            "③ **Self-trained U-Net** — trained on LOL-v1 real night "
+            "*photographs*.<br>"
+            "⚠️ *Where ③ is darker than ①, the model is fighting an input it "
+            "was not trained for (see the note above) — ② is the safer choice "
+            "for that image.*"
         ),
         "cap_original": "① Original (your upload)",
         "cap_lr": "② Model input (LR {w}×{h}, upscaled for display)",
@@ -101,16 +112,18 @@ TEXTS = {
         "sec_upload": "Upload",
         "sec_result": "Result",
         "info_3panel": (
-            "**How to read these three panels**: super-resolution maps a "
-            "*low-resolution* image to a *high-resolution* one, so the middle "
-            "panel is the model's real input (your original downscaled ×{scale}). "
-            "The model only ever saw those pixels; panel ③ is its reconstruction "
-            "and should look much sharper than ②. Panel ① is the reference; it "
-            "is already high-res, and **SR neither can nor claims to beat its "
-            "true detail**. For a fair comparison upload a **low-resolution** "
-            "image (or just compare ② → ③)."
+            "**🧭 How to read the three panels**<br>"
+            "① **Original** — your upload; already high-res, the reference. "
+            "SR neither can nor claims to beat its true detail.<br>"
+            "② **Model input** — your image downscaled ×{scale}. The only "
+            "pixels the model ever saw.<br>"
+            "③ **SR output** — the reconstruction from ②; it should look much "
+            "sharper than ②.<br>"
+            "💡 *For a fair comparison, upload a **low-resolution** image — or "
+            "simply compare ② → ③.*"
         ),
         "download": "⬇️ Download result PNG",
+        "download_lr": "⬇️ Download model input PNG",
         "empty_info": (
             "👾 Upload an image to begin. Low-light works best on dark photos; "
             "super-resolution is meant for low-resolution inputs."
@@ -129,7 +142,13 @@ TEXTS = {
         "task_lowlight": "低光增强 (Low-Light)",
         "scale_label": "SR 放大倍数",
         "scale_help": "×2 / ×4 均使用自训模型（三次训练按槽位择优）",
-        "trained_caption": "三次训练对照 · 按槽位择优 · 全图验证 PSNR：SR×4 27.38（AutoDL 4090 batch16，临时替换观感对比）· SR×2 32.35 · 低光 18.32",
+        "trained_caption": (
+            "**三次训练对照** · 按槽位择优<br>"
+            "全图验证 PSNR：<br>"
+            "· SR×4 — **27.47**<br>"
+            "· SR×2 — **32.35**<br>"
+            "· 低光 — **18.32**"
+        ),
         "upload_label": "上传图片",
         "spinner": "推理中…",
         "tag_ml": "ML 自训模型",
@@ -157,9 +176,12 @@ TEXTS = {
             "**classical 自适应伽马基线**，它是正常提亮的。"
         ),
         "info_ll_3panel": (
-            "**怎么看这三张图**：① 你的输入，② classical 自适应伽马基线，"
-            "③ 自训 U-Net。若 ③ 比 ① 还暗，说明模型正在处理一张它没被训练过的输入"
-            "（见上方说明）。对该图而言 ② 是更稳妥的选择。"
+            "**🧭 三张图怎么看**<br>"
+            "① **输入** — 你上传的图片，未做任何处理。<br>"
+            "② **classical 基线** — 自适应伽马；对任何图像都能稳定提亮。<br>"
+            "③ **自训 U-Net** — 在 LOL-v1 真实夜间**照片**上训练。<br>"
+            "⚠️ *若 ③ 比 ① 还暗，说明模型正在处理一张它没被训练过的输入"
+            "（见上方说明）——对该图而言 ② 是更稳妥的选择。*"
         ),
         "cap_original": "① 原图 (your upload)",
         "cap_lr": "② 模型实际输入 (低清 {w}×{h}，放大显示)",
@@ -169,13 +191,16 @@ TEXTS = {
         "sec_upload": "上传",
         "sec_result": "结果",
         "info_3panel": (
-            "**怎么看这三张图**：超分把「低分辨率」映射成「高分辨率」，"
-            "所以中间那张才是模型的真正输入（由你的原图降采样 ×{scale} 得到）。"
-            "模型只见过中间这张的像素，③ 是它重建出的结果，③ 应比 ② 清晰很多。"
-            "① 是参考原图：它本来就高清，**超分不会、也不该声称能超过它的真实细节**。"
-            "想看公平对比，请上传**低分辨率**图片（或直接看 ②→③）。"
+            "**🧭 三张图怎么看**<br>"
+            "① **原图** — 你上传的图片，本身就是高清参考；超分不会、也不该"
+            "声称能超过它的真实细节。<br>"
+            "② **模型实际输入** — 由原图降采样 ×{scale} 得到；模型只见过"
+            "这里的像素。<br>"
+            "③ **超分输出** — 模型根据 ② 重建的结果，应明显比 ② 清晰。<br>"
+            "💡 *想看公平对比，请上传**低分辨率**图片，或直接比较 ② → ③。*"
         ),
         "download": "⬇️ 下载结果 PNG",
+        "download_lr": "⬇️ 下载模型输入 PNG",
         "empty_info": (
             "👾 请上传一张图片开始体验。低光任务建议用较暗的照片；"
             "超分建议用低分辨率图。"
@@ -533,6 +558,16 @@ header[data-testid="stHeader"] { background: transparent; }
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
   padding-top: 1.2rem;
 }
+/* The sidebar's model-provenance caption: give the per-model lines room to
+   breathe (they are rendered as separate <br>-delimited lines; without this
+   they read as one squeezed block). */
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+  line-height: 2.0;
+  padding: 10px 12px;
+  border: 1px solid var(--pf-border);
+  border-radius: 4px;
+  background: var(--pf-card-bg);
+}
 [data-testid="stFileUploader"] {
   border: 2px dashed var(--pf-border);
   border-radius: 6px;
@@ -885,8 +920,22 @@ if uploaded is not None:
 
     buf = io.BytesIO()
     out.save(buf, format="PNG")
-    st.download_button(T["download"], buf.getvalue(),
-                       file_name="pixelforge_after.png", mime="image/png")
+    if use_sr and ml_lr is not None:
+        # SR ran the real model: also offer the model's true input (the LR
+        # image) for download, so panel ② can be inspected/computed against.
+        lr_buf = io.BytesIO()
+        ml_lr.save(lr_buf, format="PNG")
+        cdl1, cdl2 = st.columns(2)
+        with cdl1:
+            st.download_button(T["download"], buf.getvalue(),
+                               file_name="pixelforge_after.png", mime="image/png")
+        with cdl2:
+            st.download_button(T["download_lr"], lr_buf.getvalue(),
+                               file_name="pixelforge_model_input_lr.png",
+                               mime="image/png")
+    else:
+        st.download_button(T["download"], buf.getvalue(),
+                           file_name="pixelforge_after.png", mime="image/png")
 else:
     st.info(T["empty_info"])
 
