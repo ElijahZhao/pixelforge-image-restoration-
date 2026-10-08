@@ -22,8 +22,10 @@ They are **not** committed to the repo (too large). Download them once:
   data/lol/val/high/
   ```
 
-## Quick start without data
-The inference service (`serve/`) works **without** any trained weights: it falls
-back to classical baselines (bicubic + unsharp for SR, adaptive gamma correction
-for low-light). Train the real models on a free GPU to replace these with learned
-models — the service picks up exported weights automatically.
+## Running the service without datasets
+You don't need the training datasets to run inference: `serve/models/` already ships
+the exported TorchScript weights for all three tasks, so the service starts in ML mode
+out of the box. The datasets are only needed if you want to (re)train. To swap or
+retrain a model, export its weights into `serve/models/` and restart — the service
+picks them up automatically. If a weight file is missing, that slot falls back to the
+classical baseline (bicubic + unsharp for SR, adaptive gamma for low-light).

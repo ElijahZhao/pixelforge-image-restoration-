@@ -19,7 +19,7 @@ uvicorn serve.app:app --host 0.0.0.0 --port 8000
 {
   "status": "ok",
   "engines": {
-    "sr_scale2": "classical",
+    "sr_scale2": "ml",
     "sr_scale4": "ml",
     "lowlight": "ml"
   }
@@ -31,7 +31,7 @@ uvicorn serve.app:app --host 0.0.0.0 --port 8000
 - `"ml"`：`serve/models/` 下有对应权重，模型已加载。
 - `"classical"`：没有权重，会走经典兜底（超分用 bicubic + unsharp，低光用自适应伽马）。
 
-`sr_scale2` 默认为 `"classical"` —— 见下面「关于 2×」一节。
+`sr_scale2` 已随仓库分发自训权重，默认即为 `"ml"`（详见下文「关于 2×」）。
 
 ---
 
@@ -86,20 +86,20 @@ uvicorn serve.app:app --host 0.0.0.0 --port 8000
 
 ## 关于 2×
 
-服务对 `scale=2` **有接口、但没有自训权重**：
-`serve/models/` 里只有 `sr_generator_scale4.pt`（4× 的 SRResNet）和 `lowlight.pt`。
+`scale=2` 走自训 SRCNN（`sr_generator_scale2.pt`，随仓库分发，PSNR 32.35 / SSIM 0.917）。
+请求 2× 时 `engine` 为 `"ml"`，`/api/health` 把 `sr_scale2` 报成 `"ml"`。
 
-所以请求 2× 时，`engine` 是 `"classical"`，走 bicubic + unsharp，不是学出来的。
-`/api/health` 会如实把 `sr_scale2` 报成 `"classical"`。
-
-要让 2× 用上模型，先训练并导出：
+若权重缺失（例如临时移走 `.pt`），服务会自动降级到 bicubic + unsharp 经典兜底。
+要重新获得权重，可训练并导出：
 
 ```bash
 python train/train.py --task sr --model srcnn --scale 2 \
   --data_root data --epochs 100 --batch_size 16
+python train/export.py --checkpoint models/sr_generator_scale2_best.pth \
+  --out serve/models/sr_generator_scale2.pt --task sr --scale 2
 ```
 
-训练完导出到 `serve/models/`，服务重启后会自动加载（`serve/model_loader.py` 负责发现）。
+服务重启后自动加载（`serve/model_loader.py` 负责发现）。
 
 ---
 

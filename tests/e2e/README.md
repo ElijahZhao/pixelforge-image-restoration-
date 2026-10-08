@@ -32,7 +32,7 @@ python tests/e2e/e2e.py
 | `super_resolution_slider_dragged.png` | 滑块拖动后 |
 | `low_light_home.png` / `low_light_result.png` | 低光流程 |
 
-> 当前无训练权重，引擎显示 `Classical baseline`；训练并导出权重后自动变为 `Trained PyTorch model`，本测试无需改动即可验证新模型。
+> 仓库已分发三档自训权重，`serve/models/` 存在时引擎显示 `Trained PyTorch model`；若临时移走权重则降级为 `Classical baseline`，本测试无需改动即可验证两种模式。
 
 ## 退出码
 

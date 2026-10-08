@@ -27,7 +27,7 @@
 
 ## 🎯 What it is
 
-PixelForge implements a **complete, reproducible** vision pipeline rather than a wrapper around an API:
+PixelForge is a **complete, reproducible** vision pipeline built from scratch:
 
 ```
 data → training → evaluation → export (TorchScript) → backend inference → frontend
@@ -43,7 +43,7 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 - **Full training loop**: data loading, Adam + cosine annealing + AMP mixed precision + optional VGG perceptual loss, PSNR/SSIM evaluation, TorchScript export.
 - **Three shipped weights**: SR ×4 (PSNR 27.47), SR ×2 (PSNR 32.35) and low-light (PSNR 18.32) — each beats its classical baseline; classical methods remain as automatic fallback if a weight is ever missing.
 - **Quantitative comparison**: classical baselines vs. self-trained models on the same validation set; scripts and per-epoch logs are committed and recomputable.
-- Production hygiene is not an afterthought: CI (tests + coverage gate + dependency audit + frontend build), a non-root Docker image, per-IP rate limiting, and API docs.
+- Engineering: CI runs the tests behind a coverage gate, audits dependencies, and builds the frontend; the Docker image runs as a non-root user; the API enforces per-IP rate limiting and ships documentation.
 
 ## 🖼️ Showcase
 
@@ -53,7 +53,7 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 
 ![SR 4x comparison](assets/compare_sr_4x.png)
 
-> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB) but looks softer / greyer (measured: output gradient mean 1.39 vs. 1.45 for bicubic). This is typical of perceptual-loss training: it optimises feature-space similarity, not pixel sharpness. The metric and the visual result point in different directions.
+> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB) but looks softer / greyer — measured output gradient mean is 1.39 vs. 1.45 for bicubic. That is typical of perceptual-loss training, which optimises feature-space similarity rather than pixel sharpness, so a lower gradient mean (softer edges) coexists with the higher PSNR/SSIM.
 
 **Low-light enhancement: dark input → adaptive-gamma baseline vs. self-trained U-Net**
 

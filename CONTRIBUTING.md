@@ -25,7 +25,7 @@ cd web && cp .env.local.example .env.local && pnpm install
 ## 运行测试
 
 ```bash
-# 全套（训练单元测试 + API 冒烟），应输出 28 passed
+# 全套（训练单元测试 + API 冒烟 + 真实权重集成测试），应输出 39 passed, 1 skipped
 python -m pytest
 
 # 仅训练侧（不依赖 pytest 的旧入口，仍保留）

@@ -1,6 +1,6 @@
 # Deployment
 
-> **本文档描述的是历史 / 备选方案（Vercel + Hugging Face Spaces）。**
+> **本文档描述的是备选部署方案（Vercel + 自托管后端）。**
 > **当前实际上线的公开 Demo 走的是 Streamlit Community Cloud**，权威步骤见
 > [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
 > 之所以保留本文档：受限网络下的镜像推送方法（第 4 节）仍然有用。
@@ -10,26 +10,22 @@
 ```bash
 cd web
 cp .env.local.example .env.local   # or set in Vercel dashboard
-# set NEXT_PUBLIC_API_URL to your backend URL (HF Space or VPS)
+# set NEXT_PUBLIC_API_URL to your backend URL (VPS)
 vercel --prod
 ```
 Vercel auto-detects Next.js. Set the env var `NEXT_PUBLIC_API_URL` in the
 project settings to point at the deployed backend.
 
-## 2. Backend (FastAPI) → Hugging Face Spaces (free, optional GPU)
-### Option A — Gradio one-click demo
-Create a Spaces repo (Gradio SDK), copy `serve/gradio_demo.py`, `serve/classical.py`,
-`serve/model_loader.py` and `requirements.txt`, then `python serve/gradio_demo.py`
-is auto-launched. Drop exported `.pt` weights into `serve/models/` for ML mode.
+## 2. Backend (FastAPI) → VPS / Docker Spaces
 
-### Option B — Full FastAPI service
-Use a Docker Spaces or a small VPS. Run:
 ```bash
 pip install -r requirements.txt
-uvicorn serve.app:app --host 0.0.0.0 --port 7860
+uvicorn serve.app:app --host 0.0.0.0 --port 8000
 ```
-Make sure `serve/models/` contains the exported TorchScript weights if you want
-the trained models (otherwise it serves classical baselines).
+
+`serve/models/` already contains the exported TorchScript weights, so the service
+starts in ML mode out of the box. Point the frontend's `NEXT_PUBLIC_API_URL` at this
+backend.
 
 ## 3. Local (dev) — both together
 ```bash
@@ -46,7 +42,7 @@ cd web && pnpm install && pnpm dev
   Next.js dev server (`next.config.mjs` rewrites) proxies it to the local
   FastAPI service at `http://localhost:8000` — perfect for local dev with no
   CORS issues. In production, set `NEXT_PUBLIC_API_URL` to your deployed
-  backend (e.g. the HF Space URL) so the browser calls it directly.
+  backend (e.g. your VPS URL) so the browser calls it directly.
 - CORS is open (`*`) in `serve/app.py` for convenience — tighten it to your
   frontend domain before going public.
 
