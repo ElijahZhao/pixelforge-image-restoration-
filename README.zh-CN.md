@@ -77,7 +77,7 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 
 ![线上 Demo 超分 2× 三栏对比](assets/demo_live_sr2.png)
 
-| 原始上传 | 模型输入（LR 223×341） | PixelForge ×2 输出 |
+| 原始上传 (446×683) | 模型输入（LR 223×341） | PixelForge ×2 输出 (446×682) |
 |:---:|:---:|:---:|
 | ![SR ×2 原图](assets/demo_sr2_original.png) | ![SR ×2 模型输入](assets/demo_sr2_model_input.png) | ![SR ×2 输出](assets/demo_sr2_output.png) |
 

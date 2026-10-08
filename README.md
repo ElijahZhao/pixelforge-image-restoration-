@@ -79,7 +79,7 @@ Current status and graded TODOs: [PROGRESS.md](PROGRESS.md).
 
 ![Live demo, SR ×2 three-panel view](assets/demo_live_sr2.png)
 
-| Original upload | Model input (LR 223×341) | PixelForge ×2 output |
+| Original upload (446×683) | Model input (LR 223×341) | PixelForge ×2 output (446×682) |
 |:---:|:---:|:---:|
 | ![SR ×2 original](assets/demo_sr2_original.png) | ![SR ×2 model input](assets/demo_sr2_model_input.png) | ![SR ×2 output](assets/demo_sr2_output.png) |
 
