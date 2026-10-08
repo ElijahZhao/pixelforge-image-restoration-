@@ -49,6 +49,8 @@
 
 **三槽位全部实测打赢各自基线；batch16 新模型 2 采纳 + 1 险负（0.09 dB）——三次训练是成功的对照实验，不是失败记录。** 部署权重三份 md5 已逐字节核验进仓库 `serve/models/` 与 `deploy/streamlit/models/`（双端一致）；AutoDL 端旧权重与仓库历史权重 md5 相同（`backup_old` 未入包，双保险兑现，无数据损失）。
 
+> ⚠️ **临时观感对比（2026-10-08）**：用户为肉眼比较两版 SR×4 的实际效果，已将部署位 `serve/models/sr_generator_scale4.pt` + `deploy/streamlit/models/sr_generator_scale4.pt` 临时换成 **AutoDL 4090 batch16 新训版（eval 27.38，md5 `0b344fbf`）**，SR×2 / 低光不动。**此替换不改变上面的决策结论**——旧模型 27.47 仍优 0.09 dB，正式阵容仍是旧 SR×4。对比完回退命令：`git checkout f853fe9 -- serve/models/sr_generator_scale4.pt deploy/streamlit/models/sr_generator_scale4.pt`（旧文件已固化在 git 历史，零损失）。
+
 > 恢复来源（AutoDL，**已实测修正**）：备份脚本把备份放在 `/root/autodl-tmp/backup_old/`，
 > 且 `cp -r results models serve/models` 中两个 models 目录同名，GNU cp 将 serve/models 的内容
 > **合并进了 `backup_old/models/`**（与训练权重 .pth 平铺在一起，本地已复现验证）。
