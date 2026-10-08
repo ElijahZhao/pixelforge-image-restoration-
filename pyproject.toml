@@ -24,7 +24,6 @@ source = ["serve", "train"]
 omit = [
     "train/train.py",
     "train/export.py",
-    "serve/gradio_demo.py",
     "train/tests/*",
     "tests/*",
 ]

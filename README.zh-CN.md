@@ -32,19 +32,19 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 数据 → 训练 → 评测 → 模型导出（TorchScript）→ 后端推理 → 前端展示
 ```
 
-每一环都是自己写的、能跑的。两个自训权重（`sr_generator_scale4.pt`、`lowlight.pt`）随仓库分发，克隆即可运行。
+每一环都是自己写的、能跑的。**三个**自训权重（`sr_generator_scale4.pt`、`sr_generator_scale2.pt`、`lowlight.pt`）随仓库分发，克隆即可运行——Demo 与测试都不需要 GPU。
 
 ## ✨ 核心亮点
 
 - **真实建模能力**：从零实现 SRCNN、带 PixelShuffle 与残差块的 SRResNet 生成器、带跳跃连接的低光 U-Net。
 - **完整训练闭环**：数据加载、Adam + 余弦退火 + AMP 混合精度 + 可选 VGG 感知损失、PSNR/SSIM 评测、TorchScript 导出。
+- **三个已发布权重**：超分 ×4（PSNR 27.47）、超分 ×2（PSNR 32.35）、低光（PSNR 18.32）——各自都打赢经典基线；权重缺失时经典方法自动兜底。
 - **量化对比**：用标准指标在同一批验证图上对比「经典基线 vs 自训模型」，脚本与逐 epoch 日志均可复算。
-- **优雅降级**：没有权重时自动走经典方法兜底，放上权重即切换 ML 引擎，`GET /api/health` 可查当前引擎。
 - 工程细节也没落下：CI 三作业（测试 + 覆盖率 + 依赖审计 + 前端构建）、Docker 非 root 镜像、IP 限流、API 文档。
 
 ## 🖼️ 效果演示
 
-> 下方为 CPU 上用本仓库真实权重跑出的输出。前两张为并排对比图（左：低质量输入 / 经典基线，右：PixelForge 自训模型），最后两张为公开 Demo 的线上实跑截图，每个任务各一张。
+> 下方为 CPU 上用本仓库真实权重跑出的输出。前两张为并排对比图（左：低质量输入 / 经典基线，右：PixelForge 自训模型），最后三张为公开 Demo 的线上实跑截图，每个任务各一张。
 
 **超分辨率 4×：Bicubic 基线 vs 自训 SRResNet**
 
@@ -56,7 +56,7 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 
 ![LowLight comparison](assets/compare_lowlight.png)
 
-> 自训 U-Net 在同口径下 PSNR 提升 +10.41 dB、SSIM +0.547，亮度恢复与结构保留均明显优于伽马基线。
+> 自训 U-Net 在同口径下 PSNR 提升 +10.55 dB、SSIM +0.553，亮度恢复与结构保留均明显优于伽马基线。
 
 > 对比图由 `scripts/make_demo.py` + `scripts/make_compare.py` 用仓库内真实权重生成，运行即可复现。
 
@@ -87,54 +87,44 @@ PixelForge 实现了一条**完整、可复现**的视觉流水线，而不是�
 | 任务 | 基线 | 自训模型 | 增益 |
 |---|---|---|---|
 | **超分 ×4** | Bicubic：PSNR 26.69 / SSIM 0.754 | **PSNR 27.47 / SSIM 0.780** | **+0.77 dB / +0.026** |
-| **低光增强** | 不处理：PSNR 7.77 / SSIM 0.192 | **PSNR 18.18 / SSIM 0.739** | **+10.41 dB / +0.547** |
+| **超分 ×2** | Bicubic：PSNR 31.04 / SSIM 0.894 | **PSNR 32.35 / SSIM 0.917** | **+1.31 dB / +0.023** |
+| **低光增强** | 不处理：PSNR 7.77 / SSIM 0.192 | **PSNR 18.32 / SSIM 0.746** | **+10.55 dB / +0.553** |
 
-**口径说明（重要）**：上表在全图验证集上测得，与训练日志中「随机裁剪块」口径不同，二者不可混比（训练日志中 SR best 27.39、低光 best 18.59，属正常口径差异）。全部结果可由 `results/train_log_*.csv` + `scripts/eval_baseline.py` 复现。
+**口径说明（重要）**：上表三行均在全图验证集、同一套协议下测得——这套协议也正是挑选部署权重的协议。训练日志里的是「随机裁剪」口径，二者**不可直接比较**；完整解释与复现命令见 [`results/README.md`](results/README.md)。
 
-## 🧩 功能特性
-
-- **超分 4×**：自训 SRResNet 生成器（含感知损失），本仓库唯一训练并导出权重的超分档位。
-- **超分 2×**：无自训权重，请求时走经典 bicubic + unsharp 兜底。要用模型跑 2×，需先按 `train/train.py --task sr --model srcnn --scale 2` 补训。
-- **低光增强**：自训低光 U-Net；另带自适应伽马经典兜底，并对「暗但不是欠曝照片」的输入做了曝光门控。
-- **前后对比**：Streamlit Demo 并列展示；Next.js 前端用可拖动滑块对比。
-- **两种部署入口**：`deploy/streamlit/streamlit_app.py`（公开 Demo）+ `serve/app.py`（FastAPI 服务）。
-
-## 🏗️ 系统架构
-
-```mermaid
-flowchart LR
-    A[用户上传图片] --> B{入口}
-    B -->|公开 Demo| C[Streamlit Cloud<br/>deploy/streamlit/]
-    B -->|本地 / Vercel| D[Next.js 前端 web/]
-    C --> E[自训模型 + 经典基线]
-    D -->|POST /api/predict| F(FastAPI 服务 serve/app.py)
-    F --> G{serve/models/<br/>有训练权重?}
-    G -->|是| H[PyTorch 模型<br/>SRResNet / U-Net]
-    G -->|否| I[经典方法<br/>Bicubic / 自适应伽马]
-    E --> J[复原后图像]
-    H --> J
-    I --> J
-    J --> A
-```
+本表**不**声称达到 SOTA：SR ×4 的 27.47 dB 高于 bicubic 基线，但远低于大数据集学术 SOTA（30+ dB）——训练集与模型容量都偏小。低光的增益是相对「不处理」基线，而非相对其他已发表方法。
 
 ## 🚀 快速开始
 
-> 本地运行无需 GPU。服务自带经典基线，开箱即跑；仓库已含自训权重，加载后自动切到 ML 引擎。
+> 公开 Demo 无需安装；本地一切在 CPU 上即可运行——经典基线开箱即跑，仓库自带的权重会让 Demo 自动切到 ML 引擎。
+
+**A. 公开 Demo（无需安装）**
+
+直接打开 <https://pixelforge-image-restoration.streamlit.app/>。免费档会休眠，首访可能需等几秒唤醒。
+
+**B. 本地跑同一个 Demo**
 
 ```bash
-# 1) 后端（FastAPI）
-pip install -r requirements.txt
+pip install -r deploy/streamlit/requirements.txt   # CPU-only torch，为免费档锁版本
+streamlit run deploy/streamlit/streamlit_app.py
+```
+
+**C. 自托管 FastAPI 后端 + Next.js 前端**
+
+```bash
+# 后端
+pip install -r requirements.txt          # 本文件不含 torch——需另行安装：
+pip install torch torchvision            # 开发用 CPU 版；GPU 机器用 CUDA 版
 uvicorn serve.app:app --reload --port 8000
 
-# 2) 前端（另一个终端）
+# 前端（另一个终端）
 cd web
-cp .env.local.example .env.local   # 默认指向 http://localhost:8000
+cp .env.local.example .env.local         # 默认指向 http://localhost:8000
 pnpm install
 pnpm dev
 ```
 
 打开 http://localhost:3000，上传图片、选任务、点 Enhance，拖动滑块对比。
-想跳过本地环境？直接开 <https://pixelforge-image-restoration.streamlit.app/>（免费档会休眠，首访需唤醒）。
 
 **Docker**（仅后端）
 
@@ -144,6 +134,34 @@ docker run -p 8000:8000 pixelforge-serve
 ```
 
 镜像内含自训权重，启动即 ML 模式。前端是另一个构建目标，不在这个镜像里。
+
+## 🏗️ 系统架构
+
+```mermaid
+flowchart LR
+    A[用户上传图片] --> B{入口}
+    B -->|公开 Demo| C[Streamlit<br/>deploy/streamlit/]
+    B -->|自托管| D[Next.js 前端 web/]
+    C --> E[自训权重 + 经典基线<br/>CPU，跑在 Community Cloud]
+    D -->|POST /api/predict| F(FastAPI 服务 serve/app.py)
+    F --> G{serve/models/<br/>有训练权重?}
+    G -->|是| H[PyTorch 模型<br/>SRResNet / SRCNN / U-Net]
+    G -->|否| I[经典方法<br/>Bicubic / 自适应伽马]
+    E --> J[复原后图像]
+    H --> J
+    I --> J
+    J --> A
+```
+
+线上部署的是 Streamlit Demo（`deploy/streamlit/streamlit_app.py`，跑在 Community Cloud）——这才是真正上线的产物。FastAPI 后端（`serve/app.py`）与 Next.js 前端（`web/`）同属本仓库代码，可自托管：`web/` 向 `serve/app.py` 发请求，后者在某任务/档位加载了权重时走 ML 引擎，否则走经典基线。`GET /api/health` 可查当前引擎。完整接口见 [`docs/API.md`](docs/API.md)。
+
+## 🧩 功能特性
+
+- **超分 4×**：自训 SRResNet 生成器（含感知损失），PSNR 27.47 / SSIM 0.780，胜 bicubic。
+- **超分 2×**：自训 SRCNN，PSNR 32.35 / SSIM 0.917，胜 bicubic——不再是经典兜底。
+- **低光增强**：自训低光 U-Net（PSNR 18.32 / SSIM 0.746）；另带自适应伽马经典兜底，并对「暗但不是欠曝照片」的输入做了曝光门控。
+- **前后对比**：Streamlit Demo 并列展示；Next.js 前端用可拖动滑块对比。
+- **三个训练权重随仓库分发**，位于 `serve/models/`（Demo 用副本在 `deploy/streamlit/models/`）；权重缺失时经典方法自动兜底。
 
 ## 🧪 本地测试
 
@@ -159,7 +177,7 @@ cd web && pnpm install && pnpm test
 cd web && pnpm exec tsc --noEmit
 ```
 
-预期 `36 passed, 1 skipped`（24 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
+预期 `39 passed, 1 skipped`（27 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
 
 E2E 浏览器测试需真实浏览器与两个服务，默认在 pytest 下跳过；要运行：
 
@@ -172,29 +190,36 @@ CI（`.github/workflows/ci.yml`）跑三个作业：带覆盖率门槛的 pytest
 
 ## 🧰 训练真实模型
 
-> 数据准备、训练、导出全流程。原始训练在单卡 GPU 上完成，本仓库权重已随仓库分发。
+> 原始训练在单卡 GPU 上完成，本仓库权重已随仓库分发。重新训练需 GPU。
 
 ```bash
 # 准备数据：建目录 + 打印下载地址（不自动下大文件）
 bash scripts/download_data.sh
 pip install -r requirements.txt
+pip install torch torchvision            # 开发用 CPU 版；GPU 机器用 CUDA 版
 
 # 超分（4×，启用感知损失）
 python train/train.py --task sr --model generator --scale 4 \
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
 
+# 超分（2×，SRCNN）
+python train/train.py --task sr --model srcnn --scale 2 \
+    --data_root data --epochs 200 --batch_size 8 --lr 1e-4
+
 # 低光（U-Net，无感知损失）
 python train/train.py --task lowlight --data_root data \
     --epochs 200 --batch_size 8 --lr 2e-4
 
-# 导出为 TorchScript 供服务使用
+# 导出为 TorchScript 供服务 / Demo 使用
 python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
     --out serve/models/sr_generator_scale4.pt --task sr --scale 4
+python train/export.py --checkpoint models/sr_generator_scale2_best.pth \
+    --out serve/models/sr_generator_scale2.pt --task sr --scale 2
 python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
     --out serve/models/lowlight.pt --task lowlight --scale 2
 ```
 
-把导出的 `.pt` 放进 `serve/models/`，服务会自动从经典基线切换到你的模型（`/api/health` 可查当前引擎）。
+把导出的 `.pt` 放进 `serve/models/`（Demo 用副本放 `deploy/streamlit/models/`），服务重启即自动加载。
 
 ## 🔬 方法说明
 
@@ -223,7 +248,7 @@ pixelforge-image-restoration/
 │   ├── train.py       # 训练脚本
 │   ├── export.py      # 导出 TorchScript
 │   └── tests/         # 单元测试（CPU 可跑）
-├── serve/             # 推理侧
+├── serve/             # 推理侧（FastAPI）
 │   ├── app.py         # FastAPI 服务（限流 + 资源守卫）
 │   ├── classical.py   # 经典方法兜底
 │   ├── model_loader.py# 权重加载与 U-Net 尺寸适配
@@ -252,20 +277,43 @@ pixelforge-image-restoration/
 | 前端 | Next.js 14、React 18、Tailwind CSS、TypeScript |
 | 部署 | Streamlit Community Cloud（公开 Demo）、Docker、Vercel（可选） |
 
+## ❓ 常见问题
+
+**需要 GPU 吗？**
+不需要。公开 Demo、本地 Demo、整套测试都在 CPU 上跑。（重新）训练才需要 GPU。
+
+**哪些任务有训练权重？**
+三个都有：超分 ×4（27.47 dB）、超分 ×2（32.35 dB）、低光（18.32 dB），各自都胜经典基线。权重文件缺失时经典方法会自动兜底。
+
+**SR ×4 结果比 bicubic 还柔，是坏了吗？**
+不是。SR ×4 用了感知（VGG）损失，优化的是特征空间相似度而非像素锐度——所以它指标更高、观感略柔。这是感知损失训练的正常现象，不是缺陷。
+
+**公开 Demo 很慢或显示唤醒页？**
+免费 Streamlit 档位空闲会休眠，暂停后的首访需几秒启动。推理本身在 CPU 上跑，普通照片通常很快。
+
+**受限网络跑不了怎么办？**
+可以——见 [DEPLOY.md](DEPLOY.md)，用镜像通道推送镜像即可绕过直连 GitHub 的限制。
+
 ## ☁️ 部署
 
 **公开 Demo（已上线）**：Streamlit Community Cloud 直接从仓库部署，入口 `deploy/streamlit/streamlit_app.py`（自包含）。步骤见 [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
 
-**本地 / 自托管**：后端 `serve/app.py` 可跑在 VPS；前端 `web/` 可直接部署到 Vercel，设 `NEXT_PUBLIC_API_URL` 指向后端。详见 [DEPLOY.md](DEPLOY.md)。
-
-受网络限制无法直连 GitHub 时，参考 [DEPLOY.md](DEPLOY.md) 用镜像通道推送。
+**自托管**：后端 `serve/app.py` 可跑在 VPS；前端 `web/` 可直接部署到 Vercel，设 `NEXT_PUBLIC_API_URL` 指向后端。详见 [DEPLOY.md](DEPLOY.md)。
 
 ## 🗺️ 路线图
 
 工程已竣工并上线，剩余为可选扩展项：
 
-- `SRCNN ×2` 补训：当前为 `TBD`（未训练），可用 `train/train.py --model srcnn --scale 2` 补训，让 2× 也走 ML 引擎。
 - 延伸材料：英文项目报告 / 答辩幻灯片。
+- （×2 SRCNN 槽位已训练并随仓库分发，无需再做。）
+
+## 📝 变更记录
+
+完整历史见 [CHANGELOG.md](CHANGELOG.md)。近期：
+
+- **1.2.2** — 加固公开 Demo 的上传守卫（解码前拒绝压缩炸弹）、移除未使用的 Gradio 依赖、固化 CI 覆盖率门禁。
+- **1.2.1** — 新增 Demo 展示素材，并修复大图上传导致的 Demo 内存崩溃。
+- **1.2.0** — 首个 ×2 超分权重上线，低光权重更新。
 
 ## 📄 许可与引用
 
