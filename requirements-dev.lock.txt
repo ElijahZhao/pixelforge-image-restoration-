@@ -7,7 +7,7 @@
 --index-url https://mirrors.tencent.com/pypi/simple/
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-certifi==2026.7.22
+certifi==2026.10.19
     # via requests
 charset-normalizer==3.5.2
     # via requests

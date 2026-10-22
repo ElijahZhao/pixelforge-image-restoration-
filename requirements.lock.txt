@@ -23,7 +23,7 @@ anyio==4.15.1
     #   watchfiles
 brotli==1.2.0
     # via gradio
-certifi==2026.7.22
+certifi==2026.10.19
     # via
     #   httpcore
     #   httpx
