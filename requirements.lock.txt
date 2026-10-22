@@ -108,7 +108,7 @@ packaging==26.3
     #   huggingface-hub
 pandas==3.0.6
     # via gradio
-pillow==12.3.0
+pillow==13.0.0
     # via
     #   -r requirements.txt
     #   gradio
