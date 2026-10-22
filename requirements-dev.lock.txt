@@ -5,6 +5,7 @@
 #    pip-compile --output-file=requirements-dev.lock.txt requirements-dev.txt
 #
 --index-url https://mirrors.tencent.com/pypi/simple/
+--extra-index-url https://download.pytorch.org/whl/cpu
 
 certifi==2026.7.22
     # via requests
