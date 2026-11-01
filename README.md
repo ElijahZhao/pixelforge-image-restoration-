@@ -75,7 +75,7 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 
 ![Live demo, SR ×4 three-panel view](assets/demo_live_sr4.png)
 
-**Running live, super-resolution ×2** — the ×2 slot runs its own self-trained SRCNN (PSNR 32.35 vs. bicubic 31.04 on the same caliber). Demo view, then the full ×2 case as three separate downloads the demo exposes: the original upload, the model input (LR 223×341), and the ×2 output (446×682).
+**Running live, super-resolution ×2** — the ×2 slot runs its own self-trained SRResNet generator (PSNR 32.35 vs. bicubic 31.04 on the same caliber). Demo view, then the full ×2 case as three separate downloads the demo exposes: the original upload, the model input (LR 223×341), and the ×2 output (446×682).
 
 ![Live demo, SR ×2 three-panel view](assets/demo_live_sr2.png)
 
@@ -170,7 +170,7 @@ classical baseline. `GET /api/health` reports which engine each slot is using. F
 ## 🧩 Features
 
 - **SR ×4**: self-trained SRResNet generator with perceptual loss. PSNR 27.47 / SSIM 0.780 vs. bicubic.
-- **SR ×2**: self-trained SRCNN, PSNR 32.35 / SSIM 0.917 vs. bicubic — no longer a classical fallback.
+- **SR ×2**: self-trained SRResNet generator, PSNR 32.35 / SSIM 0.917 vs. bicubic — no longer a classical fallback.
 - **Low-light enhancement**: self-trained low-light U-Net (PSNR 18.32 / SSIM 0.746), plus an adaptive-gamma classical fallback and an exposure gate for inputs that are dark but not underexposed photos.
 - **Before/after**: side-by-side in the Streamlit demo; draggable slider in the Next.js frontend.
 - **Three trained weights ship** in `serve/models/` (and a copy in `deploy/streamlit/models/` for the demo); classical baselines remain as automatic fallback if a weight is ever missing.
@@ -213,8 +213,8 @@ bash scripts/download_data.sh
 python train/train.py --task sr --model generator --scale 4 \
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
 
-# Super-resolution (2×, SRCNN)
-python train/train.py --task sr --model srcnn --scale 2 \
+# Super-resolution (2×, SRResNet generator)
+python train/train.py --task sr --model generator --scale 2 \
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4
 
 # Low-light (U-Net)
@@ -320,7 +320,7 @@ Yes — see [DEPLOY.md](DEPLOY.md) for pushing the image via a mirror when GitHu
 The engineering is complete and live; the remaining items are optional extensions:
 
 - Extended materials: English project report ([REPORT.md](REPORT.md)); slides remain optional.
-- (The ×2 SRCNN slot is already trained and shipped — no further work needed there.)
+- (The ×2 SRResNet slot is already trained and shipped — no further work needed there.)
 
 ## 📝 Changelog
 

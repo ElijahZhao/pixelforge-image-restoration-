@@ -86,7 +86,7 @@ uvicorn serve.app:app --host 0.0.0.0 --port 8000
 
 ## 关于 2×
 
-`scale=2` 走自训 SRCNN（`sr_generator_scale2.pt`，随仓库分发，PSNR 32.35 / SSIM 0.917）。
+`scale=2` 走自训 SRResNet 生成器（`sr_generator_scale2.pt`，随仓库分发，PSNR 32.35 / SSIM 0.917）。
 请求 2× 时 `engine` 为 `"ml"`，`/api/health` 把 `sr_scale2` 报成 `"ml"`。
 
 若权重缺失（例如临时移走 `.pt`），服务会自动降级到 bicubic + unsharp 经典兜底。

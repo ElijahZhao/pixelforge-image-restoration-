@@ -27,7 +27,7 @@ the machine, not to win a benchmark.
 ## What's actually in the box
 
 - **Three trained weights:** `sr_generator_scale4.pt` (SRResNet, 27.47 dB), `sr_generator_scale2.pt`
-  (SRCNN, 32.35 dB), `lowlight.pt` (U-Net, 18.32 dB).
+  (SRResNet generator, 32.35 dB), `lowlight.pt` (U-Net, 18.32 dB).
 - **A full training loop:** data loading, Adam with cosine annealing, mixed precision, optional
   perceptual loss, PSNR/SSIM evaluation, TorchScript export.
 - **A Streamlit demo** with a bilingual UI and a light/dark theme. This is the live thing — it's

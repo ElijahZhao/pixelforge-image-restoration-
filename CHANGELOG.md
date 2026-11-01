@@ -5,6 +5,20 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.1] - 2026-11-02
+
+文档事实修正：×2 权重的模型身份、方法页过时表格、评测口径表述。**不改任何代码行为**（前端文案除外）。
+
+### Fixed
+
+- **×2 模型身份全仓修正（SRCNN → SRResNet 生成器，17 处）**：`sr_generator_scale2.pt` 从来不是 SRCNN。铁证三条互相独立：① 权重结构实测含 `entry → res_blocks.0..7 → upsample`（PixelShuffle），参数 781,068，SRCNN 是三层 conv（约 5.7k 参数）；② 训练日志名由 `train.py` 的 `--model` 参数生成，留档日志为 `train_log_sr_generator_scale2_batch16_20261007.csv`；③ `build_model` 仅在 `--model srcnn` 时构建 SRCNN。修正覆盖 `README.md` / `README.zh-CN.md` / `results/README.md` / `REPORT.md` / `docs/API.md` / `deploy/streamlit/DEPLOY_STREAMLIT.md` / 交付材料与 CHANGELOG 1.2.0 历史条目（原文误记，加更正注）。**最重的一处不是改名**：README 的 ×2 复现命令原写 `--model srcnn`，照它跑不出 32.35（会训出一个真 SRCNN），已改 `--model generator`。代码级的 SRCNN 基线描述（`models.py`、架构清单、参考文献）不受影响、保留。
+- **方法页评测表双重过时（`web/app/method/page.tsx`）**：×2 行仍显示 "SRCNN / TBD"（权重 1.2.0 已训出部署）；低光 ours 行仍是旧数字 18.18 / 0.739（部署为 18.32 / 0.746）；×2 的 bicubic 行是 Set5 参考值 33.66*，与本仓 DIV2K 口径不可比。现全表统一为本仓实测值：×2 bicubic 31.04 / 0.894、SRResNet 32.35 / 0.917、低光 U-Net 18.32 / 0.746，脚注同步改为口径说明。
+- **评测口径表述自相矛盾（`results/README.md`）**：原文 "(full-image, one fixed crop)"——"full-image" 与 "one fixed crop" 互斥。厘清：表格数字由 `eval_baseline.py` 在**整张图**上测得（"full-image" 对这三个数字是准确的）；训练日志才是 96×96 中心块口径。并补实测差值：同一部署权重 × DIV2K val-100，中心块口径比全图**低 1.17 dB（×4）/ 1.42 dB（×2）**。
+
+### Verified
+
+- **三个报告数字在独立环境逐位复现**（Kaggle T4 + torch 2.11.0+cu128，本仓 HEAD `f76ca96`，官方 DIV2K valid-100 + LOL eval15，`eval_baseline.py` 未改一字）：×4 **27.47 / 0.7798**、×2 **32.35 / 0.9165**、低光 **18.32 / 0.7457**，与 `results/README.md` 两/四位小数一致；同 kernel 重跑逐位相同。顺带量化：低光逐图平均（1.3.0 口径）18.3205 vs 全局 MSE（旧路径）17.1645，旧口径低估 **1.156 dB**，与 1.3.0 条目在 8×256² 块上实测的 1.16 dB 方向、量级一致。
+
 ## [1.3.0] - 2026-11-01
 
 指标改为**逐图计算再平均**，验证批大小与训练解耦，退化算子的抗锯齿行为显式写死。**报告口径已变，新旧训练日志的 `val_psnr` 不可直接比较**（见下）。
@@ -66,7 +80,7 @@ README 展示页全面换新（低光 ×2 / SR×4 / SR×2 三档实测截图与�
 
 ### Added
 
-- `serve/models/sr_generator_scale2.pt`：首个自训 ×2 超分权重（SRCNN，AutoDL RTX 4090 batch16）。全图验证 **32.35 / 0.917**，胜 bicubic 基线 31.04 +1.31 dB；此前 ×2 请求一直回退经典 bicubic（1.1.1 中"×2 无训练权重"的临时限制解除）。
+- `serve/models/sr_generator_scale2.pt`：首个自训 ×2 超分权重（SRResNet 生成器，AutoDL RTX 4090 batch16；1.2.0 条目原文误记为 SRCNN，2026-11-02 依权重结构与训练日志名更正）。全图验证 **32.35 / 0.917**，胜 bicubic 基线 31.04 +1.31 dB；此前 ×2 请求一直回退经典 bicubic（1.1.1 中"×2 无训练权重"的临时限制解除）。
 - `deploy/streamlit/models/sr_generator_scale2.pt`：Streamlit demo 同步上线 ×2 真模型档位（加载逻辑按 `sr_*_scale{scale}.pt` 自动识别，零代码改动）。
 - `results/train_log_*_batch16_20261007.csv` ×3 与 `results/logs_batch16_20261007/`：第 ②③ 次训练（batch16）完整日志留档，与第 ① 次（batch8）构成超参对照实验证据。
 - `archive_private/docs/MODEL_SELECTION_TODO.md`（已移出主仓库至私有归档）：三次训练按槽位择优的决策记录（含评估口径说明、备份路径坑位与恢复验证）。

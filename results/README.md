@@ -22,7 +22,7 @@ Super-Resolution (full-image validation, 100 images)
 | Method                        | Task | Scale | PSNR (dB) | SSIM  |
 |-------------------------------|------|-------|-----------|-------|
 | Bicubic (classical baseline)  | SR   | 2×    | 31.04     | 0.894 |
-| SRCNN (ours, 2nd run) **deployed** | SR   | 2×    | 32.35     | 0.917 |
+| SRResNet (ours, 2nd run) **deployed** | SR   | 2×    | 32.35     | 0.917 |
 | Gain                          |      |       | +1.31     | +0.023 |
 | Bicubic (classical baseline)  | SR   | 4×    | 26.69     | 0.754 |
 | SRResNet (ours, 1st run) **deployed** | SR   | 4×    | 27.47     | 0.780 |
@@ -59,14 +59,20 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   literature reference band never measured on this project's split; it is
 >   not comparable with the current deterministic full-image protocol. Under the
 >   fair, same-protocol comparison the U-Net gains +10.41 dB over the no-op baseline.
-> - Training-log bests (random-crop protocol) were 27.39 (SR) / 18.59 (low-light);
->   the full-image protocol above yields 27.47 / 18.18. These are NOT
->   interchangeable, and the training-log figure is the LESS trustworthy of the two:
->   the SR crop position was drawn at random for validation, which moved the reported
->   PSNR by 7.35 dB peak-to-peak against a real training gain of +0.46 dB. The
->   27.39 came from a single epoch whose neighbours were 25.3-26.6 -- its edge is
->   crop luck, not model quality. The validation crop is now deterministic, so
->   the numbers below (full-image, one fixed crop) are the ones to quote.
+> - Training-log bests (crop protocol) were 27.39 (SR) / 18.59 (low-light);
+>   the full-image protocol above yields 27.47 for the same ×4 weight. These
+>   are NOT interchangeable, and the training-log figure is the LESS
+>   trustworthy of the two: the SR crop position used to be drawn at random for
+>   validation, which moved the reported PSNR by 7.35 dB peak-to-peak against a
+>   real training gain of +0.46 dB. The 27.39 came from a single epoch whose
+>   neighbours were 25.3-26.6 -- its edge is crop luck, not model quality. The
+>   validation crop is now deterministic (96×96 centre patch, see
+>   `train/datasets.py`), but it still measures 96×96 pixels of each image,
+>   while the table above measures the FULL image via `scripts/eval_baseline.py`.
+>   Measured on the deployed weights over DIV2K val-100 (2026-11-02), the
+>   centre-patch protocol reads 1.17 dB (×4) / 1.42 dB (×2) LOWER than
+>   full-image -- same model, same images, different window. The full-image
+>   numbers above are the ones to quote.
 > - Reproduce with: `python scripts/eval_baseline.py --task sr --scale 4` and
 >   `python scripts/eval_baseline.py --task lowlight`.
 > - **Aggregation (added 2026-11-01, CHANGELOG 1.3.0)**: every PSNR/SSIM in the tables

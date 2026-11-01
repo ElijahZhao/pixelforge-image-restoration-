@@ -72,7 +72,7 @@ PixelForge 是一条**完整、可复现**、全链路从零自建的视觉流�
 
 ![线上 Demo 超分 4× 三栏对比](assets/demo_live_sr4.png)
 
-**线上实跑·超分 2×** —— ×2 槽位跑的是自训 SRCNN（同口径 PSNR 32.35，胜 bicubic 基线 31.04）。先看 Demo 界面，再通过 Demo 暴露的下载入口拿到 ×2 案例的三张原图：原始上传、模型输入（LR 223×341）、×2 输出（446×682）。
+**线上实跑·超分 2×** —— ×2 槽位跑的是自训 SRResNet 生成器（同口径 PSNR 32.35，胜 bicubic 基线 31.04）。先看 Demo 界面，再通过 Demo 暴露的下载入口拿到 ×2 案例的三张原图：原始上传、模型输入（LR 223×341）、×2 输出（446×682）。
 
 ![线上 Demo 超分 2× 三栏对比](assets/demo_live_sr2.png)
 
@@ -158,7 +158,7 @@ flowchart LR
 ## 🧩 功能特性
 
 - **超分 4×**：自训 SRResNet 生成器（含感知损失），PSNR 27.47 / SSIM 0.780，胜 bicubic。
-- **超分 2×**：自训 SRCNN，PSNR 32.35 / SSIM 0.917，胜 bicubic——不再是经典兜底。
+- **超分 2×**：自训 SRResNet 生成器，PSNR 32.35 / SSIM 0.917，胜 bicubic——不再是经典兜底。
 - **低光增强**：自训低光 U-Net（PSNR 18.32 / SSIM 0.746）；另带自适应伽马经典兜底，并对「暗但不是欠曝照片」的输入做了曝光门控。
 - **前后对比**：Streamlit Demo 并列展示；Next.js 前端用可拖动滑块对比。
 - **三个训练权重随仓库分发**，位于 `serve/models/`（Demo 用副本在 `deploy/streamlit/models/`）；权重缺失时经典方法自动兜底。
@@ -202,8 +202,8 @@ pip install torch torchvision            # 开发用 CPU 版；GPU 机器用 CUD
 python train/train.py --task sr --model generator --scale 4 \
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
 
-# 超分（2×，SRCNN）
-python train/train.py --task sr --model srcnn --scale 2 \
+# 超分（2×，SRResNet 生成器）
+python train/train.py --task sr --model generator --scale 2 \
     --data_root data --epochs 200 --batch_size 8 --lr 1e-4
 
 # 低光（U-Net，无感知损失）
@@ -305,7 +305,7 @@ pixelforge-image-restoration/
 工程已竣工并上线，剩余为可选扩展项：
 
 - 延伸材料：英文项目报告 / 答辩幻灯片。
-- （×2 SRCNN 槽位已训练并随仓库分发，无需再做。）
+- （×2 SRResNet 槽位已训练并随仓库分发，无需再做。）
 
 ## 📝 变更记录
 

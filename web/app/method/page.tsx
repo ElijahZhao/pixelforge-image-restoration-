@@ -47,12 +47,13 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
 
       <h2 className="text-xl font-semibold mt-8">Evaluation</h2>
       <p className="mt-3 text-slate-300">
-        Quantitative results use PSNR and SSIM. Rows marked <b>ours</b> are
-        filled with metrics measured on this repo&rsquo;s trained weights
-        (SR&times;4 on DIV2K, low-light on LOL, full-image protocol); the
-        SRCNN&times;2 row stays <b>TBD</b> because no weight was trained/exported
-        for it (it falls back to the classical baseline). No placeholder numbers
-        are ever shown as real results.
+        Quantitative results use PSNR and SSIM, averaged per image over the
+        full validation split. Rows marked <b>ours</b> are measured on this
+        repo&rsquo;s trained weights (SR on DIV2K val-100, low-light on LOL
+        eval15, full-image protocol via <code>scripts/eval_baseline.py</code>);
+        the same script supplies every baseline row, so model and baseline
+        differ only in method. No placeholder numbers are shown as real
+        results.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full text-sm glass">
@@ -70,15 +71,15 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
               <td className="p-2">Bicubic (baseline)</td>
               <td className="p-2">SR</td>
               <td className="p-2">2×</td>
-              <td className="p-2">33.66 *</td>
-              <td className="p-2">0.9299 *</td>
+              <td className="p-2">31.04</td>
+              <td className="p-2">0.894</td>
             </tr>
             <tr>
-              <td className="p-2">SRCNN (ours)</td>
+              <td className="p-2">SRResNet (ours)</td>
               <td className="p-2">SR</td>
               <td className="p-2">2×</td>
-              <td className="p-2 text-slate-500">TBD</td>
-              <td className="p-2 text-slate-500">TBD</td>
+              <td className="p-2">32.35</td>
+              <td className="p-2">0.917</td>
             </tr>
             <tr>
               <td className="p-2">Bicubic (baseline)</td>
@@ -105,16 +106,17 @@ LowLight UNet: Enc(3->32->64->128) -> Bottleneck -> Dec (skip connections)
               <td className="p-2">LowLight-UNet (ours)</td>
               <td className="p-2">LowLight</td>
               <td className="p-2">N/A</td>
-              <td className="p-2">18.18</td>
-              <td className="p-2">0.739</td>
+              <td className="p-2">18.32</td>
+              <td className="p-2">0.746</td>
             </tr>
           </tbody>
         </table>
       </div>
       <p className="mt-2 text-xs text-slate-500">
-        * Set5 ×2 Bicubic reference value (Dong et al.). The ×4 / low-light rows
-        are measured in this repo (DIV2K / LOL, full-image protocol); SRCNN ×2
-        remains TBD (no trained weight; it uses the classical fallback).
+        All values are measured in this repo on DIV2K val-100 (SR) and LOL
+        eval15 (low-light) with the same per-image-mean, full-image protocol
+        (<code>scripts/eval_baseline.py</code>); reproduced on 2026-11-02 on a
+        separate GPU environment with two-decimal agreement.
       </p>
 
       <h2 className="text-xl font-semibold mt-8">Datasets</h2>
