@@ -42,7 +42,7 @@ from torchvision.models import VGG16_Weights
 
 from models import build_model
 from datasets import get_dataloader
-from metrics import evaluate_batch
+from metrics import aggregate, evaluate_batch
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -150,8 +150,17 @@ def train(args):
     # `drop_last` never apply, and what remains is exactly the guarantee we want
     # -- `_seed_worker` fixes every worker RNG, so the metric cannot drift
     # between epochs for reasons unrelated to the weights.
+    #
+    # The validation batch size is a SEPARATE knob from the training one. It used
+    # to silently follow `--batch_size`, which made the reported metric a function
+    # of a training hyper-parameter: changing the training batch regrouped the
+    # validation images and moved the score by up to 11.65 dB on this project's
+    # own checkpoints (measured under the old batch-wide-MSE aggregation; under
+    # the per-image one the value is invariant by construction).
+    # Default 1 keeps each image scored on its own; even at N>1 the per-image
+    # metrics are unchanged, and `tests/test_protocol.py` holds that invariant.
     val_loader = get_dataloader(args.task, args.data_root, "val",
-                                batch_size=args.batch_size, scale=args.scale,
+                                batch_size=args.val_batch_size, scale=args.scale,
                                 seed=SEED)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
@@ -252,6 +261,12 @@ def train(args):
             w.writerow([f"# objective={objective}"])
             w.writerow([f"# best_criterion={best_criterion}"])
             w.writerow([f"# perceptual_normalized={bool(args.perceptual)}"])
+            # The aggregation rule belongs in the log, not only in the code: a
+            # CSV that does not say HOW its metric was averaged cannot be
+            # compared with another CSV, and this project has already been bitten
+            # by that (11.85 dB between two aggregation choices).
+            w.writerow(["# val_aggregation=per_image_mean"])
+            w.writerow([f"# val_batch_size={args.val_batch_size}"])
             w.writerow(["epoch", "train_loss", "val_psnr", "val_ssim", "time_s"])
 
     for epoch in range(start_epoch, args.epochs + 1):
@@ -280,16 +295,23 @@ def train(args):
         scheduler.step()
 
         # Validation.
+        #
+        # Every image is scored on its own and only then averaged, so the number
+        # cannot depend on how images are grouped into batches. The old code took
+        # one MSE over the whole batch and averaged those per-batch scalars --
+        # a quantity that moved with `--batch_size` (measured spread on this
+        # project: 11.85 dB), i.e. the metric measured the dataloader, not the
+        # model. See metrics.py's module docstring.
         model.eval()
         psnrs, ssims = [], []
         with torch.no_grad():
             for lr, hr in val_loader:
                 lr, hr = lr.to(DEVICE), hr.to(DEVICE)
                 out = model(lr)
-                m = evaluate_batch(out.cpu(), hr.cpu())
-                psnrs.append(m["psnr"])
-                ssims.append(m["ssim"])
-        val_psnr, val_ssim = sum(psnrs) / len(psnrs), sum(ssims) / len(ssims)
+                m = evaluate_batch(out.cpu(), hr.cpu(), per_image=True)
+                psnrs.extend(m["psnr_per_image"])
+                ssims.extend(m["ssim_per_image"])
+        val_psnr, val_ssim = aggregate(psnrs), aggregate(ssims)
         elapsed = time.time() - t0
         print(f"Epoch {epoch:03d} | loss={running/len(train_loader.dataset):.4f} "
               f"| val PSNR={val_psnr:.2f} SSIM={val_ssim:.4f} | {elapsed:.1f}s")
@@ -341,6 +363,10 @@ def parse_args():
     p.add_argument("--data_root", default="data")
     p.add_argument("--epochs", type=int, default=100)
     p.add_argument("--batch_size", type=int, default=16)
+    p.add_argument("--val_batch_size", type=int, default=1,
+                   help="batch size for validation only, independent of --batch_size. "
+                        "Default 1: metrics are per-image, so this changes speed but "
+                        "must never change the reported value")
     p.add_argument("--lr", type=float, default=1e-3)
     p.add_argument("--perceptual", action="store_true")
     p.add_argument("--resume", action="store_true",

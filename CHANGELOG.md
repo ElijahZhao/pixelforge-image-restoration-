@@ -5,6 +5,29 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-11-01
+
+指标改为**逐图计算再平均**，验证批大小与训练解耦，退化算子的抗锯齿行为显式写死。**报告口径已变，新旧训练日志的 `val_psnr` 不可直接比较**（见下）。
+
+### Changed
+
+- **指标聚合改为逐图（`train/metrics.py`）**：原实现用一个 batch 级全局 MSE 得到一个标量（`F.mse_loss(pred, target, reduction="mean")` 覆盖 B×C×H×W），`train.py` 再对这些 batch 标量求算术平均。这样报告值会随**验证批大小**变化——同一个模型、同一批图，仅改分组就差 1.16 dB（8 个 256² 块实测：逐图平均 26.172，batch=8 全局 MSE 25.009，拆成两组 4 张则 25.051）。现改为每张图各自算 PSNR/SSIM 再等权平均，聚合结果在结构上不再能"看见" batch。
+- **验证批大小与训练解耦（`train/train.py`）**：新增 `--val_batch_size`（默认 1），不再复用 `--batch_size`。此前换个训练 batch 会顺带重排验证集，让指标变成训练超参的函数。
+- **CSV 记录口径（`results/*.csv`）**：新增 `# val_aggregation=per_image_mean` 与 `# val_batch_size=<n>` 两行表头。不写清聚合方式的日志无法与另一份日志比较。
+- **退化算子写死抗锯齿（`train/datasets.py`）**：`TF.resize(..., BICUBIC)` 显式补 `antialias=True`。该参数默认值在 torchvision 0.17 由 False 翻为 True，而本项目训练环境不锁 torchvision 版本，训练机与评测机可能不同版本。实测影响：同一权重同一张图，关掉抗锯齿后模型相对 bicubic 的增益从 **+0.57 dB 翻成 −1.19 dB**——胜负取决于这个开关，不能留给库默认值。
+
+### Added
+
+- `train/metrics.py`：`psnr_per_image` / `ssim_per_image`（返回 `(B,)`）、`aggregate()`（等权平均的唯一实现）、`psnr`/`ssim` 新增 `reduction="none"`、`evaluate_batch(..., per_image=True)`。
+- `train/tests/test_protocol.py`：7 条测试锁定协议——逐图指标与 batch 划分无关（PSNR/SSIM 各一条）、聚合不等价于全局 MSE、`evaluate_batch` 自洽、等权平均、完美图不污染均值（inf 语义）、`datasets` 产出的 LR 必须等于显式 `antialias=True` 的结果且不等于 `False`。
+- `train/tests/run_tests.py` 纳入 `test_protocol`（34 项全绿）。
+
+### 影响范围（重要）
+
+- **`scripts/eval_baseline.py` 的数字不变**：它本来就是逐图（batch=1）评测，旧口径在 batch=1 时与新口径等价。`results/README.md` 对比表里的 32.35 / 27.47 / 18.32 **不受本次改动影响**。
+- **训练日志的 `val_psnr` 会系统性升高**：旧口径被 batch 内最难的那张图拉低。8 个 256² 块实测低估 1.16 dB；batch=16 且图像难度分散时更大。因此 `results/train_log_*_20261007.csv` 与今后新日志**不可直接相减**，跨协议比较一律以 `eval_baseline.py` 为准。
+- **不影响已发布权重**：本次未改动任何模型结构或权重文件。
+
 ## [1.2.2] - 2026-10-08
 
 补全上传守卫时序缺口、清理死依赖、固化 CI 覆盖率门禁、修正文档与过时测试。

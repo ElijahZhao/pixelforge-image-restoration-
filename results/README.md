@@ -69,3 +69,12 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   the numbers below (full-image, one fixed crop) are the ones to quote.
 > - Reproduce with: `python scripts/eval_baseline.py --task sr --scale 4` and
 >   `python scripts/eval_baseline.py --task lowlight`.
+> - **Aggregation (added 2026-11-01, CHANGELOG 1.3.0)**: every PSNR/SSIM in the tables
+>   above is the arithmetic mean of **per-image** values. `scripts/eval_baseline.py`
+>   has always evaluated one image at a time, so these numbers are unaffected by the
+>   1.3.0 change. The training logs are a different story: `train.py` used to build one
+>   MSE over the whole validation batch, which is dominated by the hardest image in the
+>   batch and therefore reads **lower** than the per-image mean (measured: 1.16 dB on
+>   8×256² patches; more when image difficulty is mixed). Logs written before 1.3.0 and
+>   logs written after it are therefore **not directly subtractable** — compare across
+>   protocols only through `eval_baseline.py`, which is the same code path for both.
