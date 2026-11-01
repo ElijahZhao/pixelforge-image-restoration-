@@ -21,7 +21,7 @@ anyio==4.15.1
     #   httpx2
     #   starlette
     #   watchfiles
-brotli==1.2.0
+brotli==1.2.1
     # via gradio
 certifi==2026.10.19
     # via
@@ -35,7 +35,7 @@ fastapi==0.142.2
     # via
     #   -r requirements.txt
     #   gradio
-filelock==4.0.9
+filelock==4.2.1
     # via
     #   huggingface-hub
     #   torch
@@ -97,7 +97,7 @@ numpy==2.4.6
     #   gradio
     #   pandas
     #   torchvision
-opentelemetry-api==1.45.0
+opentelemetry-api==1.45.1
     # via fastapi
 orjson==3.12.0
     # via gradio
