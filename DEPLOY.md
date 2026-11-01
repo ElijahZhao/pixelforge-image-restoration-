@@ -46,11 +46,11 @@ cd web && pnpm install && pnpm dev
 - CORS is open (`*`) in `serve/app.py` for convenience — tighten it to your
   frontend domain before going public.
 
-## 4. Pushing to GitHub from a restricted network (e.g. this sandbox)
+## 4. Pushing to GitHub from a restricted network (e.g. an offline build box)
 When the environment cannot reach `github.com` directly (TLS reset / proxy
 whitelist), use a public GitHub mirror that the network *can* reach, e.g.
 `ghproxy.net`. It proxies both `git` traffic and resolves the target repo
-server-side, so your sandbox never needs direct access to GitHub.
+server-side, so the client never needs direct access to GitHub.
 
 ```bash
 TOKEN=<YOUR_FINE_GRAINED_TOKEN>   # a fine-grained token with `repo` scope
