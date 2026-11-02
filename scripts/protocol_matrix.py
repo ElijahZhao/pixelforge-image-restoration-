@@ -101,6 +101,21 @@ def find_checkpoints(ckpt_dir):
 
 
 def load_model(path, task, scale):
+    """Load either a TorchScript export (``serve/models/*.pt``) or a state dict.
+
+    Both are in the repo for good reason: the deployed weights are TorchScript
+    ``.pt`` (they are what the service actually runs), while seed-matrix
+    experiments produce ``.pth`` state dicts. A protocol table that can only be
+    built from one of them cannot answer "is the *deployed* model's number
+    reproducible", which is the question a reviewer asks first.
+    """
+    try:
+        model = torch.jit.load(path, map_location="cpu")
+        model.eval()
+        return model.to(DEVICE), {"source": "torchscript"}
+    except Exception:  # noqa: BLE001 - not a TorchScript file, fall through
+        pass
+
     ck = torch.load(path, map_location="cpu", weights_only=False)
     state = ck.get("state_dict", ck) if isinstance(ck, dict) else ck
     name = ck.get("model") if isinstance(ck, dict) else None
@@ -110,6 +125,7 @@ def load_model(path, task, scale):
     model.eval()
     meta = {k: ck.get(k) for k in ("seed", "crop_size", "tag", "epoch", "val_psnr")} \
         if isinstance(ck, dict) else {}
+    meta["source"] = "state_dict"
     return model.to(DEVICE), meta
 
 
@@ -230,7 +246,8 @@ def run(args):
         except Exception as exc:  # noqa: BLE001
             print(f"[!] cannot load {ckpt}: {exc}")
             continue
-        print(f"\n=== {name} ({meta if meta.get('seed') else 'no run metadata'}) ===")
+        tag = f"seed={meta.get('seed')}" if meta.get("seed") else meta.get("source")
+        print(f"\n=== {name} ({tag}) ===")
         rec = {"path": ckpt, "meta": meta, "protocols": {}}
 
         for p in wanted:
