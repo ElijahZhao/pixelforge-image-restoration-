@@ -5,6 +5,24 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.5.0] - 2026-11-02
+
+种子矩阵的汇总侧：5 个种子训完之后，**怎么把 5 个数变成一句话**。这一步此前不存在，而它正是论文里"误差棒"的出处。
+
+### Added
+
+- **`scripts/aggregate_seeds.py`**：扫描 `--tag seeds/s##` 产出的 `train_log_*.csv`（本地目录、或 Kaggle kernel 拉回的 `runs/<model>/s<seed>/`），按模型输出 `n / 均值 ± 样本标准差 / 95% CI / min–max`，可写 `--out` CSV 与 `--md` Markdown 表。
+  - **CI 用 t 分布而非正态**：n=5 时 t=2.776，正态近似会把区间低估约 12%。
+  - **标准差用 `ddof=1`**：5 个种子是样本，不是总体。
+  - **主动校验而非静默平均**：CSV 头部 `seed=` 与目录名不一致、同一模型下种子重复、各 run 的 epoch 数不齐、种子数不足 `--expect-seeds`，全部打印为 `!` 告警而不是算进均值。
+  - **口径写进输出**：训练内验证是中心裁剪 / per-image mean / 训练侧退化算子，不是全图 Y+shave 文献口径；主表由阶段 5 用 P1–P6 重评同一批 checkpoint，两者不得混用（这个项目已经为"两种聚合方式差 11.85 dB"付过一次代价）。
+  - **best-of-N 只作上界**：每个 run 的 `best` 是 200 轮里按 `val_psnr` 挑的最大值，headline 用 final-epoch 均值，`best` 连同 min–max 一起给，标题即写明。
+
+### Verified
+
+- 合成 5 种子数据（单调上升曲线，best 应等于 final）：表出 `n=5`、均值 ± std、95% CI `[26.8030, 27.1170]`，与手算一致。
+- 故障注入：把 `seed 42` 的 CSV 放进 `seeds/s43/` 目录 → 输出同时报 `directory says s43 but CSV header says seed=42` 与 `only 1 seed(s), expected 5`，且该 run 未被计入。
+
 ## [1.4.0] - 2026-11-02
 
 可复现性硬化：把"跑两次结果不一样"的三个来源（种子写死、patch 大小藏在类默认值里、多次实验共用同一组文件名）变成显式参数并落盘记录。**默认行为不变**：不带新参数时输出路径、文件名、超参与 1.3.2 完全一致。
