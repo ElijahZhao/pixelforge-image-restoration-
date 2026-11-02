@@ -15,6 +15,12 @@ coverage.xml
 data/div2k/
 data/lol/
 models/*.pth
+# Tagged runs (--tag seeds/s43) nest under models/<tag>/: weights stay local in
+# every depth, and so do the resume points. The CSV + config JSON they produce
+# live under results/<tag>/ and ARE tracked -- they are the seed matrix's
+# evidence, and they are kilobytes.
+models/**/*.pth
+models/**/ckpt/
 # Resume points (optimizer/scheduler state, tens of MB each). Local-only: they
 # exist so an interrupted GPU run can continue, not to be shared.
 models/ckpt/

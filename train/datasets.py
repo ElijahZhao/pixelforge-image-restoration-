@@ -33,12 +33,20 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms.functional as TF
 
+# Default training patch size per task. These are constraints, not tastes:
+# an SR HR patch must be divisible by the scale factor (2 or 4) or the LR patch
+# loses pixels to integer truncation, and the low-light U-Net downsamples by 32
+# five times, so its patch must be a multiple of 32. They live in one dict so
+# that the class defaults, `get_dataloader` and `train.py`'s --crop_size help
+# text cannot disagree about what "the default" is.
+DEFAULT_CROP = {"sr": 96, "lowlight": 128}
+
 
 class SuperResolutionDataset(Dataset):
     """HR images; LR is produced by bicubic downscaling at load time."""
 
     def __init__(self, root: str, split: str = "train", scale: int = 2,
-                 crop_size: int = 96, augment: bool = True):
+                 crop_size: int = DEFAULT_CROP["sr"], augment: bool = True):
         self.scale = scale
         self.crop_size = crop_size
         self.augment = augment and split == "train"
@@ -92,12 +100,19 @@ class SuperResolutionDataset(Dataset):
             #
             # The crop position used to be drawn from `torch.randint` regardless
             # of `augment`, so every validation epoch scored a different crop of
-            # every image. Measured on the DIV2K val split, that alone moved the
-            # reported PSNR by 7.35 dB peak-to-peak, while 200 epochs of real
-            # training moved it +0.46 dB -- the metric was ~16:1 noise-to-signal,
-            # so the "best" checkpoint was largely chosen by crop luck. Centre
-            # cropping keeps the patch size (and therefore the compute) identical
-            # while making the number comparable across epochs.
+            # every image. That is real noise: 200 independent resamples of the
+            # DIV2K val split move the reported PSNR by 2.83 dB peak-to-peak
+            # (max 27.54, mean 25.80, sigma 0.51), while the training run itself
+            # gained +3.36 dB (epochs 1-5 -> 196-200). Two parallel facts worth
+            # keeping straight, because an earlier note in this file mixed them
+            # up: the 7.35 dB figure is a SINGLE image over 28 resamples, not the
+            # whole split, and the earlier "16:1 noise-to-signal" claim was an
+            # extrapolation from it that the 200-resample measurement refutes
+            # (it is ~0.8:1). So crop noise alone did not swamp training -- what
+            # amplified the reported number was selecting the best of N
+            # evaluations afterwards (best-of-200 adds +1.59 dB by itself).
+            # Centre cropping removes the noise at the source and keeps the patch
+            # size (and therefore the compute) identical.
             img = TF.crop(img, (h - self.crop_size) // 2, (w - self.crop_size) // 2,
                           self.crop_size, self.crop_size)
         return img
@@ -134,8 +149,8 @@ class LowLightDataset(Dataset):
     silently corrupting training.
     """
 
-    def __init__(self, root: str, split: str = "train", crop_size: int = 128,
-                 augment: bool = True):
+    def __init__(self, root: str, split: str = "train",
+                 crop_size: int = DEFAULT_CROP["lowlight"], augment: bool = True):
         self.crop_size = crop_size
         # Training crops go through the U-Net, which downsamples by 32 several
         # times; a patch whose side is not a multiple of 32 makes the decoder's
@@ -254,11 +269,23 @@ def _seed_worker(worker_id: int) -> None:
 
 
 def get_dataloader(task: str, data_root: str, split: str, batch_size: int = 16,
-                   scale: int = 2, num_workers: int = 4, seed: int | None = None):
+                   scale: int = 2, num_workers: int = 4, seed: int | None = None,
+                   crop_size: int | None = None):
+    """Build the loader for ``task``/``split``.
+
+    ``crop_size`` is threaded through from ``train.py --crop_size``; when it is
+    ``None`` each task keeps its own constraint-satisfying default (see
+    ``DEFAULT_CROP``). Before this argument existed the patch size was a magic
+    constant inside the dataset class: it changed model behaviour and PSNR, but
+    appeared in no log and no config, so two runs "with the same flags" could
+    differ by a training-setup detail nobody had written down.
+    """
     if task == "sr":
-        ds = SuperResolutionDataset(f"{data_root}/div2k", split, scale=scale)
+        ds = SuperResolutionDataset(f"{data_root}/div2k", split, scale=scale,
+                                    crop_size=crop_size or DEFAULT_CROP["sr"])
     elif task == "lowlight":
-        ds = LowLightDataset(f"{data_root}/lol", split)
+        ds = LowLightDataset(f"{data_root}/lol", split,
+                             crop_size=crop_size or DEFAULT_CROP["lowlight"])
     else:
         raise ValueError(task)
 

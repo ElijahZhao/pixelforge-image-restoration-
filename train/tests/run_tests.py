@@ -18,7 +18,8 @@ import unittest
 
 
 MODULES = ["train.tests.test_models", "train.tests.test_metrics",
-           "train.tests.test_protocol", "train.tests.test_correctness"]
+           "train.tests.test_protocol", "train.tests.test_correctness",
+           "train.tests.test_reproducibility"]
 
 
 def run() -> int:

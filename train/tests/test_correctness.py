@@ -286,8 +286,10 @@ def test_sr_val_is_deterministic():
 
     The crop position was drawn from ``torch.randint`` regardless of ``augment``,
     so each validation epoch saw a different part of every image. Measured on
-    DIV2K val that moved PSNR by 7.35 dB peak-to-peak, against a real training
-    gain of +0.46 dB over 200 epochs.
+    DIV2K val, 200 independent resamples of the whole split move PSNR by 2.83 dB
+    peak-to-peak (max 27.54 / mean 25.80 / sigma 0.51), against a real training
+    gain of +3.36 dB over 200 epochs -- so the noise did not swamp training, but
+    it did make the per-epoch number incomparable with itself.
     """
     base = tempfile.mkdtemp()
     rng = np.random.default_rng(3)

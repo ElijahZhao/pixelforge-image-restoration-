@@ -5,6 +5,43 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.4.0] - 2026-11-02
+
+可复现性硬化：把"跑两次结果不一样"的三个来源（种子写死、patch 大小藏在类默认值里、多次实验共用同一组文件名）变成显式参数并落盘记录。**默认行为不变**：不带新参数时输出路径、文件名、超参与 1.3.2 完全一致。
+
+### Added
+
+- **`train/train.py --seed`**（默认 42）：种子由模块常量改成参数。此前是 `SEED = 42` 常量，**无法从命令行覆盖**——这意味着"5 个种子的误差棒"在旧代码上做不出来，除非改源码，而改源码就改变了产出数字的那份代码。
+- **`train/train.py --crop_size`**（默认按任务：SR 96 / 低光 128）：训练 patch 大小此前只存在于 `datasets.py` 的类默认值里，`get_dataloader` 从不传它。它同时决定训练分布与验证中心裁剪尺寸，却不出现在任何日志或参数里——两次"参数相同"的运行因此可以差在没有写下来的那一项上。
+- **`train/train.py --tag`**：输出隔离到 `models/<tag>/` 与 `results/<tag>/`。种子矩阵 5 次运行的 task/model/scale 全同，没有 tag 就会互相覆盖，**活下来的那个看起来像一次完整实验**。
+- **每次运行写 `results/[<tag>/]config_<task>_<model>_scale<n>.json`**：完整参数 + 解析后的关键协议项（训练随机裁 / 验证中心裁 / 逐图平均 / RGB 全图无 shave / `bicubic(antialias=True)`）+ 数据量 + 环境快照（git commit 与 dirty 标记、torch/torchvision/numpy/Pillow 版本、CUDA 与 cuDNN 版本、设备名、`pip freeze` 摘要哈希）。
+- **`train/runenv.py`**：环境快照模块，供训练脚本与独立 CLI 复用，避免 `pip freeze` 逻辑写两遍。
+- **`scripts/collect_env.py`**：独立环境转储（`--freeze` 可带完整 `pip freeze`），用于记录训练机、以及论文复现实验章。
+- **`--no-determinism` / `--strict-determinism`**：默认钉住 `cudnn.deterministic=True` / `benchmark=False`；严格模式再加 `torch.use_deterministic_algorithms(True)`（可能在不具备确定性内核的算子处报错，故为可选）。
+- **`train/tests/test_reproducibility.py`**（11 条）：同种子两次装载批次逐元素相等、不同种子必须不同、crop 参数透传、默认值单一来源、`--tag` 路径拼接、日志种子回读、CLI 默认值向后兼容、cuDNN 开关生效、环境快照字段齐全。
+
+### Changed
+
+- **日志头从 5 行扩到 14 行**：新增 `# seed=`、`# crop_size=`、`# batch_size=`、`# lr=`、`# epochs=`、`# tag=`、`# git_commit=<sha>[ (dirty)]`、`# torch=… cuda=… device=…`、`# config=<路径>`。CSV 消费方均按 `#` 前缀跳过注释，历史解析方式不受影响。
+- **断点续训的身份校验加入 seed 与 crop**：此前只校验 task/model/scale，于是在 `--seed 43` 下续 `seed 42` 的断点会产出"既不是 42 也不是 43"的一次运行，而种子矩阵里它会冒充一个独立样本。
+- **最优权重与断点现在携带 `seed` / `crop_size` / `tag` / `val_psnr` / `epoch`**：几个月后在磁盘上翻到一个 `.pth`，能追回它的实验条件，而不是"某次运行"。
+- **`datasets.DEFAULT_CROP` 成为 patch 大小唯一来源**：类签名默认值、`get_dataloader`、`train.py` 的帮助文本都读它，三处不会再各说各话。
+
+### Fixed
+
+- **代码注释里"验证裁剪噪声 7.35 dB、噪声信号比 16:1"的错误说法**（`train/datasets.py` 与 `train/tests/test_correctness.py`）：7.35 dB 是**单张图 28 次重采样**的峰峰值，不是整个验证集；整集 200 次抽样实测峰峰值 **2.83 dB**（max 27.54 / mean 25.80 / σ 0.51），而训练本身的真实增益是 **+3.36 dB**（第 1–5 轮 → 196–200 轮），比值约 **0.8:1**，不是 16:1。真正把报告数字抬上去的是**事后择优**（best-of-200 单独贡献 +1.59 dB），不是单次评价噪声。原说法来自一次提交注释中的**未测量断言**，后被 200-seed 判决仿真推翻；注释已按实测改写。
+- **跨种子覆盖保护**：`--seed 43` 不带 `--tag` 会静默截断 `seed 42` 的 CSV。现在检测到既有日志头里的种子不同即拒绝启动，并提示加 `--tag`；同种子重跑仍允许覆盖（那正是检验确定性的方式）。
+- **`config_*.json` 的写入时机**：原实现先写 config 后校验断点身份，导致被拒绝的续训仍改写了 config，出现"日志说 seed=7、配置说 seed=8"。现在 config 写入移到校验之后。
+
+### Verified
+
+- **确定性验收**（本机 CPU，合成 4 张 72×72 图，SR/×2，crop 32，2 轮）：同 `--seed 7` 连跑两次（`--tag smoke/a`、`--tag smoke/b`），逐轮 `epoch/train_loss/val_psnr/val_ssim` 完全一致（0.4449 → 0.3375；7.58 → 7.65；0.1072 → 0.1472）。
+- **保护逻辑**：不同种子写同一 tag → 拒绝并提示；`--auto-resume` 种子不符 → 拒绝并列出两侧 seed/crop；`--crop_size 30` 且 ×4 → 数据集按既有约束报错。
+- **合法续训**：低光任务 1 轮 → `--auto-resume` 从第 2 轮续跑，日志追加而非截断（3 条数据行 + 1 行表头）。
+- **测试**：`python -m train.tests.run_tests` 45/45 通过；`pytest train/tests` 55 项全绿。
+
+> 未做（留待阶段 4）：种子矩阵的批量驱动脚本。本轮只保证"单次运行可固定、可隔离、可追溯"，重复 5 次并汇总误差棒是阶段 4 的事。
+
 ## [1.3.2] - 2026-11-02
 
 新增文献口径评测协议（Y 通道 + 边缘裁剪），把"本仓数字折算出文献数字"从外推变成实测。**默认行为不变**：`eval_baseline.py` 不带 `--protocol` 时仍走 RGB 全通道，历史数字照旧复现。
