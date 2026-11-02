@@ -38,6 +38,43 @@ Low-Light Enhancement (LOL validation, 15 images)
 | LowLight U-Net (ours, 3rd run) **deployed** | LowLight | 18.32 | 0.746 |
 | Gain (deployed)                 |          | +10.55    | +0.553 |
 
+## Literature-comparable protocol (Y channel + border shave)
+
+> The tables above are **RGB, all channels, no shave**. Published SR tables
+> (SRCNN/SRResNet/EDSR/RCAN, and the NTIRE challenge protocol) instead report
+> PSNR/SSIM on the **Y channel of YCbCr with `scale` border pixels shaved**.
+> The table below is the same weights, same 100 images, same torch pipeline —
+> only the coordinate system changes. Reproduce with
+> `python scripts/eval_baseline.py --task sr --scale 4 --protocol y_shave`
+> (and `--scale 2`; low-light uses `--protocol y`, since it has no upscale
+> factor and therefore no shave).
+
+| Slot                    | RGB (repo)     | Y + shave (literature) | Δ PSNR  |
+|-------------------------|----------------|------------------------|---------|
+| SR ×4 — bicubic         | 26.69 / 0.7541 | 28.10 / 0.7762         | +1.41   |
+| SR ×4 — **ours**        | 27.47 / 0.7798 | **28.91 / 0.8026**     | +1.44   |
+| SR ×2 — bicubic         | 31.04 / 0.8935 | 32.43 / 0.9046         | +1.39   |
+| SR ×2 — **ours**        | 32.35 / 0.9165 | **33.82 / 0.9275**     | +1.47   |
+| LowLight — no-op        | 7.77 / 0.1924  | 9.28 / 0.3928          | +1.51   |
+| LowLight — **ours**     | 18.32 / 0.7457 | **20.59 / 0.8444**     | +2.27   |
+
+> - **Definition of Y**: BT.601 studio swing, identical to MATLAB `rgb2ycbcr`
+>   (`Y = (16 + 65.481R + 128.553G + 24.966B)/255`); shave = `scale` px per side
+>   (4 px for ×4, which equals the NTIRE fixed-4 convention); SSIM uses a
+>   Gaussian 11×11 / σ=1.5 window on Y (MATLAB `ssim` defaults). Implemented in
+>   `train/eval_protocol.py`, pinned by 10 golden tests.
+> - **The gain barely moves, the absolute value does.** The model's edge over
+>   bicubic is ≈+0.78 dB → +0.81 dB (×4) and +1.31 → +1.39 dB (×2), i.e. within
+>   0.1 dB; but a bare PSNR number is a property of the coordinate system and
+>   cannot be moved between tables.
+> - **An earlier estimate was wrong by 1 dB**: the 8th audit round extrapolated
+>   "RGB → Y+shave ≈ 2.4–2.8 dB"; measured on the same weights it is 1.44 dB
+>   (×4) / 1.47 dB (×2) for the model and 1.41 / 1.39 for the baseline. Quote the
+>   measured column, not the extrapolation.
+> - **Low-light is a different story**: the Y-channel shift is 2.27 dB, so the
+>   RGB low-light number (18.32) is *not* directly comparable to a luma-channel
+>   report even though it is within the paper's own convention.
+
 > Notes
 > - **2026-10-07 three-run best-of selection**: a retraining round on AutoDL (RTX 4090,
 >   batch 16) produced the first-ever ×2 weight (32.35, +1.31 dB over bicubic — deployed)
