@@ -5,6 +5,29 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.6.0] - 2026-11-02
+
+把"数字来自 Kaggle kernel"这件事收回到仓库里（A 方案）。核心是两件此前只存在于 kernel 的东西：**统一的退化算子**和**协议矩阵驱动**。
+
+**过程中推翻了一个写进台账的假设**，先说这条：原记录把"训练侧 `datasets.py` 与评测侧 `eval_baseline.py` 各有一套 LR 生成函数"当作训练/评测分布错配的风险。先量再判——两套实现在 4× 下采样的输出差 **max 0.006–0.014、mean 0.002**，是 8-bit 量化级（PIL 缩小时会按比例放大 support kernel，本身就是带抗锯齿的）。**重复代码是维护隐患，不是分布错配。** 真正会翻结果的是 `antialias` 开关：关掉它，同一批 ×4 权重从 22.66 掉到 19.35 dB，而 bicubic 基线跟着掉，**增益从 +0.57 dB 翻到 −1.19 dB**。这条才是必须进协议矩阵的维度。
+
+### Added
+
+- **`train/degradation.py`**：LR 构造的唯一实现，三档显式化：
+  `tv_bicubic_aa`（训练默认）/ `tv_bicubic_noaa`（"没写清楚"的那一档）/ `pil_bicubic`（已发布评测数字的来源，8-bit 中间表示）。`build_lr`（tensor 进 tensor 出）与 `build_lr_pil`（PIL 进出，供 `eval_baseline`）共用同一实现，改一处不可能只影响一侧。
+- **`scripts/protocol_matrix.py`**：P1–P6 协议矩阵，`--ckpt_dir` 可直接扫种子矩阵产出的 15 个 checkpoint。输出 `protocol_matrix.{json,csv}`、每个 (checkpoint, 协议) 一份 `per_image/*.csv`（逐图 PSNR/SSIM，审稿人可自行重算任何聚合），并打印同一 checkpoint 的协议跨度。
+- **`train/tests/test_degradation.py`**（12 条）：训练算子逐元素等价、三档必须互不相同、`pil_bicubic` 落在 8-bit 网格、batch 不影响像素、PIL 入口与 tensor 入口同算子、尺寸向下取整到 1 px、未知档位报错。
+
+### Changed
+
+- **`datasets.py` 改调 `degradation.build_lr`**，不再内联 `TF.resize(..., antialias=True)`；`DEFAULT_MODE` 成为训练分布的唯一出处。**逐元素等价**由测试钉住——若不等价，仓库里所有 checkpoint 都是在代码已不再复现的分布上训出来的。
+- **`scripts/eval_baseline.py` 新增 `--lr_mode`**，默认仍是 `pil_bicubic`。**默认刻意不改**：已发布表格全部由该算子产生，改默认等于让旧数字失效而不留痕。选了非默认档会打印"不可与已发布表格直接比较"。
+
+### Verified
+
+- `python -m train.tests.run_tests` **57/57**；`pytest train/tests tests` **79 项全绿**。
+- 协议矩阵冒烟（合成 4 张 512×512、`sr_generator_scale4_best.pth`、CPU）：P1 29.155 / P2 28.882 / P3 28.835 / P4 28.831 / P5 30.015 / P6 27.754 dB，跨度 2.261 dB。合成图上绝对值无意义，但三个机制方向都对：**择优抬 0.27 dB、Y+shave 抬 1.18 dB、关抗锯齿掉 2.26 dB**。
+
 ## [1.5.0] - 2026-11-02
 
 种子矩阵的汇总侧：5 个种子训完之后，**怎么把 5 个数变成一句话**。这一步此前不存在，而它正是论文里"误差棒"的出处。

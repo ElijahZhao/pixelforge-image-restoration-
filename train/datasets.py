@@ -33,6 +33,8 @@ from torch.utils.data import Dataset
 from PIL import Image
 import torchvision.transforms.functional as TF
 
+from degradation import DEFAULT_MODE, build_lr
+
 # Default training patch size per task. These are constraints, not tastes:
 # an SR HR patch must be divisible by the scale factor (2 or 4) or the LR patch
 # loses pixels to integer truncation, and the low-light U-Net downsamples by 32
@@ -119,22 +121,16 @@ class SuperResolutionDataset(Dataset):
 
     def __getitem__(self, idx: int):
         hr = TF.to_tensor(self._load(idx))
-        lr_size = [max(1, hr.shape[-2] // self.scale),
-                   max(1, hr.shape[-1] // self.scale)]
-        # `antialias` is spelled out instead of taking torchvision's default.
-        #
-        # The default flipped from False to True in torchvision 0.17, and this
-        # project deliberately does not pin torchvision for training (see
-        # requirements.txt), so the training box and the evaluation box can run
-        # different versions. The flag is not cosmetic: measured on this
-        # project's own x4 weights, the same image and the same metric, turning
-        # antialias off moves the model's PSNR from 22.66 to 19.35 dB while the
-        # bicubic baseline moves with it, so the model's *gain over bicubic*
-        # flips from +0.57 dB to -1.19 dB. Whether the model wins depends on
-        # this flag, which is exactly the kind of thing that must not be left to
-        # a library default.
-        lr = TF.resize(hr, lr_size, interpolation=TF.InterpolationMode.BICUBIC,
-                       antialias=True)
+        # The operator itself lives in `degradation.py` now, so training and
+        # `scripts/eval_baseline.py` cannot quietly diverge. Measured fact worth
+        # keeping: the eval side (PIL bicubic) sits within 8-bit quantisation of
+        # this one (max |diff| 0.006-0.014, mean 0.002) -- the duplicate code was
+        # a maintenance hazard, not a distribution mismatch. What does move the
+        # number is `antialias`: off, the same x4 weights go 22.66 -> 19.35 dB
+        # and the gain over bicubic flips +0.57 -> -1.19 dB. `DEFAULT_MODE` is
+        # that training distribution, spelled out instead of inherited from a
+        # torchvision default that changed in 0.17.
+        lr = build_lr(hr.unsqueeze(0), self.scale, mode=DEFAULT_MODE).squeeze(0)
         return lr, hr
 
 

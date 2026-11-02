@@ -26,6 +26,8 @@ from PIL import Image
 sys.path.insert(0, os.path.abspath("train"))
 from metrics import evaluate_batch  # noqa: E402
 from eval_protocol import evaluate_y  # noqa: E402
+from degradation import (LEGACY_EVAL_MODE, MODES, build_lr_pil,  # noqa: E402
+                         describe)
 
 _EXTS = (".png", ".jpg", ".jpeg", ".bmp")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -85,7 +87,8 @@ def _metric(pred_t, tgt_t, protocol="rgb", border=0):
     return m["psnr"], m["ssim"]
 
 
-def eval_sr(scale, data_root, max_images, protocol="rgb"):
+def eval_sr(scale, data_root, max_images, protocol="rgb",
+            lr_mode=LEGACY_EVAL_MODE):
     sr_dir = _pick_dir(data_root, "div2k", "sr")
     if sr_dir is None:
         print("[!] 未找到 SR 数据目录"); return
@@ -95,7 +98,14 @@ def eval_sr(scale, data_root, max_images, protocol="rgb"):
     if max_images:
         hrs = hrs[:max_images]
     border = scale if protocol == "y_shave" else 0
-    print(f"[i] SR 验证目录: {sr_dir}/val ({len(hrs)} 张) | device={DEVICE} | protocol={protocol}(border={border})")
+    print(f"[i] SR 验证目录: {sr_dir}/val ({len(hrs)} 张) | device={DEVICE} | "
+          f"protocol={protocol}(border={border}) | lr={lr_mode}")
+    print(f"[i] 退化算子: {describe(lr_mode)}")
+    if lr_mode != LEGACY_EVAL_MODE:
+        # Only a note, not a warning: this is exactly what P1..P6 in the paper
+        # vary. But a number produced here is NOT comparable with the published
+        # tables, which were all made with the legacy PIL operator.
+        print("[i] 注意: 非历史口径, 数字不可与已发布表格直接比较")
 
     ml = _ml()
     model = ml.get_sr_model(scale)
@@ -105,8 +115,7 @@ def eval_sr(scale, data_root, max_images, protocol="rgb"):
     bic_p, bic_s, mod_p, mod_s = [], [], [], []
     for i, f in enumerate(hrs, 1):
         hr = Image.open(f).convert("RGB")
-        lr = hr.resize((max(1, hr.width // scale), max(1, hr.height // scale)),
-                       Image.BICUBIC)
+        lr = build_lr_pil(hr, scale, mode=lr_mode)
         bic = lr.resize(hr.size, Image.BICUBIC)
         x = TF.to_tensor(lr).unsqueeze(0).to(DEVICE)
         with torch.no_grad():
@@ -199,9 +208,13 @@ def main():
     ap.add_argument("--protocol", choices=["rgb", "y", "y_shave"], default="rgb",
                     help="rgb=本仓历史口径(默认); y=文献 Y 通道; "
                          "y_shave=Y+边缘裁剪(文献/ NTIRE 口径, border=scale, 仅 SR)")
+    ap.add_argument("--lr_mode", choices=list(MODES), default=LEGACY_EVAL_MODE,
+                    help="LR 退化算子。默认 pil_bicubic = 已发布数字的来源, "
+                         "改动即改变数字; tv_bicubic_aa 是训练分布, "
+                         "tv_bicubic_noaa 是'没写清楚'的那一档。仅 SR 任务使用。")
     a = ap.parse_args()
     if a.task == "sr":
-        eval_sr(a.scale, a.data_root, a.max_images, a.protocol)
+        eval_sr(a.scale, a.data_root, a.max_images, a.protocol, a.lr_mode)
     else:
         if a.protocol == "y_shave":
             ap.error("低光任务没有放大倍率，无法定义 shave；请用 --protocol y")
