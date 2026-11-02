@@ -43,11 +43,20 @@ is the method:
 | Super-resolution ×2 | Bicubic 31.04 / 0.894 | **32.35 / 0.917** | +1.31 dB / +0.023 |
 | Low-light enhancement | No-op 7.77 / 0.192 | **18.32 / 0.746** | +10.55 dB / +0.553 |
 
-One thing worth being straight about: the SR ×4 model scores higher than bicubic but looks a little
-softer and greyer. That's not a bug. It uses a perceptual loss, which optimises for "similar in
-feature space" rather than "sharp pixels," so you get higher PSNR with slightly softer edges. I
-measured it — the output gradient mean is 1.39 versus 1.45 for bicubic. I kept it in because it's
-honest behaviour of the method, not a defect.
+One thing worth being straight about, because I got it wrong and then corrected it: the SR ×4 model
+scores higher than bicubic, and I used to write that it "looks a little softer and greyer" because
+it uses a perceptual loss, with a measured gradient mean of 1.39 versus 1.45. Both halves of that
+were wrong. Re-measured on 9 images under four gradient definitions, the model is **sharper** than
+bicubic in all nine (luma gradient mean 1.92 versus 1.45), and a paired ablation — same seed, same
+data order, 200 epochs, only the loss switched — scores **27.61 / 0.7835** with the perceptual loss
+and **27.60 / 0.7836** without it. So the perceptual term is not what buys the PSNR, and it is not
+what softens the output either; at this repo's weights (1.0 pixel versus 0.006 perceptual) it is
+effectively inert. I kept the correction in rather than quietly deleting the claim, because the
+error is instructive: what the perceptual loss actually affects here is *fragility*. Two
+implementation bugs in it — missing ImageNet normalisation, and a `0.01` factor that erased the
+pixel term — left SR ×4 at 17.20 dB, below bicubic, until both were fixed. A loss that can cost
+10 dB when it is wrong and nothing measurable when it is right is not a feature; it is a liability
+you have to babysit.
 
 ## The one deployment that's actually live
 

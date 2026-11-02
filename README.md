@@ -53,7 +53,7 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 
 ![SR 4x comparison](assets/compare_sr_4x.png)
 
-> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB) but looks softer / greyer — measured output gradient mean is 1.39 vs. 1.45 for bicubic. That is typical of perceptual-loss training, which optimises feature-space similarity rather than pixel sharpness, so a lower gradient mean (softer edges) coexists with the higher PSNR/SSIM.
+> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB). It is **not** softer than bicubic: measured output gradient mean (luma, mean absolute difference) is **1.92 vs. 1.45**, i.e. the model is sharper, and it is sharper on all 9 measured images. An earlier revision of this note claimed the opposite ("looks softer / greyer, 1.39 vs. 1.45") and attributed that to the perceptual loss; both halves of that claim are wrong — see the ablation note in the FAQ below. The PSNR advantage is not bought by the perceptual loss either.
 
 **Low-light enhancement: dark input → adaptive-gamma baseline vs. self-trained U-Net**
 
@@ -297,8 +297,8 @@ No. The public demo, the local demo, and the whole test suite run on CPU. Only (
 **Which tasks have a trained weight?**
 All three: SR ×4 (27.47 dB), SR ×2 (32.35 dB) and low-light (18.32 dB). Each beats its classical baseline. The classical methods stay as an automatic fallback if a weight file is ever missing.
 
-**The SR ×4 result looks softer than bicubic — is it broken?**
-No. SR ×4 uses a perceptual (VGG) loss, which optimises feature-space similarity rather than pixel sharpness; that is why it scores higher PSNR/SSIM yet looks a little softer. This is expected behaviour of perceptual-loss training, not a defect.
+**The SR ×4 result is reported to look softer than bicubic — is it broken?**
+No, and it is not softer either. An earlier note here claimed it looked softer with a gradient mean of 1.39 vs. 1.45; re-measured on 9 images under four gradient definitions, the model is **sharper** than bicubic in 9 of 9 cases (luma gradient mean 1.92 vs. 1.45). The same ablation also removes the perceptual loss as the explanation for the PSNR score: trained with `--perceptual` it scores **27.61 / 0.7835**, trained without it **27.60 / 0.7836** (DIV2K valid 100, 200 epochs, same seed, same data order) — the difference is 0.01 dB, i.e. noise. At this repo's weights (`w_pixel=1.0`, `w_percep=0.006`) the VGG term is effectively inert; the PSNR gain comes from the architecture and the charbonnier objective, not from the perceptual term. What the perceptual term *does* affect is fragility: two earlier implementation bugs in it (missing ImageNet normalisation, and a `0.01` factor that erased the pixel term) left SR ×4 at 17.20 dB — below bicubic — until both were fixed.
 
 **The public demo is slow or shows a wake-up screen.**
 The free Streamlit tier sleeps when idle; the first visit after a pause takes a few seconds to spin up. Inference itself runs on CPU and is normally quick for typical photos.
