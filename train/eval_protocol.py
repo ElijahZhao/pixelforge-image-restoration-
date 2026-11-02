@@ -6,8 +6,13 @@ The rest of this repo reports **RGB full-channel, full-image, no shave** numbers
 (``metrics.py``).  Nearly every SR paper (SRCNN/SRResNet/EDSR/RCAN, and the NTIRE
 challenge protocol) instead reports **PSNR/SSIM on the Y channel of YCbCr with a
 border shave of ``scale`` pixels**.  The two coordinate systems differ by a
-measured **2.4-2.8 dB** on this repo's own weights, so a number from one cannot
-be placed in a table built from the other.
+measured **+1.44 dB (x4) / +1.47 dB (x2)** on this repo's own weights (DIV2K
+valid 100, same images, only ``--protocol`` changed), so a number from one
+cannot be placed in a table built from the other.
+
+(An earlier estimate of "2.4-2.8 dB" was an extrapolation that mixed in
+dataset differences; the measured within-repo figure is 1.44/1.47 dB.  Quote
+the measured one.)
 
 This module implements the literature side of that conversion so that the
 comparison is a computed number rather than an extrapolated one.
