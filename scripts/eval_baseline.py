@@ -25,6 +25,7 @@ from PIL import Image
 
 sys.path.insert(0, os.path.abspath("train"))
 from metrics import evaluate_batch  # noqa: E402
+from eval_protocol import evaluate_y  # noqa: E402
 
 _EXTS = (".png", ".jpg", ".jpeg", ".bmp")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -68,15 +69,23 @@ def _ml():
     return _ML_MODULE
 
 
-def _metric(pred_t, tgt_t):
-    """在 DEVICE 上算 psnr/ssim, 返回 (p, s)。"""
+def _metric(pred_t, tgt_t, protocol="rgb", border=0):
+    """在 DEVICE 上算 psnr/ssim, 返回 (p, s)。
+
+    protocol="rgb"     : 本仓历史口径（RGB 全通道、全图、无裁剪，见 metrics.py）
+    protocol="y"       : 文献口径的 Y 通道（BT.601 studio swing），不裁剪
+    protocol="y_shave" : 文献口径 Y + 边缘裁剪 border 像素（SR 惯例 border=scale）
+    """
     pred_t = pred_t.to(DEVICE)
     tgt_t = tgt_t.to(DEVICE)
-    m = evaluate_batch(pred_t, tgt_t)
+    if protocol == "rgb":
+        m = evaluate_batch(pred_t, tgt_t)
+    else:
+        m = evaluate_y(pred_t, tgt_t, border=border)
     return m["psnr"], m["ssim"]
 
 
-def eval_sr(scale, data_root, max_images):
+def eval_sr(scale, data_root, max_images, protocol="rgb"):
     sr_dir = _pick_dir(data_root, "div2k", "sr")
     if sr_dir is None:
         print("[!] 未找到 SR 数据目录"); return
@@ -85,7 +94,8 @@ def eval_sr(scale, data_root, max_images):
         print(f"[!] 未找到验证图: {sr_dir}/val"); return
     if max_images:
         hrs = hrs[:max_images]
-    print(f"[i] SR 验证目录: {sr_dir}/val ({len(hrs)} 张) | device={DEVICE}")
+    border = scale if protocol == "y_shave" else 0
+    print(f"[i] SR 验证目录: {sr_dir}/val ({len(hrs)} 张) | device={DEVICE} | protocol={protocol}(border={border})")
 
     ml = _ml()
     model = ml.get_sr_model(scale)
@@ -110,8 +120,8 @@ def eval_sr(scale, data_root, max_images):
         pred = TF.to_pil_image(out.squeeze(0).cpu()).resize(hr.size, Image.BICUBIC)
 
         hr_t = TF.to_tensor(hr).unsqueeze(0)
-        p, s = _metric(TF.to_tensor(bic).unsqueeze(0), hr_t); bic_p.append(p); bic_s.append(s)
-        p, s = _metric(TF.to_tensor(pred).unsqueeze(0), hr_t); mod_p.append(p); mod_s.append(s)
+        p, s = _metric(TF.to_tensor(bic).unsqueeze(0), hr_t, protocol, border); bic_p.append(p); bic_s.append(s)
+        p, s = _metric(TF.to_tensor(pred).unsqueeze(0), hr_t, protocol, border); mod_p.append(p); mod_s.append(s)
         if i % 10 == 0 or i == len(hrs):
             print(f"    ... {i}/{len(hrs)} 张", flush=True)
 
@@ -124,7 +134,7 @@ def eval_sr(scale, data_root, max_images):
     print("  结论         : " + ("✅ 模型打赢基线" if mp > bp else "❌ 未超过基线(需调优)"))
 
 
-def eval_lowlight(data_root, max_images):
+def eval_lowlight(data_root, max_images, protocol="rgb"):
     ll_dir = _pick_dir(data_root, "lol", "lowlight")
     if ll_dir is None:
         print("[!] 未找到低光数据目录"); return
@@ -141,7 +151,7 @@ def eval_lowlight(data_root, max_images):
     lows = _load_images(low_dir)
     if max_images:
         lows = lows[:max_images]
-    print(f"[i] 低光验证目录: {low_dir} ({len(lows)} 张) | device={DEVICE}")
+    print(f"[i] 低光验证目录: {low_dir} ({len(lows)} 张) | device={DEVICE} | protocol={protocol}")
 
     raw_p, raw_s, mod_p, mod_s = [], [], [], []
     used = 0
@@ -161,9 +171,9 @@ def eval_lowlight(data_root, max_images):
             continue
         pred = ml.predict_lowlight(low)
         hr_t = TF.to_tensor(hr.resize(pred.size)).unsqueeze(0)
-        p, s = _metric(TF.to_tensor(low.resize(pred.size)).unsqueeze(0), hr_t)
+        p, s = _metric(TF.to_tensor(low.resize(pred.size)).unsqueeze(0), hr_t, protocol)
         raw_p.append(p); raw_s.append(s)
-        p, s = _metric(TF.to_tensor(pred).unsqueeze(0), hr_t)
+        p, s = _metric(TF.to_tensor(pred).unsqueeze(0), hr_t, protocol)
         mod_p.append(p); mod_s.append(s)
         used += 1
         if i % 10 == 0 or i == len(lows):
@@ -186,11 +196,16 @@ def main():
     ap.add_argument("--data_root", default="data")
     ap.add_argument("--max_images", type=int, default=0,
                     help="只评测前 N 张以快速出结论 (0=全部)")
+    ap.add_argument("--protocol", choices=["rgb", "y", "y_shave"], default="rgb",
+                    help="rgb=本仓历史口径(默认); y=文献 Y 通道; "
+                         "y_shave=Y+边缘裁剪(文献/ NTIRE 口径, border=scale, 仅 SR)")
     a = ap.parse_args()
     if a.task == "sr":
-        eval_sr(a.scale, a.data_root, a.max_images)
+        eval_sr(a.scale, a.data_root, a.max_images, a.protocol)
     else:
-        eval_lowlight(a.data_root, a.max_images)
+        if a.protocol == "y_shave":
+            ap.error("低光任务没有放大倍率，无法定义 shave；请用 --protocol y")
+        eval_lowlight(a.data_root, a.max_images, a.protocol)
 
 
 if __name__ == "__main__":
