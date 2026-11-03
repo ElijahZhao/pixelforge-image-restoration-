@@ -1,0 +1,2 @@
+run,task,model,scale,n_seeds,seeds,epochs,final_psnr_mean,final_psnr_std,final_psnr_ci95_low,final_psnr_ci95_high,best_psnr_mean,best_psnr_std,best_psnr_min,best_psnr_max
+sr/srcnn/×2,sr,srcnn,2,5,42 43 44 45 46,100,30.686,0.0688,30.6006,30.7714,30.686,0.0688,30.57,30.74
