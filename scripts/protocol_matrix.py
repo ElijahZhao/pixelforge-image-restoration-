@@ -64,6 +64,7 @@ import argparse
 import csv
 import glob
 import json
+import math
 import os
 import statistics
 import sys
@@ -204,11 +205,30 @@ def _measure(out, hr, proto, border):
     raise ValueError(proto["metric"])
 
 
-def _forward(model, hr_pil, box, scale, degrade, baseline):
-    """One crop -> one SR output on the HR grid. No metrics, no policy."""
+def _forward(model, hr_pil, box, scale, degrade, baseline, align=1):
+    """One crop -> one SR output on the HR grid. No metrics, no policy.
+
+    ``align`` is the network's downsampling stride multiple. U-Net stacks use
+    stride-2 convs (floor) followed by nearest x2 upsamples (exact), so an LR
+    side that is not a multiple of ``align`` shifts the skip connection by one
+    pixel and `torch.cat` raises "Expected size 76 but got size 75". HR is
+    therefore reflect-padded up to ``align * scale`` before the forward pass and
+    the output is cropped back, so **measurement still happens on the original
+    pixels** -- padding is an inference-time accommodation, not a change of
+    evaluation region. Plain conv+shuffle SR models need no padding (align=1),
+    and 96px crops already satisfy align<=32, so nothing about the SR numbers
+    depends on this flag.
+    """
     top, left, ch, cw = box
     patch = hr_pil.crop((left, top, left + cw, top + ch))
     hr = TF.to_tensor(patch).unsqueeze(0).to(DEVICE)
+    hr_eval = hr
+    if align > 1 and not baseline:
+        need = scale * align
+        ph, pw = (-ch) % need, (-cw) % need
+        if ph or pw:
+            # reflect needs pad < input size; 600x400 vs 8 is never close.
+            hr = torch.nn.functional.pad(hr, (0, pw, 0, ph), mode="reflect")
     # `.to(DEVICE)` is not redundant: the `pil_bicubic` branch of build_lr goes
     # through PIL, which is a CPU library, and re-stacks per-image results back
     # on the CPU. On GPU that produced "Input type (FloatTensor) and weight type
@@ -224,17 +244,19 @@ def _forward(model, hr_pil, box, scale, degrade, baseline):
             lr, size=list(hr.shape[-2:]), mode="bicubic", align_corners=False)
         return out.clamp(0, 1), hr
     out = model(lr).clamp(0, 1)
-    if out.shape[-2:] != hr.shape[-2:]:
+    if align > 1 and out.shape[-2:] != hr_eval.shape[-2:]:
+        out = out[..., :ch, :cw]
+    if out.shape[-2:] != hr_eval.shape[-2:]:
         # The model's true output is lr*scale; when H/W are not divisible by
         # the scale, the grid differs by a pixel. Resize back so PSNR is
         # measured on the HR grid -- an evaluation-time normalisation, not a
         # second upscale (same convention as scripts/eval_baseline.py).
-        out = TF.resize(out, list(hr.shape[-2:]), antialias=False)
-    return out, hr
+        out = TF.resize(out, list(hr_eval.shape[-2:]), antialias=False)
+    return out, hr_eval
 
 
 def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
-              baseline=False):
+              baseline=False, align=1):
     """Legacy path: ONE protocol, opening the image per protocol.
 
     Kept verbatim (modulo the baseline switch) so `--legacy` can prove the
@@ -245,7 +267,8 @@ def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
     best = None
     vals = []
     for box in boxes:
-        out, hr = _forward(model, hr_pil, box, scale, proto["degrade"], baseline)
+        out, hr = _forward(model, hr_pil, box, scale, proto["degrade"], baseline,
+                           align)
         p, s = _measure(out, hr, proto, border)
         vals.append((p, s))
         best = (p, s) if best is None or p > best[0] else best
@@ -258,7 +281,7 @@ def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
 
 
 def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
-                baseline=False):
+                baseline=False, align=1):
     """Grouped path: every requested protocol for ONE image.
 
     Protocols that share (degrade, sampling) share one forward pass -- they
@@ -279,7 +302,7 @@ def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
         got = []
         best = None
         for box in boxes:
-            o, hr = _forward(model, hr_pil, box, scale, degrade, baseline)
+            o, hr = _forward(model, hr_pil, box, scale, degrade, baseline, align)
             per = {p: _measure(o, hr, PROTOCOLS[p], border) for p in plist}
             got.append(per)
             if best is None or per[plist[0]][0] > best[plist[0]][0]:
@@ -373,7 +396,8 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
                 for f in files:
                     hr = Image.open(f).convert("RGB")
                     pv, sv = score_one(model, hr, PROTOCOLS[p], args.scale, border,
-                                       args.crop, args.n_random, rng, args.baseline)
+                                       args.crop, args.n_random, rng, args.baseline,
+                                       args.align)
                     ps[p].append(pv)
                     ss[p].append(sv)
                 per_sec[p] = time.time() - t0
@@ -385,7 +409,8 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
             for f in files:
                 hr = Image.open(f).convert("RGB")
                 got = score_image(model, hr, wanted, args.scale, border,
-                                  args.crop, args.n_random, rng, args.baseline)
+                                  args.crop, args.n_random, rng, args.baseline,
+                                  args.align)
                 for p in wanted:
                     ps[p].append(got[p][0])
                     ss[p].append(got[p][1])
@@ -399,14 +424,22 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
 
         for p in wanted:
             proto = PROTOCOLS[p]
+            # A bicubic baseline can reconstruct a flat patch exactly, so MSE==0
+            # and `psnr_per_image` returns +inf -- mathematically right, but
+            # `statistics.stdev` refuses inf and killed the whole baseline run.
+            # Keep +inf in the per-image CSV (it is the true value) and exclude
+            # it from the aggregate, recording the count so the exclusion is
+            # visible rather than silent.
+            finite = [v for v in ps[p] if math.isfinite(v)]
+            n_inf = len(ps[p]) - len(finite)
             rec["protocols"][p] = {
                 "label": proto["label"], "degrade": proto["degrade"],
                 "metric": proto["metric"], "sampling": proto["sampling"],
                 "agg": proto["agg"],
-                "psnr_mean": round(statistics.mean(ps[p]), 4),
-                "psnr_std": round(statistics.stdev(ps[p]), 4) if len(ps[p]) > 1 else None,
+                "psnr_mean": round(statistics.mean(finite), 4) if finite else None,
+                "psnr_std": round(statistics.stdev(finite), 4) if len(finite) > 1 else None,
                 "ssim_mean": round(statistics.mean(ss[p]), 4),
-                "n_images": len(ps[p]), "sec": round(per_sec[p], 1),
+                "n_images": len(ps[p]), "n_inf": n_inf, "sec": round(per_sec[p], 1),
             }
             fn = f"{name}__{p}.csv" if not tag_prefix else f"{tag_prefix}__{name}__{p}.csv"
             with open(os.path.join(per_img, fn), "w", newline="") as fh:
@@ -415,13 +448,17 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
                 for fpath, pv, sv in zip(files, ps[p], ss[p]):
                     w.writerow([os.path.basename(fpath), f"{pv:.6f}", f"{sv:.6f}"])
             r = rec["protocols"][p]
-            print(f"  {p} {r['psnr_mean']:7.3f} dB / {r['ssim_mean']:.4f}  "
-                  f"[{proto['label']}] ({r['sec']}s)", flush=True)
+            mark = f" (+{r['n_inf']} exact)" if r["n_inf"] else ""
+            pm = (f"{r['psnr_mean']:7.3f}" if r["psnr_mean"] is not None
+                  else "   all-inf")
+            print(f"  {p} {pm} dB / {r['ssim_mean']:.4f}  "
+                  f"[{proto['label']}] ({r['sec']}s){mark}", flush=True)
             rows.append({"dataset": ds_name, "checkpoint": name, "protocol": p,
                          "label": proto["label"], "degrade": proto["degrade"],
                          "metric": proto["metric"], "sampling": proto["sampling"],
                          "agg": proto["agg"], "psnr_mean": r["psnr_mean"],
                          "psnr_std": r["psnr_std"], "ssim_mean": r["ssim_mean"],
+                         "n_inf": r["n_inf"],
                          "n_images": r["n_images"]})
         print(f"  [{ds_name} | {name}] {time.time() - t_ds:.1f}s total", flush=True)
         rec_by_ckpt[name] = rec
@@ -501,7 +538,8 @@ def run(args):
     for ds, blk in (result["datasets"].items() if multi
                     else [(None, {"checkpoints": result["checkpoints"]})]):
         for name, rec in blk["checkpoints"].items():
-            vals = [v["psnr_mean"] for v in rec["protocols"].values()]
+            vals = [v["psnr_mean"] for v in rec["protocols"].values()
+                    if v["psnr_mean"] is not None]
             if len(vals) > 1:
                 print(f"  {(ds + ' | ') if ds else ''}{name}: {min(vals):.3f} .. "
                       f"{max(vals):.3f} dB (spread {max(vals) - min(vals):.3f} dB)")
@@ -536,6 +574,10 @@ def main(argv=None):
     ap.add_argument("--baseline", action="store_true",
                     help="skip the network, report bicubic-upsampled LR instead; "
                          "gives Figure 1 the reference line it needs")
+    ap.add_argument("--align", type=int, default=1,
+                    help="network downsampling stride multiple (U-Net=8); HR is "
+                         "reflect-padded to align*scale before the forward pass "
+                         "and cropped back, so metrics stay on original pixels")
     ap.add_argument("--legacy", action="store_true",
                     help="old per-protocol loop, for bit-exact equivalence tests only")
     ap.add_argument("--out", default="results/protocol_matrix")
