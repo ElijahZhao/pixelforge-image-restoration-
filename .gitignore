@@ -36,6 +36,11 @@ results/*.csv
 !results/train_log_sr_generator_scale2_batch16_20261007.csv
 !results/train_log_lowlight_srcnn_scale2_batch16_20261007.csv
 
+# Exception: the compute ledger is the per-run record of every Kaggle kernel we
+# ran (duration, device, outcome). It is kilobytes of CSV and it is the only
+# place the project's actual compute cost is written down.
+!results/compute_ledger.csv
+
 # Node / Next.js
 node_modules/
 web/.next/
@@ -74,3 +79,6 @@ archive_private/
 
 # 离线备份包（体积大，含权重与规划文档，不入库）
 backup/
+
+# Kaggle 执行日志本地缓存（台账脚本的输入缓存，可重新拉取）
+.cache/

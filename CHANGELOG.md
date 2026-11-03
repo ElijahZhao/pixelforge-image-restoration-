@@ -5,6 +5,28 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.8.0] - 2026-11-03
+
+**算力台账**：把每一次内核运行的耗时写进仓库，而不是留在记忆里。
+
+### Added
+
+- `scripts/kernel_ledger.py`：遍历 10 个内核的各个版本，拉 `kaggle kernels logs`（每条事件带相对内核启动的秒数，取最大值即墙钟时长）与 `kaggle kernels files`（产物创建时刻即版本起点），生成逐 run 台账。
+  - **结局是人工判读，脚本不猜**：`VERDICTS` 表逐版本标注"这次在干什么 / 成没成"，缺项会以 `?` 标出而不是自动归类。
+  - 日志缓存在 `.cache/kaggle-logs/`：Kaggle 对"正在运行的内核"的历史日志查询不稳定（同一内核并发查会返回空），缓存让重跑不依赖 API 的临时状态。
+- `results/compute_ledger.md`：27 次已完成 run + 1 次进行中的逐次明细，含每一次失败的根因与修法、两个时长口径（内核墙钟 vs 训练净时长）、GPU/CPU 配额拆分。
+- `results/compute_ledger.csv`、`results/kernel_runs.json`：逐 run 的机读数据与原始证据。
+
+### Changed
+
+- `README.md` / `README.zh-CN.md`：Results 段末尾加"这些数字的代价"——27 次运行、22.9 h 机器时间（GPU 15.5 h + CPU 7.3 h）、其中 6.8 h 烧在 9 次失败或作废的运行上、种子方差背后 1 100 个 epoch。
+- `.gitignore`：忽略 `.cache/`（台账脚本的日志缓存，可重新拉取）。
+
+### Fixed
+
+- **资产复核发现的两处真缺口**（此前只在 Kaggle 上，现已下载归档）：对账 v1 的 6 份逐图 CSV（P3/P5/P6 两尺度）——它们是"锚点配错判 FAIL"那 3.23 h 的现场数据；低光分支冒烟 v3 的 config / 日志 / 权重——D 批参数的来源。
+- 感知消融 on/off 两组权重经 md5 比对确认本地早已齐全（`8fc7b188…` / `d47ac809…`），此前按文件名比对属误报。
+
 ## [1.7.1] - 2026-11-03
 
 协议矩阵对账收尾时发现的一件事：**旧 kernel 里"退化算子"那两个数据点是伪影，不是算子效应**。修的是表述与防线，不是数字——四个锚点（27.4977 / 32.4243 / 28.9371 / 33.8931）全部有效，逐位复现的结论不变。

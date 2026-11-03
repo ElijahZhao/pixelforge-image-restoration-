@@ -111,6 +111,14 @@ What this does **not** claim: SOTA. SR ×4 at 27.47 dB beats the bicubic baselin
 large-dataset academic SOTA (30+ dB) — the training set and model capacity are small. The
 low-light gain is relative to a no-op baseline, not to other published methods.
 
+**What it cost to measure.** Every number above came from free-tier Kaggle T4 kernels, and
+the ledger is written down rather than remembered: **27 kernel runs, 22.9 h of wall-clock
+machine time** (15.5 h on GPU, 7.3 h on CPU — the reconciliation kernels deliberately run on
+CPU so they cost no GPU quota), of which **6.8 h went into 9 runs that failed or were voided**
+and had to be redone. 1 100 training epochs are behind the seed-variance figures. The per-run
+breakdown, including why each run failed, is in [`results/compute_ledger.md`](results/compute_ledger.md)
+and can be regenerated with `scripts/kernel_ledger.py`.
+
 ## 🚀 Quick start
 
 > The public demo needs no install. Locally, everything runs on CPU — classical baselines work out of the box, and the shipped weights switch the demo to the ML engine automatically.

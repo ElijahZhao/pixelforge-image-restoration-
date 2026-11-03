@@ -1,0 +1,516 @@
+[
+ {
+  "kernel": "pixelforge-smoke",
+  "version": 1,
+  "duration_s": 20.5,
+  "n_log_events": 52,
+  "files": [
+   "smoke_result.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-smoke",
+  "version": 2,
+  "duration_s": 26.6,
+  "n_log_events": 57,
+  "files": [
+   "smoke_result.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-smoke2",
+  "version": 1,
+  "duration_s": 6.8,
+  "n_log_events": 18,
+  "files": [
+   "smoke2_result.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-smoke2",
+  "version": 2,
+  "duration_s": 30.4,
+  "n_log_events": 78,
+  "files": [
+   "smoke2_result.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-io-probe",
+  "version": 1,
+  "duration_s": 19.4,
+  "n_log_events": 51,
+  "files": []
+ },
+ {
+  "kernel": "pixelforge-eval-protocol",
+  "version": 1,
+  "duration_s": 393.1,
+  "n_log_events": 35,
+  "files": [
+   ".dockerignore",
+   ".env.local.example",
+   ".gitignore",
+   "0801.png",
+   "0802.png",
+   "0803.png",
+   "0804.png",
+   "0805.png",
+   "0806.png",
+   "0807.png",
+   "0808.png",
+   "0809.png",
+   "0810.png",
+   "0811.png",
+   "0812.png",
+   "0813.png",
+   "0814.png",
+   "0815.png",
+   "0816.png",
+   "0817.png",
+   "0818.png",
+   "0819.png",
+   "0820.png",
+   "0821.png",
+   "0822.png",
+   "0823.png",
+   "0824.png",
+   "0825.png",
+   "0826.png",
+   "0827.png",
+   "0828.png",
+   "0829.png",
+   "0830.png",
+   "0831.png",
+   "0832.png",
+   "0833.png",
+   "0834.png",
+   "0835.png",
+   "0836.png",
+   "0837.png",
+   "0838.png",
+   "0839.png",
+   "0840.png",
+   "0841.png",
+   "0842.png",
+   "0843.png",
+   "0844.png",
+   "0845.png",
+   "0846.png",
+   "0847.png",
+   "0848.png",
+   "0849.png",
+   "0850.png",
+   "0851.png",
+   "0852.png",
+   "0853.png",
+   "0854.png",
+   "0855.png",
+   "0856.png",
+   "0857.png",
+   "0858.png",
+   "0859.png",
+   "0860.png",
+   "0861.png",
+   "0862.png",
+   "0863.png",
+   "0864.png",
+   "0865.png",
+   "0866.png",
+   "0867.png",
+   "0868.png",
+   "0869.png",
+   "0870.png",
+   "0871.png",
+   "0872.png",
+   "0873.png",
+   "0874.png",
+   "0875.png",
+   "0876.png",
+   "0877.png",
+   "0878.png",
+   "0879.png",
+   "0880.png",
+   "0881.png",
+   "0882.png",
+   "0883.png",
+   "0884.png",
+   "0885.png",
+   "0886.png",
+   "0887.png",
+   "0888.png",
+   "0889.png",
+   "0890.png",
+   "0891.png",
+   "0892.png",
+   "0893.png",
+   "0894.png",
+   "0895.png",
+   "0896.png",
+   "0897.png",
+   "0898.png",
+   "0899.png",
+   "0900.png",
+   "API.md",
+   "CHANGELOG.md",
+   "CITATION.cff",
+   "CONTRIBUTING.md",
+   "CompareSlider.tsx",
+   "DEPLOY.md",
+   "DEPLOY_STREAMLIT.md",
+   "Dockerfile",
+   "HEAD",
+   "LICENSE",
+   "README.md",
+   "README.zh-CN.md",
+   "REPORT.md",
+   "__init__.py",
+   "api.test.ts",
+   "api.ts",
+   "app.py",
+   "applypatch-msg.sample",
+   "banner.svg",
+   "ci.yml",
+   "classical.py",
+   "commit-msg.sample",
+   "compare_lowlight.png",
+   "compare_sr_4x.png",
+   "config",
+   "config.toml",
+   "datasets.py",
+   "demo_live_lowlight_1.png",
+   "demo_live_lowlight_2.png",
+   "demo_live_sr2.png",
+   "demo_live_sr4.png",
+   "demo_lowlight_gamma.jpg",
+   "demo_lowlight_input.jpg",
+   "demo_lowlight_ours.jpg",
+   "demo_sr2_model_input.png",
+   "demo_sr2_original.png",
+   "demo_sr2_output.png",
+   "demo_sr_bicubic.jpg",
+   "demo_sr_lr.jpg",
+   "demo_sr_ours.jpg",
+   "description",
+   "div2k_valid.zip",
+   "download_data.sh",
+   "eval_baseline.py",
+   "exclude",
+   "export.py",
+   "fsmonitor-watchman.sample",
+   "globals.css",
+   "index",
+   "layout.tsx",
+   "lowlight.pt",
+   "main",
+   "make_compare.py",
+   "make_demo.py",
+   "metrics.cpython-313.pyc",
+   "metrics.py",
+   "model_loader.cpython-313.pyc",
+   "model_loader.py",
+   "models.py",
+   "next-env.d.ts",
+   "next.config.mjs",
+   "pack-035cd3b32daae49ef630f5071788247d232c7f9d.idx",
+   "pack-035cd3b32daae49ef630f5071788247d232c7f9d.pack",
+   "pack-035cd3b32daae49ef630f5071788247d232c7f9d.rev",
+   "package.json",
+   "packed-refs",
+   "page.tsx",
+   "pnpm-lock.yaml",
+   "post-update.sample",
+   "postcss.config.js",
+   "pre-applypatch.sample",
+   "pre-commit.sample",
+   "pre-merge-commit.sample",
+   "pre-push.sample",
+   "pre-rebase.sample",
+   "pre-receive.sample",
+   "prepare-commit-msg.sample",
+   "push-to-checkout.sample",
+   "pyproject.toml",
+   "requirements-dev.lock.txt",
+   "requirements-dev.txt",
+   "requirements.lock.txt",
+   "requirements.txt",
+   "retrain_autodl.sh",
+   "run_tests.py",
+   "sample_dark.png",
+   "sample_scene.png",
+   "sendemail-validate.sample",
+   "shallow",
+   "sr_generator_scale2.pt",
+   "sr_generator_scale4.pt",
+   "streamlit_app.py",
+   "tailwind.config.js",
+   "test_api_smoke.py",
+   "test_correctness.py",
+   "test_e2e.py",
+   "test_inference_integration.py",
+   "test_metrics.py",
+   "test_models.py",
+   "test_protocol.py",
+   "train.py",
+   "train_log_lowlight_srcnn_scale2.csv",
+   "train_log_lowlight_srcnn_scale2_batch16_20261007.csv",
+   "train_log_sr_generator_scale2_batch16_20261007.csv",
+   "train_log_sr_generator_scale4.csv",
+   "train_log_sr_generator_scale4_batch16_20261007.csv",
+   "train_lowlight.log",
+   "train_sr_scale2.log",
+   "train_sr_scale4.log",
+   "tsconfig.json",
+   "update.sample"
+  ]
+ },
+ {
+  "kernel": "pixelforge-eval-protocol",
+  "version": 2,
+  "duration_s": 429.8,
+  "n_log_events": 51,
+  "files": [
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-eval-protocol",
+  "version": 3,
+  "duration_s": 65.7,
+  "n_log_events": 32,
+  "files": [
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-eval-protocol",
+  "version": 4,
+  "duration_s": 413.2,
+  "n_log_events": 283,
+  "files": [
+   "per_image_lowlight.csv",
+   "per_image_sr_x2.csv",
+   "per_image_sr_x4.csv",
+   "status.json",
+   "summary.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-y",
+  "version": 1,
+  "duration_s": 329.3,
+  "n_log_events": 17,
+  "files": [
+   "ll_rgb.txt",
+   "ll_y.txt",
+   "sr2_rgb.txt",
+   "sr2_y_shave.txt",
+   "sr4_rgb.txt",
+   "sr4_y_shave.txt",
+   "status.json",
+   "summary.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-perceptual-ablation",
+  "version": 1,
+  "duration_s": 181.7,
+  "n_log_events": 19,
+  "files": [
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-perceptual-ablation",
+  "version": 2,
+  "duration_s": 13434.2,
+  "n_log_events": 77,
+  "files": [
+   "ablation_summary.json",
+   "best.pth",
+   "eval.txt",
+   "model.pt",
+   "status.json",
+   "train.log",
+   "train_log.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-matrix",
+  "version": 1,
+  "duration_s": 2464.7,
+  "n_log_events": 104,
+  "files": [
+   "protocol_matrix.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-matrix",
+  "version": 2,
+  "duration_s": 53.9,
+  "n_log_events": 21,
+  "files": [
+   "protocol_matrix.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-matrix",
+  "version": 3,
+  "duration_s": 45.8,
+  "n_log_events": 23,
+  "files": [
+   "protocol_matrix.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-matrix",
+  "version": 4,
+  "duration_s": 48.6,
+  "n_log_events": 60,
+  "files": [
+   "protocol_repro.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-matrix",
+  "version": 5,
+  "duration_s": 319.1,
+  "n_log_events": 268,
+  "files": [
+   "protocol_repro.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-repro-v6",
+  "version": 1,
+  "duration_s": 159.3,
+  "n_log_events": 81,
+  "files": [
+   "protocol_repro_v6.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-repo",
+  "version": 1,
+  "duration_s": 11629.7,
+  "n_log_events": 80,
+  "files": [
+   "protocol_matrix.csv",
+   "protocol_matrix.json",
+   "reconciliation.json",
+   "sr_generator_scale2__P3.csv",
+   "sr_generator_scale2__P5.csv",
+   "sr_generator_scale2__P6.csv",
+   "sr_generator_scale4__P3.csv",
+   "sr_generator_scale4__P5.csv",
+   "sr_generator_scale4__P6.csv",
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-repo",
+  "version": 2,
+  "duration_s": 14.1,
+  "n_log_events": 15,
+  "files": [
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-repo",
+  "version": 3,
+  "duration_s": 12122.6,
+  "n_log_events": 49,
+  "files": [
+   "protocol_matrix.csv",
+   "protocol_matrix.json",
+   "sr_generator_scale2__P8.csv",
+   "sr_generator_scale4__P7.csv",
+   "sr_generator_scale4__P8.csv",
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-protocol-repo",
+  "version": 4,
+  "duration_s": 2628.2,
+  "n_log_events": 37,
+  "files": [
+   "protocol_matrix.csv",
+   "protocol_matrix.json",
+   "reconciliation.json",
+   "sr_generator_scale2__P7.csv",
+   "status.json"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 1,
+  "duration_s": 272.6,
+  "n_log_events": 27,
+  "files": [
+   "config_sr_srcnn_scale2.json",
+   "sr_srcnn_scale2_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_sr_srcnn_scale2.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 2,
+  "duration_s": 352.9,
+  "n_log_events": 27,
+  "files": [
+   "config_sr_generator_scale4.json",
+   "sr_generator_scale4_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_sr_generator_scale4.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 3,
+  "duration_s": 55.6,
+  "n_log_events": 25,
+  "files": [
+   "config_lowlight_srcnn_scale2.json",
+   "lowlight_srcnn_scale2_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_lowlight_srcnn_scale2.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 4,
+  "duration_s": 16294.9,
+  "n_log_events": 48,
+  "files": [
+   "config_sr_srcnn_scale2.json",
+   "sr_srcnn_scale2_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_sr_srcnn_scale2.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 5,
+  "duration_s": 20516.7,
+  "n_log_events": 40,
+  "files": [
+   "config_sr_generator_scale4.json",
+   "sr_generator_scale4_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_sr_generator_scale4.csv"
+  ]
+ }
+]
