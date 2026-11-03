@@ -204,3 +204,47 @@ def test_describe_covers_every_mode_and_names_the_training_one():
         assert text and isinstance(text, str)
     assert "training" in describe(DEFAULT_MODE)
     assert "legacy" in describe(LEGACY_EVAL_MODE)
+
+
+# ------------------------------------------------------- no 8-bit round trip
+
+
+def _step_edge(h=64, w=64, k=24):
+    """A hard step edge: the input that makes bicubic ring the most."""
+    hr = torch.zeros(1, 3, h, w)
+    hr[:, :, (h - k) // 2:(h + k) // 2, (w - k) // 2:(w + k) // 2] = 1.0
+    return hr
+
+
+def test_float_modes_keep_bicubic_overshoot():
+    """`build_lr` must not clamp to [0,1]. Training does not clamp either.
+
+    Bicubic downscaling rings: a hard edge produces values below 0 and above 1.
+    Those excursions carry real high-frequency energy; truncating them smooths
+    the edge back. The cost is not theoretical -- the v1 protocol kernel passed
+    every variant through `TF.to_pil_image` (an 8-bit container that clamps),
+    and on these same weights that alone moved the score 0.69 dB on synthetic
+    edges and is why its "tv_aa" point reads 25.55 dB where the same operator
+    run in float reads 27.51 dB. A future "let's just clamp the input, it's an
+    image" edit would silently reintroduce that gap.
+    """
+    hr = _step_edge()
+    # Only the antialiased mode rings at 4x: its low-pass widens the bicubic
+    # support, so neighbouring pixels overshoot. `noaa` at 4x degenerates to
+    # near point-sampling and lands on exact 0/1, so it is not the case here.
+    lr = build_lr(hr, 4, mode=TV_BICUBIC_AA)
+    lo, hi = lr.min().item(), lr.max().item()
+    assert lo < 0.0 or hi > 1.0, (
+        f"{TV_BICUBIC_AA} returned a clamped range [{lo:.4f}, {hi:.4f}]; the "
+        f"operator no longer matches the distribution training saw")
+    # Quantify: clamping to [0,1] must actually cost something here, so the
+    # assertion above is not merely about a handful of invisible pixels.
+    clamped = lr.clamp(0.0, 1.0)
+    assert (clamped - lr).abs().max().item() > 0.01
+
+
+def test_pil_mode_is_inherently_8bit_and_that_is_declared():
+    """The PIL mode clamps because its container does -- and says so."""
+    lr = build_lr(_step_edge(), 4, mode=PIL_BICUBIC)
+    assert lr.min().item() >= 0.0 and lr.max().item() <= 1.0
+    assert "8-bit" in describe(PIL_BICUBIC)

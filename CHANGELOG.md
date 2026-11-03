@@ -5,6 +5,34 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.7.1] - 2026-11-03
+
+协议矩阵对账收尾时发现的一件事：**旧 kernel 里"退化算子"那两个数据点是伪影，不是算子效应**。修的是表述与防线，不是数字——四个锚点（27.4977 / 32.4243 / 28.9371 / 33.8931）全部有效，逐位复现的结论不变。
+
+### 发现
+
+v1 kernel 把每个 LR 变体都过一遍 8-bit 容器：
+
+```python
+tv_aa = TF.to_pil_image(TF.resize(hr_t, size_tv, BICUBIC, antialias=True))
+```
+
+`to_pil_image` 会 clamp 到 [0,1]，而 bicubic 下采样在硬边缘必 overshoot（实测 −0.0129 ~ +1.0255）。于是 v1 记的 `P2_rgb_full_tv_aa` = 25.5482，比主仓同一算子的 27.5098 低 **1.96 dB**——差的是被截掉的 ringing，不是 AA 实现。
+
+**只有 pil 档不受影响**（它本来就走 8-bit），所以 P1 的四个数干净、对账成立；而 P2/P3 两档不能用来论证"换算子影响多大"。干净的 AA 效应是主仓 **P5 28.95 → P6 25.21 = 3.73 dB**，两侧都不经 8-bit。
+
+### Added
+
+- `train/tests/test_degradation.py` 新增两条：`test_float_modes_keep_bicubic_overshoot`（float 档不得 clamp，且 clamp 的代价必须可测 > 0.01）、`test_pil_mode_is_inherently_8bit_and_that_is_declared`（pil 档夹紧是容器属性，且 `describe()` 必须写明 8-bit）。注释里直接写了这次事故的形状，防止将来"顺手 clamp 一下"。
+
+### Changed
+
+- `README.md` Results 段：把"算子有影响"改成一张三行表，分别给出 0.012 / 3.7 / 1.96 dB 三个量级，并说明第三行来自 8-bit 往返。原句只给了 0.012 与 3.7，读者容易以为"PIL 与 torchvision 几乎一样，所以算子名不重要"——恰好相反：同一个算子名，两种数制差 1.96 dB。
+
+### 备注
+
+`build_lr` 的 float 档本来就正确（不 clamp，与训练一致），本次没有改动实现，只补了防线与表述。
+
 ## [1.6.0] - 2026-11-02
 
 把"数字来自 Kaggle kernel"这件事收回到仓库里（A 方案）。核心是两件此前只存在于 kernel 的东西：**统一的退化算子**和**协议矩阵驱动**。

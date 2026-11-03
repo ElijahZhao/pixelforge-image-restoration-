@@ -87,7 +87,17 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 
 > Numbers are measured by [`scripts/eval_baseline.py`](scripts/eval_baseline.py) on the same validation set with the same PSNR/SSIM implementation, so the only variable is the method. Per-epoch logs are under [`results/`](results/).
 >
-> **Reproduced, with the protocol spelled out.** Those two SR numbers were re-measured by [`scripts/protocol_matrix.py`](scripts/protocol_matrix.py) under an explicitly named protocol — **P8: full image, RGB, per-image mean, DIV2K val 100 images, LR = PIL bicubic** — giving **27.4977 dB** (published 27.47) and **32.4243 dB** (published 32.35). The point of naming the protocol is that the operator matters: on the ×4 weights, switching the LR operator from PIL bicubic to torchvision bicubic + antialias moves the score by 0.012 dB (27.5098 vs 27.4977), while merely toggling `antialias` inside torchvision moves it by 3.7 dB (28.95 → 25.21). Without the label, "27.47 dB" does not say which of those it means.
+> **Reproduced, with the protocol spelled out.** Those two SR numbers were re-measured by [`scripts/protocol_matrix.py`](scripts/protocol_matrix.py) under an explicitly named protocol — **P8: full image, RGB, per-image mean, DIV2K val 100 images, LR = PIL bicubic** — giving **27.4977 dB** (published 27.47) and **32.4243 dB** (published 32.35).
+>
+> Naming the protocol is necessary but not sufficient, because the *name* does not pin the measurement. Same ×4 weights, same 100 images, three effects at very different scales:
+>
+> | Change | Δ PSNR |
+> |---|---|
+> | PIL bicubic → torchvision bicubic + antialias, both in float | **0.012 dB** (27.4977 → 27.5098) |
+> | `antialias` on → off, same torchvision call | **3.7 dB** (28.95 → 25.21) |
+> | same operator, but the LR image round-tripped through 8-bit | **1.96 dB** (27.51 → 25.55) |
+>
+> The third row is not hypothetical: it is what an earlier kernel of ours recorded under the label "torchvision bicubic + antialias". `TF.to_pil_image` clamps to [0,1], and bicubic downscaling overshoots, so the ringing that carries the edge energy was being truncated. "Bicubic" identifies neither the operator nor the number format, so a PSNR without both labels does not identify a measurement.
 
 | Task | Baseline | Ours | Gain |
 |---|---|---|---|
