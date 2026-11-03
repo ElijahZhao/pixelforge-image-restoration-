@@ -75,7 +75,8 @@ VERDICTS: dict[tuple[str, int], tuple[str, str, str]] = {
     ("pixelforge-seed-matrix", 3): ("T4", "低光分支冒烟：2 轮，lr=0", "✅ 测速样本"),
     ("pixelforge-seed-matrix", 4): ("T4", "A 批：SRCNN ×2，种子 42–46，100 轮", "✅ n=5，30.686 ± 0.069"),
     ("pixelforge-seed-matrix", 5): ("T4", "B 批：SRResNet ×4，种子 42–44，200 轮", "✅ n=3，26.430 ± 0.027"),
-    ("pixelforge-seed-matrix", 6): ("T4", "C 批：SRResNet ×4，种子 45–46，200 轮", "✅ n=5 补齐"),
+    ("pixelforge-seed-matrix", 6): ("T4", "C 批：SRResNet ×4，种子 45–46，200 轮", "🔄 进行中"),
+    ("pixelforge-seed-matrix-d", 1): ("T4", "D 批：低光 SRCNN ×2，种子 42–46，200 轮", "🔄 进行中"),
 }
 
 # 已知内核；其余内核不会被扫。
@@ -90,6 +91,7 @@ KNOWN = [
     "pixelforge-protocol-repro-v6",
     "pixelforge-protocol-repo",
     "pixelforge-seed-matrix",
+    "pixelforge-seed-matrix-d",
 ]
 
 
