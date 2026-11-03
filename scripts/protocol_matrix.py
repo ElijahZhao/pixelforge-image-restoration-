@@ -140,7 +140,10 @@ def load_model(path, task, scale):
     reproducible", which is the question a reviewer asks first.
     """
     try:
-        model = torch.jit.load(path, map_location="cpu")
+        # Load straight onto the target device. The T4 probe did it this way and
+        # worked; loading to CPU first and calling .to() afterwards left a
+        # TorchScript module whose internals were still CPU-resident.
+        model = torch.jit.load(path, map_location=DEVICE)
         model.eval()
         return model.to(DEVICE), {"source": "torchscript"}
     except Exception:  # noqa: BLE001 - not a TorchScript file, fall through
@@ -206,7 +209,14 @@ def _forward(model, hr_pil, box, scale, degrade, baseline):
     top, left, ch, cw = box
     patch = hr_pil.crop((left, top, left + cw, top + ch))
     hr = TF.to_tensor(patch).unsqueeze(0).to(DEVICE)
-    lr = build_lr(hr, scale, mode=degrade)
+    # `.to(DEVICE)` is not redundant: the `pil_bicubic` branch of build_lr goes
+    # through PIL, which is a CPU library, and re-stacks per-image results back
+    # on the CPU. On GPU that produced "Input type (FloatTensor) and weight type
+    # (cuda.FloatTensor)" -- but only for P7/P8, i.e. exactly the protocols that
+    # the T4 probe never touched (it timed `tv_bicubic_aa`, which stays on the
+    # device). The anchor gate caught it in one minute instead of after an
+    # eighty-minute matrix.
+    lr = build_lr(hr, scale, mode=degrade).to(DEVICE)
     if baseline:
         # The classic baseline: LR (already produced by `degrade`) pushed back
         # up with plain bicubic. No network, so every protocol still applies.
