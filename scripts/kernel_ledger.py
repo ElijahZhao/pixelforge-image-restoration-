@@ -77,6 +77,11 @@ VERDICTS: dict[tuple[str, int], tuple[str, str, str]] = {
     ("pixelforge-seed-matrix", 5): ("T4", "B 批：SRResNet ×4，种子 42–44，200 轮", "✅ n=3，26.430 ± 0.027"),
     ("pixelforge-seed-matrix", 6): ("T4", "C 批：SRResNet ×4，种子 45–46，200 轮", "✅ n=5 补齐，26.422 ± 0.036"),
     ("pixelforge-seed-matrix-d", 1): ("T4", "D 批：低光 SRCNN ×2，种子 42–46，200 轮", "✅ n=5，18.032 ± 0.104"),
+    ("pixelforge-probe-t4", 1): ("T4", "OOM / 耗时探针：全图 2048² 前向 + 96² 块 ×60", "✅ 45 s，全图不 OOM（峰值 8.37 GB）"),
+    ("pixelforge-protocol-full", 1): ("T4", "阶段5矩阵 v1", "❌ 锚点 gate 1.07 min 拦下：pil_bicubic 返回 CPU tensor"),
+    ("pixelforge-protocol-full", 2): ("T4", "阶段5矩阵 v2：SR 两任务 × 5 种子 × 8 协议", "⚠️ SR 10 ckpt 全部有效；低光与基线失败"),
+    ("pixelforge-protocol-full", 3): ("T4", "阶段5矩阵 v3：补低光 + two baselines", "⚠️ 基线 bicubic_sr_x4 有效；低光输入构造错误，数值作废"),
+    ("pixelforge-protocol-full", 4): ("T4", "阶段5矩阵 v4：低光配对输入重跑", "✅ 18.509 dB，与训练日志 best 均值差 0.001"),
 }
 
 # 已知内核；其余内核不会被扫。
@@ -92,6 +97,8 @@ KNOWN = [
     "pixelforge-protocol-repo",
     "pixelforge-seed-matrix",
     "pixelforge-seed-matrix-d",
+    "pixelforge-probe-t4",
+    "pixelforge-protocol-full",
 ]
 
 
