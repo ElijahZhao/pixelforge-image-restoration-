@@ -69,6 +69,7 @@ import os
 import statistics
 import sys
 import time
+import warnings
 
 import numpy as np
 import torch
@@ -80,6 +81,17 @@ from degradation import MODES, build_lr, describe  # noqa: E402
 from eval_protocol import psnr_y, ssim_y, shave  # noqa: E402
 from metrics import psnr_per_image, ssim_per_image  # noqa: E402
 from models import build_model  # noqa: E402
+
+# `_measure` converts a grad-tracking tensor to float. That is harmless here
+# (nothing calls backward) and it emits one UserWarning per image, so the exact
+# message is filtered instead of the tensor being detached: on CPU a
+# requires_grad tensor takes a different reduction kernel, and detaching moved
+# P2/P8 by 1 ulp -- not worth it to quiet a log line.
+warnings.filterwarnings(
+    "ignore",
+    message="Converting a tensor with requires_grad=True to a scalar",
+    category=UserWarning,
+)
 
 _EXTS = (".png", ".jpg", ".jpeg", ".bmp")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -205,8 +217,16 @@ def _measure(out, hr, proto, border):
     raise ValueError(proto["metric"])
 
 
-def _forward(model, hr_pil, box, scale, degrade, baseline, align=1):
+def _forward(model, hr_pil, box, scale, degrade, baseline, align=1, lr_pil=None):
     """One crop -> one SR output on the HR grid. No metrics, no policy.
+
+    ``lr_pil`` switches to PAIRED mode. The low-light model consumes a real
+    capture (`lol/val/low`), not a synthetic degradation of the target, and its
+    scale is 1. v3 got this wrong: it fed `high/` through `build_lr` and also
+    passed `--scale 2`, so the U-Net saw a half-resolution image and the score
+    came out at 12.5 dB against an 18.0 dB training-time validation. When
+    ``lr_pil`` is given, the same crop box is taken from both halves -- they are
+    verified same-size upstream -- and `build_lr` is not called at all.
 
     ``align`` is the network's downsampling stride multiple. U-Net stacks use
     stride-2 convs (floor) followed by nearest x2 upsamples (exact), so an LR
@@ -223,21 +243,41 @@ def _forward(model, hr_pil, box, scale, degrade, baseline, align=1):
     patch = hr_pil.crop((left, top, left + cw, top + ch))
     hr = TF.to_tensor(patch).unsqueeze(0).to(DEVICE)
     hr_eval = hr
-    if align > 1 and not baseline:
-        need = scale * align
-        ph, pw = (-ch) % need, (-cw) % need
-        if ph or pw:
-            # reflect needs pad < input size; 600x400 vs 8 is never close.
-            hr = torch.nn.functional.pad(hr, (0, pw, 0, ph), mode="reflect")
-    # `.to(DEVICE)` is not redundant: the `pil_bicubic` branch of build_lr goes
-    # through PIL, which is a CPU library, and re-stacks per-image results back
-    # on the CPU. On GPU that produced "Input type (FloatTensor) and weight type
-    # (cuda.FloatTensor)" -- but only for P7/P8, i.e. exactly the protocols that
-    # the T4 probe never touched (it timed `tv_bicubic_aa`, which stays on the
-    # device). The anchor gate caught it in one minute instead of after an
-    # eighty-minute matrix.
-    lr = build_lr(hr, scale, mode=degrade).to(DEVICE)
+    if lr_pil is not None:
+        # Paired mode. `scale` is 1 by construction, so the pad multiple is
+        # `align` alone; padding the INPUT is what keeps the skip connections
+        # aligned, and the output is cropped back below.
+        lr = TF.to_tensor(lr_pil.crop((left, top, left + cw, top + ch)))
+        lr = lr.unsqueeze(0).to(DEVICE)
+        if align > 1 and not baseline:
+            ph, pw = (-ch) % align, (-cw) % align
+            if ph or pw:
+                lr = torch.nn.functional.pad(lr, (0, pw, 0, ph), mode="reflect")
+    else:
+        if align > 1 and not baseline:
+            need = scale * align
+            ph, pw = (-ch) % need, (-cw) % need
+            if ph or pw:
+                # reflect needs pad < input size; 600x400 vs 8 is never close.
+                hr = torch.nn.functional.pad(hr, (0, pw, 0, ph), mode="reflect")
+        # `.to(DEVICE)` is not redundant: the `pil_bicubic` branch of build_lr
+        # goes through PIL, which is a CPU library, and re-stacks per-image
+        # results back on the CPU. On GPU that produced "Input type (FloatTensor)
+        # and weight type (cuda.FloatTensor)" -- but only for P7/P8, i.e. exactly
+        # the protocols that the T4 probe never touched (it timed
+        # `tv_bicubic_aa`, which stays on the device). The anchor gate caught it
+        # in one minute instead of after an eighty-minute matrix.
+        lr = build_lr(hr, scale, mode=degrade).to(DEVICE)
     if baseline:
+        if lr_pil is not None:
+            # Paired mode has no upscaling step, so the honest reference line is
+            # "do nothing": return the capture itself. Painting bicubic here
+            # would compare an enhancer against an upsampler, which is not a
+            # comparison at all. `lr` may have been reflect-padded above, so it
+            # is cropped back to the measured region.
+            if lr.shape[-2:] != hr_eval.shape[-2:]:
+                lr = lr[..., :ch, :cw]
+            return lr.clamp(0, 1), hr_eval
         # The classic baseline: LR (already produced by `degrade`) pushed back
         # up with plain bicubic. No network, so every protocol still applies.
         out = torch.nn.functional.interpolate(
@@ -256,7 +296,7 @@ def _forward(model, hr_pil, box, scale, degrade, baseline, align=1):
 
 
 def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
-              baseline=False, align=1):
+              baseline=False, align=1, lr_pil=None):
     """Legacy path: ONE protocol, opening the image per protocol.
 
     Kept verbatim (modulo the baseline switch) so `--legacy` can prove the
@@ -268,7 +308,7 @@ def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
     vals = []
     for box in boxes:
         out, hr = _forward(model, hr_pil, box, scale, proto["degrade"], baseline,
-                           align)
+                           align, lr_pil)
         p, s = _measure(out, hr, proto, border)
         vals.append((p, s))
         best = (p, s) if best is None or p > best[0] else best
@@ -281,13 +321,17 @@ def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
 
 
 def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
-                baseline=False, align=1):
+                baseline=False, align=1, lr_pil=None):
     """Grouped path: every requested protocol for ONE image.
 
     Protocols that share (degrade, sampling) share one forward pass -- they
     differ only in how that tensor is measured. P1 is alone in its group
     because `best_of_n` needs N draws, and it keeps a dedicated RNG consumed in
     image order, which is exactly the order the legacy loop used.
+
+    ``lr_pil`` is forwarded unchanged: in paired mode every protocol draws its
+    input from `low/` instead of from `build_lr(high)`. Grouping stays valid
+    because the pairing is per-image, not per-protocol.
     """
     w, h = hr_pil.size
     groups = {}
@@ -302,7 +346,8 @@ def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
         got = []
         best = None
         for box in boxes:
-            o, hr = _forward(model, hr_pil, box, scale, degrade, baseline, align)
+            o, hr = _forward(model, hr_pil, box, scale, degrade, baseline, align,
+                             lr_pil)
             per = {p: _measure(o, hr, PROTOCOLS[p], border) for p in plist}
             got.append(per)
             if best is None or per[plist[0]][0] > best[plist[0]][0]:
@@ -365,6 +410,45 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
     per_img = os.path.join(args.out, "per_image")
     os.makedirs(per_img, exist_ok=True)
 
+    low_by_stem = {}
+    if getattr(args, "paired", False):
+        # `files` comes from the target half (`lol/val/high`); the input half is
+        # its sibling. Pairs are matched by stem, the same rule
+        # `LowLightDataset` uses, and a missing partner is fatal -- silently
+        # falling back to a synthetic degradation is precisely the v3 bug.
+        low_dir = os.path.join(os.path.dirname(ds_dir.rstrip(os.sep)), "low")
+        if not os.path.isdir(low_dir):
+            print(f"[x] paired evaluation needs {low_dir}/", flush=True)
+            raise SystemExit(2)
+        for fn in os.listdir(low_dir):
+            stem, ext = os.path.splitext(fn)
+            if ext.lower() in _EXTS:
+                low_by_stem[stem] = os.path.join(low_dir, fn)
+        if not low_by_stem:
+            print(f"[x] {low_dir}/ has no images", flush=True)
+            raise SystemExit(2)
+
+    def _load_pair(hr_path):
+        """(hr_pil, lr_pil); lr_pil is None outside paired mode."""
+        hr = Image.open(hr_path).convert("RGB")
+        if not getattr(args, "paired", False):
+            return hr, None
+        stem = os.path.splitext(os.path.basename(hr_path))[0]
+        lp = low_by_stem.get(stem)
+        if lp is None:
+            print(f"[x] {os.path.basename(hr_path)} has no low/{stem}.* partner",
+                  flush=True)
+            raise SystemExit(2)
+        lr = Image.open(lp).convert("RGB")
+        if lr.size != hr.size:
+            # The same crop box is used for both halves, so unequal sizes would
+            # silently misalign input and target -- `LowLightDataset` refuses
+            # these too.
+            print(f"[x] size mismatch for {stem}: low={lr.size} high={hr.size}",
+                  flush=True)
+            raise SystemExit(2)
+        return hr, lr
+
     models = []
     if args.baseline:
         models.append(("bicubic", None, {"source": "interpolation"}))
@@ -394,10 +478,10 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
                 rng = np.random.default_rng(args.seed)
                 t0 = time.time()
                 for f in files:
-                    hr = Image.open(f).convert("RGB")
+                    hr, lr = _load_pair(f)
                     pv, sv = score_one(model, hr, PROTOCOLS[p], args.scale, border,
                                        args.crop, args.n_random, rng, args.baseline,
-                                       args.align)
+                                       args.align, lr)
                     ps[p].append(pv)
                     ss[p].append(sv)
                 per_sec[p] = time.time() - t0
@@ -407,10 +491,10 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
             rng = np.random.default_rng(args.seed)
             t0 = time.time()
             for f in files:
-                hr = Image.open(f).convert("RGB")
+                hr, lr = _load_pair(f)
                 got = score_image(model, hr, wanted, args.scale, border,
                                   args.crop, args.n_random, rng, args.baseline,
-                                  args.align)
+                                  args.align, lr)
                 for p in wanted:
                     ps[p].append(got[p][0])
                     ss[p].append(got[p][1])
@@ -466,6 +550,12 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
 
 
 def run(args):
+    # Paired evaluation is a property of the TASK, not a switch. The low-light
+    # model consumes a real capture and is scale-1; there is no synthetic
+    # degradation to build. Leaving this to a CLI flag is what let v3 ship a
+    # wrong number: it degraded `high/` with bicubic *and* passed `--scale 2`,
+    # scoring 12.5 dB against an 18.0 dB training-time validation.
+    args.paired = (args.task == "lowlight")
     datasets = _resolve_datasets(args)
     usable = []
     for name, d in datasets:
@@ -493,10 +583,23 @@ def run(args):
             return 2
 
     border = args.shave if args.shave is not None else args.scale
+    if args.paired and args.scale != 1:
+        # LowLightUNet is 1:1 (`build_model("lowlight")` ignores `scale`). A
+        # scale > 1 here would downscale the capture first and then resize the
+        # output back -- two wrongs that mostly cancel visually and leave a
+        # plausible-looking but meaningless PSNR. Refuse instead.
+        print(f"[x] --task lowlight is scale-1, got --scale {args.scale}. "
+              f"The 'scale2' in the checkpoint filename is a historical name, "
+              f"not a property of the network.", flush=True)
+        return 2
     print(f"[i] datasets={[u[0] for u in usable]} | device={DEVICE} | "
           f"scale=x{args.scale} | shave={border} | crop={args.crop} | "
           f"n_random={args.n_random} | grouped={not args.legacy} | "
-          f"baseline={args.baseline}", flush=True)
+          f"baseline={args.baseline} | paired={args.paired}", flush=True)
+    if args.paired:
+        print("[i] paired mode: input = lol/val/low, target = lol/val/high; "
+              "no synthetic degradation is applied and scale must be 1",
+              flush=True)
     print(f"[i] 退化算子会被逐个协议记录; 训练侧用的是 {describe('tv_bicubic_aa')}",
           flush=True)
 
@@ -505,7 +608,8 @@ def run(args):
     result = {"protocols": {p: PROTOCOLS[p] for p in wanted},
               "config": {"scale": args.scale, "shave": border, "crop": args.crop,
                          "n_random": args.n_random, "device": DEVICE,
-                         "grouped": not args.legacy, "baseline": args.baseline},
+                         "grouped": not args.legacy, "baseline": args.baseline,
+                         "paired": args.paired},
               "checkpoints": {}, "datasets": {}}
     all_rows = []
 
@@ -560,8 +664,11 @@ def main(argv=None):
     ap.add_argument("--datasets", default="",
                     help="comma list of dirs under --data_root, e.g. div2k/val,set14; "
                          "empty = derive from --task")
-    ap.add_argument("--protocols", default=",".join(PROTOCOLS),
-                    help=f"comma list from {sorted(PROTOCOLS)}")
+    ap.add_argument("--protocols", default="",
+                    help=f"comma list from {sorted(PROTOCOLS)}; default = all "
+                         f"eight for SR, P1-P5 for lowlight (P6-P8 vary the "
+                         f"synthetic degradation operator, which does not exist "
+                         f"when the input is a real capture)")
     ap.add_argument("--crop", type=int, default=96,
                     help="patch side for P1/P2 (default 96 = training val crop)")
     ap.add_argument("--n_random", type=int, default=60,
@@ -582,6 +689,9 @@ def main(argv=None):
                     help="old per-protocol loop, for bit-exact equivalence tests only")
     ap.add_argument("--out", default="results/protocol_matrix")
     a = ap.parse_args(argv)
+    if not a.protocols:
+        a.protocols = ("P1,P2,P3,P4,P5" if a.task == "lowlight"
+                       else ",".join(PROTOCOLS))
     return run(a)
 
 
