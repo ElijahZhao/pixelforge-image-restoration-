@@ -121,3 +121,117 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   8×256² patches; more when image difficulty is mixed). Logs written before 1.3.0 and
 >   logs written after it are therefore **not directly subtractable** — compare across
 >   protocols only through `eval_baseline.py`, which is the same code path for both.
+
+## Protocol matrix (Figure 1 source; added 2026-11-04)
+
+> The two tables above each pin **one** protocol. This section holds all eight at once,
+> for all five seeds — because the single biggest number in the whole project is not a
+> model result, it is a **protocol choice**.
+
+Files: `protocol_matrix_fig1_long.csv` (105 per-checkpoint rows),
+`protocol_matrix_fig1_wide.csv` (21 seed-averaged rows), `model_vs_bicubic_gain.csv`
+(13 model-vs-baseline rows). Produced by `scripts/protocol_matrix.py`, which groups the
+eight protocols by `(degrade, sampling)` so each image needs only **three** full-image
+forwards instead of eight.
+
+| # | Protocol | Degrade | Metric | Sampling |
+|---|----------|---------|--------|----------|
+| P1 | random crop, best-of-N | `tv_bicubic_aa` | RGB | random 96², max over N draws |
+| P2 | centre crop (training val) | `tv_bicubic_aa` | RGB | centre 96² |
+| P3 | full image, RGB | `tv_bicubic_aa` | RGB | full |
+| P4 | full image, RGB + shave | `tv_bicubic_aa` | RGB + shave | full |
+| P5 | full image, Y + shave | `tv_bicubic_aa` | Y + shave | full |
+| P6 | same as P5, **no antialias** | `tv_bicubic_noaa` | Y + shave | full |
+| P7 | same as P5, **PIL bicubic** | `pil_bicubic` | Y + shave | full |
+| P8 | same as P3, **PIL bicubic** | `pil_bicubic` | RGB | full |
+
+**SR ×4 — SRResNet, 5 seeds (DIV2K val, 100 images)**
+
+| Protocol | Model | Bicubic | Gain |
+|---|---|---|---|
+| P1 best-of-60 | 44.958 ± 0.236 | 44.783 | +0.175 |
+| P2 centre 96² | 26.421 ± 0.036 | 25.808 | +0.614 |
+| **P3 full RGB** | **27.614 ± 0.035** | 26.832 | **+0.782** |
+| P4 full RGB+shave | 27.602 ± 0.035 | 26.819 | +0.784 |
+| **P5 full Y+shave** | **29.052 ± 0.036** | 28.234 | **+0.818** |
+| **P6 Y+shave, no AA** | **25.163 ± 0.019** | 26.916 | **−1.753** |
+| P7 Y+shave, PIL | 29.043 ± 0.036 | 28.230 | +0.814 |
+| P8 full RGB, PIL | 27.601 ± 0.035 | 26.825 | +0.775 |
+
+**SR ×2 — SRCNN, 5 seeds (DIV2K val, 100 images)**
+
+| Protocol | Model | Bicubic | Gain |
+|---|---|---|---|
+| P1 best-of-60 | 46.334 ± 0.558 | — | — |
+| P2 centre 96² | 30.686 ± 0.069 | — | — |
+| **P3 full RGB** | **32.163 ± 0.067** | — | — |
+| P4 full RGB+shave | 32.162 ± 0.067 | — | — |
+| **P5 full Y+shave** | **33.829 ± 0.027** | — | — |
+| P6 Y+shave, no AA | 31.105 ± 0.094 | — | — |
+| P7 Y+shave, PIL | 33.809 ± 0.027 | — | — |
+| P8 full RGB, PIL | 32.142 ± 0.066 | — | — |
+
+> **Known gap**: the ×2 bicubic rows are empty. The stage-5 kernel ran
+> `bicubic_sr_x4` and `bicubic_ll_x2` but never `bicubic_sr_x2`, so ×2 has model
+> numbers with no same-protocol baseline. The 31.04 in the table above comes from
+> `eval_baseline.py` (P3, full RGB), which is the right reference for P3 but cannot
+> fill P5/P6/P7. Filling this costs one short kernel run; until then, **quote ×2 gains
+> only against the 31.04 P3 baseline**.
+
+**Low-light — U-Net, 5 seeds (LOL eval15, 15 pairs, paired input)**
+
+| Protocol | Model | Identity | Gain |
+|---|---|---|---|
+| P1 best-of-60 | 24.577 ± 0.415 | 12.174 | +12.403 |
+| P2 centre 96² | 20.569 ± 0.530 | 7.632 | +12.937 |
+| **P3 full RGB** | **18.509 ± 0.036** | 7.773 | **+10.736** |
+| P4 full RGB+shave | 18.520 ± 0.035 | 7.771 | +10.748 |
+| **P5 full Y+shave** | **20.759 ± 0.081** | 9.279 | **+11.480** |
+
+> Low-light has no upscale factor, so there is nothing to shave and no degrade operator
+> axis: P6–P8 do not exist for it. P1–P5 run with `scale=1` on the **real captured
+> `low/`** input, paired with `high/` as target — the model is a residual U-Net
+> (`clamp(x + out)`), not a super-resolution network, despite the historical
+> `scale2` in its filename.
+
+### Three things this table says
+
+1. **P6 flips the sign.** On the exact same weights and images, switching the degrade
+   operator from antialiased to naive bicubic drops the model from +0.82 dB above
+   bicubic to **−1.75 dB below it**. Neither number is "wrong": antialiased
+   downsampling removes the aliasing the network was trained to invert, naive
+   downsampling creates it. A paper that reports only one of these is reporting an
+   artifact of its own resize call.
+2. **Protocol choice moves the number 18 dB.** For the same ×4 weight, the eight
+   protocols span **25.16 → 44.96 dB** (P1's 44.96 is the max over 60 random 96² crops,
+   an optimistic upper bound, not a comparable score). Even restricted to full-image
+   protocols, P3 (27.61) vs P5 (29.05) differ by 1.44 dB purely from the colour space
+   and border. Any cross-paper comparison must state the protocol.
+3. **The seed spread is small, the protocol spread is large.** Across 5 seeds the
+   standard deviation is 0.019–0.036 dB on full-image protocols; across protocols it is
+   up to 1.8 dB. Seed variance is *not* the uncertainty that matters here — protocol is.
+
+### Anchor gate (how these numbers are protected)
+
+`scripts/protocol_matrix.py` refuses to run the matrix unless four known anchors
+reproduce exactly: **27.4977 / 32.4243 / 28.9371 / 33.8931** (P8/P7 on ×4 and ×2).
+Every kernel run in stage 5 printed `d=+0.0000` on all four before touching the matrix.
+This caught a real bug on the first attempt: `pil_bicubic` returned a CPU tensor, the
+GPU forward raised a device mismatch, and the gate stopped the run at 1.07 minutes
+instead of publishing eight wrong protocols.
+
+```bash
+# reproduce the matrix (needs the 15 seed weights)
+# SR: 10 checkpoints x 8 protocols, 0.587 h on a T4 (kernel v2)
+python scripts/protocol_matrix.py --task sr --scale 4 --datasets div2k/val --align 8
+python scripts/protocol_matrix.py --task sr --scale 2 --datasets div2k/val --align 8
+# low-light: 5 checkpoints x P1-P5 on paired real captures, 0.116 h (kernel v4)
+python scripts/protocol_matrix.py --task lowlight --scale 1 --datasets lol/val/high --align 8
+```
+
+`--align 8` is the U-Net downsampling multiple; it reflect-pads the HR side to a
+multiple of `align × scale` before the forward pass and crops back, so metrics stay on
+original pixels. Without it a 600×400 input loses one pixel per skip connection
+(`Expected size 76 but got size 75`). Plain conv stacks are unaffected by the flag.
+
+
