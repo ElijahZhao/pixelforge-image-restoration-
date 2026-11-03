@@ -86,6 +86,8 @@ clone runs out of the box — no GPU needed for the demo or the tests.
 ## 📊 Results
 
 > Numbers are measured by [`scripts/eval_baseline.py`](scripts/eval_baseline.py) on the same validation set with the same PSNR/SSIM implementation, so the only variable is the method. Per-epoch logs are under [`results/`](results/).
+>
+> **Reproduced, with the protocol spelled out.** Those two SR numbers were re-measured by [`scripts/protocol_matrix.py`](scripts/protocol_matrix.py) under an explicitly named protocol — **P8: full image, RGB, per-image mean, DIV2K val 100 images, LR = PIL bicubic** — giving **27.4977 dB** (published 27.47) and **32.4243 dB** (published 32.35). The point of naming the protocol is that the operator matters: on the ×4 weights, switching the LR operator from PIL bicubic to torchvision bicubic + antialias moves the score by 0.012 dB (27.5098 vs 27.4977), while merely toggling `antialias` inside torchvision moves it by 3.7 dB (28.95 → 25.21). Without the label, "27.47 dB" does not say which of those it means.
 
 | Task | Baseline | Ours | Gain |
 |---|---|---|---|
