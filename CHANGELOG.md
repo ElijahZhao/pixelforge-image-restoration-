@@ -5,6 +5,37 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.9.0] - 2026-11-03
+
+**种子矩阵补齐 n=5**：三个任务各 5 次独立训练全部跑完，"种子方差有多大"从推测变成实测。
+
+### Added
+
+- `results/seeds/lowlight_unet/`：D 批（低光 SRCNN ×2，种子 42–46，200 轮）逐轮日志 + 配置 + 汇总。
+- `results/seeds/generator_x4/s45/`、`s46/`：C 批补齐 generator ×4 的第 4、5 颗种子。
+- `models/seeds/lowlight_unet/`：D 批 5 个 checkpoint（22 个 state_dict key，跨种子一致）。
+- `results/seeds/README.md` 改写为三组 n=5 的完整版本，读数陷阱从四条增加到五条。
+
+### Changed
+
+- **generator ×4 的种子统计改口径**：n=3 时是 26.430 ± 0.027，补齐 45/46 后 n=5 是
+  **26.422 ± 0.036**（区间重叠，未换结论，但论文必须写 n=5 的数）。
+- **低光任务与两个 SR 任务在收敛性上不同**，新记为一个读数陷阱：
+  SRCNN ×2 与 generator ×4 的 `best == final`（最后一轮就是 val 最优），
+  而**低光 ×2 的 best 比 final 平均高 0.465 dB**（0.36–0.63 dB，best 落在 ep 38–110 之间飘），
+  说明 200 轮时低光尚未收敛。headline 一律用 final-epoch 均值（18.032），
+  `best`（18.510）只能当上界报——这是 `aggregate_seeds.py` 里写死的预注册规则。
+- `README.md` / `README.zh-CN.md`：Results 段加入三行种子方差表与"决定数字的是协议标签，不是种子"的结论；算力代价更新为 29 次运行、26.4 h、1 700 个 epoch、15 次独立训练。
+- `scripts/kernel_ledger.py`：`KNOWN` 白名单加入 `pixelforge-seed-matrix-d`。
+- `archive_private/06-实验脚本与输出/kag-seed-matrix/monitor_kernel.py`：日志流断开后自动重连（原来一次抖动就退出，监控形同虚设）。
+
+### Changed（协议层）
+
+- C 批与 D 批**拆成两个内核并发跑**。起因是 Kaggle 只保留每个内核的**最新版本产物**，
+  推新版会覆盖旧版——原本"跑完必须先下载、再推下一批"这条串行约束，
+  正是把收工时间推到 22:00 的原因。拆开后两批产物目录互不覆盖，墙钟省约 2 h。
+- 幂等软链、`BUDGET_H` 兜底等已有约束保持不变。
+
 ## [1.8.1] - 2026-11-03
 
 **防遗漏的校验器**：把"跑完了但少下了文件"从靠人记变成靠机器卡。

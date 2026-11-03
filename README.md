@@ -112,12 +112,26 @@ large-dataset academic SOTA (30+ dB) — the training set and model capacity are
 low-light gain is relative to a no-op baseline, not to other published methods.
 
 **What it cost to measure.** Every number above came from free-tier Kaggle T4 kernels, and
-the ledger is written down rather than remembered: **27 kernel runs, 22.9 h of wall-clock
-machine time** (15.5 h on GPU, 7.3 h on CPU — the reconciliation kernels deliberately run on
+the ledger is written down rather than remembered: **29 kernel runs, 26.4 h of wall-clock
+machine time** (19.1 h on GPU, 7.3 h on CPU — the reconciliation kernels deliberately run on
 CPU so they cost no GPU quota), of which **6.8 h went into 9 runs that failed or were voided**
-and had to be redone. 1 100 training epochs are behind the seed-variance figures. The per-run
-breakdown, including why each run failed, is in [`results/compute_ledger.md`](results/compute_ledger.md)
-and can be regenerated with `scripts/kernel_ledger.py`.
+and had to be redone. **1 700 training epochs** across **15 runs (3 tasks × 5 seeds)** are
+behind the seed-variance figures. The per-run breakdown, including why each run failed, is in
+[`results/compute_ledger.md`](results/compute_ledger.md) and can be regenerated with
+`scripts/kernel_ledger.py`.
+
+**Seed variance, measured over 5 independent runs per task.** Training-internal validation
+protocol (random crop, per-image mean) — *not* comparable with the full-image numbers above:
+
+| Task | final-epoch PSNR (mean ± std, n=5) | 95% CI | best-of-N |
+|---|---|---|---|
+| SR ×2 (SRCNN, 100 ep) | 30.686 ± 0.069 | [30.601, 30.771] | 30.686 (same) |
+| SR ×4 (SRResNet, 200 ep) | 26.422 ± 0.036 | [26.378, 26.466] | 26.422 (same) |
+| Low-light ×2 (SRCNN, 200 ep) | 18.032 ± 0.104 | [17.903, 18.161] | 18.510 (upper bound only) |
+
+Seeds move the result by 0.04–0.10 dB. Toggling `antialias` alone moves it by 3.7 dB — a
+factor of ~40 more. **Seed choice is not what determines the number; the protocol label is.**
+Per-epoch logs: [`results/seeds/`](results/seeds/); method notes: [`results/seeds/README.md`](results/seeds/README.md).
 
 ## 🚀 Quick start
 

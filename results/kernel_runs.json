@@ -376,9 +376,7 @@
   "version": 5,
   "duration_s": 319.1,
   "n_log_events": 268,
-  "files": [
-   "protocol_repro.json"
-  ]
+  "files": []
  },
  {
   "kernel": "pixelforge-protocol-repro-v6",
@@ -511,6 +509,34 @@
    "stdout.log",
    "summary.json",
    "train_log_sr_generator_scale4.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix",
+  "version": 6,
+  "duration_s": 13336.3,
+  "n_log_events": 36,
+  "files": [
+   "config_sr_generator_scale4.json",
+   "sr_generator_scale4_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_sr_generator_scale4.csv"
+  ]
+ },
+ {
+  "kernel": "pixelforge-seed-matrix-d",
+  "version": 1,
+  "duration_s": 5810.6,
+  "n_log_events": 46,
+  "files": [
+   "config_lowlight_srcnn_scale2.json",
+   "lowlight_srcnn_scale2_best.pth",
+   "status.json",
+   "stdout.log",
+   "summary.json",
+   "train_log_lowlight_srcnn_scale2.csv"
   ]
  }
 ]
