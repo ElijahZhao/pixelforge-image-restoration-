@@ -81,6 +81,18 @@ PROTOCOLS = {
                agg="per_image", label="full image, Y + shave"),
     "P6": dict(sampling="full", metric="y_shave", degrade="tv_bicubic_noaa",
                agg="per_image", label="full image, Y + shave, no antialias"),
+    # P7/P8 close the degradation axis. Until they existed the matrix only had
+    # two of the three operators in `degradation.py`, so "how much does the
+    # choice of operator move the score" was answerable for AA on/off but not
+    # for PIL. They matter for a concrete reason: every number already
+    # published for this repo was produced by `eval_baseline.py`, whose default
+    # operator is `pil_bicubic`, while P3/P5 use `tv_bicubic_aa`. P8 is P3 with
+    # only the operator changed, so |P8 - P3| is that difference and nothing
+    # else; P7 does the same for P5.
+    "P7": dict(sampling="full", metric="y_shave", degrade="pil_bicubic",
+               agg="per_image", label="full image, Y + shave, PIL bicubic"),
+    "P8": dict(sampling="full", metric="rgb", degrade="pil_bicubic",
+               agg="per_image", label="full image, RGB, PIL bicubic"),
 }
 
 
