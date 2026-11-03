@@ -5,6 +5,22 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.8.1] - 2026-11-03
+
+**防遗漏的校验器**：把"跑完了但少下了文件"从靠人记变成靠机器卡。
+
+### Added
+
+- `scripts/verify_batch.py`：逐种子校验一批 Kaggle 产物是否完整——
+  四件套（`train_log_*.csv` / `config_*.json` / `*_best.pth` / `stdout.log`）齐全且非空、
+  `status.json` 每个种子字段齐全、CSV 轮数与配置一致、权重能 `torch.load`
+  且 state_dict key 数跨种子一致、元信息里的 seed/tag 对得上、汇总文件已生成。
+  任何一项不过就非零退出。
+
+  为什么要有它：B 批当初下载时用 `--file-pattern '\.(csv|json)$'`，权重被静默排除；
+  权重又不在 git 里——于是"下载成功"和"东西全在"是两件事。现在 A 批、B 批都已复验通过
+  （SRCNN 6 个 key、generator 129 个 key，各种子一致）。
+
 ## [1.8.0] - 2026-11-03
 
 **算力台账**：把每一次内核运行的耗时写进仓库，而不是留在记忆里。
