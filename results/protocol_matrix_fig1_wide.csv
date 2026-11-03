@@ -1,0 +1,17 @@
+task,scale,protocol,label,degrade,metric,sampling,agg,n_images,n_seeds,psnr_mean,psnr_std,psnr_min,psnr_max
+generator_x4,4,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,100,5,44.9575,0.2364,44.5839,45.2077
+generator_x4,4,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,100,5,26.4214,0.0363,26.3672,26.4595
+generator_x4,4,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,100,5,27.6139,0.0348,27.5637,27.6471
+generator_x4,4,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,100,5,27.6024,0.0348,27.5522,27.6356
+generator_x4,4,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,100,5,29.0523,0.0361,29.0014,29.0878
+generator_x4,4,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,100,5,25.1631,0.019,25.141,25.1854
+generator_x4,4,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,100,5,29.0433,0.0359,28.9927,29.0786
+generator_x4,4,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,100,5,27.6006,0.0345,27.551,27.6337
+srcnn_x2,2,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,100,5,46.334,0.5584,45.7223,46.9611
+srcnn_x2,2,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,100,5,30.6859,0.0685,30.5702,30.7399
+srcnn_x2,2,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,100,5,32.163,0.067,32.0626,32.2318
+srcnn_x2,2,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,100,5,32.1623,0.0671,32.0621,32.2311
+srcnn_x2,2,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,100,5,33.829,0.0272,33.7855,33.8581
+srcnn_x2,2,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,100,5,31.1048,0.0938,31.0229,31.2636
+srcnn_x2,2,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,100,5,33.8085,0.0268,33.7653,33.8371
+srcnn_x2,2,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,100,5,32.1415,0.0656,32.0426,32.209

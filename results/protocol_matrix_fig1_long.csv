@@ -1,0 +1,81 @@
+task,scale,dataset,checkpoint,protocol,label,degrade,metric,sampling,agg,psnr,ssim,n_images
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,45.2077,0.9552,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,26.4595,0.7395,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,27.6471,0.7857,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,27.6356,0.7853,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,29.0878,0.8067,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,25.141,0.7425,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,29.0786,0.8063,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s42,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,27.6337,0.7848,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,44.9313,0.9547,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,26.409,0.7377,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,27.6011,0.7843,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,27.5896,0.784,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,29.0368,0.8054,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,25.146,0.742,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,29.0277,0.805,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s43,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,27.5877,0.7834,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,44.9636,0.9548,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,26.4225,0.7382,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,27.6113,0.7846,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,27.5998,0.7842,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,29.05,0.8057,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,25.1679,0.7432,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,29.0409,0.8053,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s44,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,27.598,0.7837,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,45.101,0.9551,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,26.4486,0.7391,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,27.6462,0.7855,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,27.6349,0.7852,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,29.0856,0.8064,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,25.1751,0.743,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,29.0764,0.8061,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s45,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,27.6326,0.7846,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,44.5839,0.9542,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,26.3672,0.7363,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,27.5637,0.7831,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,27.5522,0.7828,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,29.0014,0.8044,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,25.1854,0.7421,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,28.9927,0.8041,100
+generator_x4,4,div2k/val,sr_generator_scale4_best__s46,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,27.551,0.7823,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,45.8568,0.9763,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,30.6826,0.8956,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,32.203,0.9132,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,32.2031,0.9131,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,33.8373,0.9264,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,31.2636,0.8997,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,33.8169,0.9259,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s42,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,32.1809,0.9125,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,46.9611,0.9766,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,30.706,0.895,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,32.1315,0.9124,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,32.1302,0.9124,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,33.8238,0.9264,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,31.1077,0.8978,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,33.8045,0.926,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s43,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,32.1121,0.9118,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,46.2955,0.9762,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,30.7399,0.8964,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,32.2318,0.9139,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,32.2311,0.9138,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,33.8581,0.9269,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,31.0229,0.8971,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,33.8371,0.9264,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s44,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,32.209,0.9132,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,45.7223,0.976,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,30.5702,0.8937,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,32.0626,0.9116,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,32.0621,0.9116,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,33.7855,0.9259,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,31.0588,0.8978,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,33.7653,0.9255,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s45,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,32.0426,0.911,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P1,"random crop, best-of-N",tv_bicubic_aa,rgb,random,best_of_n,46.8344,0.9768,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P2,centre crop (training val),tv_bicubic_aa,rgb,center,per_image,30.731,0.8956,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P3,"full image, RGB",tv_bicubic_aa,rgb,full,per_image,32.1859,0.9134,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P4,"full image, RGB + shave",tv_bicubic_aa,rgb_shave,full,per_image,32.185,0.9134,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P5,"full image, Y + shave",tv_bicubic_aa,y_shave,full,per_image,33.8403,0.9266,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P6,"full image, Y + shave, no antialias",tv_bicubic_noaa,y_shave,full,per_image,31.0709,0.8969,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P7,"full image, Y + shave, PIL bicubic",pil_bicubic,y_shave,full,per_image,33.8187,0.9261,100
+srcnn_x2,2,div2k/val,sr_srcnn_scale2_best__s46,P8,"full image, RGB, PIL bicubic",pil_bicubic,rgb,full,per_image,32.1631,0.9128,100

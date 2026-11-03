@@ -41,6 +41,13 @@ results/*.csv
 # place the project's actual compute cost is written down.
 !results/compute_ledger.csv
 
+# Exception: the stage-5 protocol matrix. 80 per-checkpoint rows (long) plus the
+# 16-row aggregate (wide) that Figure 1 is drawn from -- 5 seeds x 8 protocols x
+# 2 SR tasks, measured on DIV2K val. Tens of kilobytes, and the only place the
+# protocol spread (15.6-19.8 dB) is recorded per checkpoint.
+!results/protocol_matrix_fig1_long.csv
+!results/protocol_matrix_fig1_wide.csv
+
 # Node / Next.js
 node_modules/
 web/.next/
