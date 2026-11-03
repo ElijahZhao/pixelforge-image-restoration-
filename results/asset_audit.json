@@ -1,0 +1,27 @@
+{
+ "audited_at": "2026-11-03 21:30",
+ "method": "逐版本完整下载 → 去重 → 逐文件比 md5（不用 kernels files 的 size 字段，那个不是字节数）",
+ "kernels": 11,
+ "versions": 31,
+ "remote_unique_files": 208,
+ "matched_by_md5": 198,
+ "unmatched": 10,
+ "unmatched_all_resolved": true,
+ "verdict": "Kaggle 上全部可取回的产物，本地已 100% 落盘；无真丢失",
+ "unmatched_breakdown": {
+  "pixelforge-eval-protocol/v1::DIV2K_valid_HR/*.png": "公开数据集原图（ETH DIV2K validation_release），可由 scripts/download_data.sh 重下；已归档 12 张",
+  "pixelforge-eval-protocol/v1::serve/models/sr_generator_scale4.pt": "下载被截断（3145728/5031991）；同一文件在 deploy/ 路径下的完整副本 md5 d15d8353… 与本地一致 → 已确认存在且正确",
+  "pixelforge-eval-protocol/v1::pixelforge-eval-protocol.log": "v1 控制台日志；已归档",
+  "失败运行现场证据（18 项）": "台账第四节引用的失败现场，已归档",
+  "冒烟测速产物（8 项）": "2 轮测速权重与日志，非正式结果，已归档",
+  "A 批控制台日志 + smoke 结果（3 项）": "已归档"
+ },
+ "extra_checks": {
+  "15 个种子权重 torch.load + key 数跨种子一致": "通过（SRCNN 6 / generator 129 / 低光 22）",
+  "6 个部署权重 TorchScript 可加载": "通过（81 / 81 / 22 参数张量）",
+  "磁盘 52 个权重 vs 备份包": "52 = 52，无缺失",
+  "文档相对链接": "无失效",
+  "脚本语法": "全部通过",
+  "测试套件": "69 passed"
+ }
+}
