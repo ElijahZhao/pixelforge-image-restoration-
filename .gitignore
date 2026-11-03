@@ -47,6 +47,7 @@ results/*.csv
 # protocol spread (15.6-19.8 dB) is recorded per checkpoint.
 !results/protocol_matrix_fig1_long.csv
 !results/protocol_matrix_fig1_wide.csv
+!results/model_vs_bicubic_gain.csv
 
 # Node / Next.js
 node_modules/
