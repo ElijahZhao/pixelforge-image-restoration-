@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Protocol matrix: score the same checkpoint under P1..P6 and show the spread.
+"""Protocol matrix: score the same checkpoint under P1..P8 and show the spread.
 
 Why this exists
 ---------------
-The paper's Figure 1 is "the same model, six protocols, six different numbers".
-Building it used to require a Kaggle kernel
-(`archive_private/06-实验脚本与输出/kernel-output-protocol-matrix/run.py`),
-i.e. the number came from code that lived outside the repo. This script is the
-repo-side implementation, so the figure is reproducible from a clean clone:
+The paper's Figure 1 is "the same model, eight protocols, eight different
+numbers". Building it used to require a Kaggle kernel, i.e. the number came
+from code that lived outside the repo. This script is the repo-side
+implementation, so the figure is reproducible from a clean clone:
 
     git clone ... && python scripts/protocol_matrix.py --ckpt_dir models
 
-The six protocols (each one a choice, each one named in the output):
+The eight protocols (each one a choice, each one named in the output):
 
     P1  random crop, best-of-N, RGB, bicubic AA        -- reproduces the OLD behaviour
     P2  centre crop, RGB, bicubic AA                   -- the training-time val metric
@@ -19,26 +18,44 @@ The six protocols (each one a choice, each one named in the output):
     P4  full image, RGB, + border shave                -- literature, colour
     P5  full image, Y channel, + border shave          -- literature, complete
     P6  full image, Y channel, + shave, NO antialias   -- the dimension that flips the sign
+    P7  full image, Y + shave, PIL bicubic             -- operator axis, literature metric
+    P8  full image, RGB, PIL bicubic                   -- operator axis, repo metric
 
-P1 vs P2 vs P3 is *sampling*; P3 vs P4 vs P5 is *metric channel*; P5 vs P6 is
-*degradation operator*. Those three are what the matrix decomposes: variance
-from the protocol versus distance between models. In the pre-fix code P1 could
-report a number 1.6 dB above P2 purely because it selected the best of N random
-crops per image afterwards -- a best-of-N artifact, not a better model.
+P1 vs P2 vs P3 is *sampling*; P3 vs P4 vs P5 is *metric channel*; P5 vs P6 vs
+P7 is *degradation operator*; P7 vs P8 is metric again, on the PIL operator.
+Those are what the matrix decomposes: variance from the protocol versus
+distance between models.
+
+A protocol is a point in (sampling x metric x degrade). Two protocols that
+share all three except `metric` **see the same network output** -- P3/P4/P5
+are one forward pass measured three ways, P7/P8 likewise. The grouped path
+below exploits that: one forward, several metrics. It is not an approximation;
+measuring the same tensor three ways is what the matrix always meant.
+
+Grouping also removes a hidden cost the old loop carried: it opened every
+image once per protocol (100 images x 8 protocols = 800 decodes), because the
+file loop lived inside the protocol loop. Hence `--legacy`, which keeps the
+old path alive *for equivalence testing only*:
+
+    python scripts/protocol_matrix.py --legacy ... > old.json
+    python scripts/protocol_matrix.py ...          > new.json
+    # per-image PSNR/SSIM must match to the last bit
 
 Outputs
 -------
 ``<out>/protocol_matrix.json``   nested: ckpt -> protocol -> metrics
-``<out>/protocol_matrix.csv``    tidy one row per (ckpt, protocol)
+                                 (multi-dataset runs add a ``datasets`` level)
+``<out>/protocol_matrix.csv``    tidy one row per (dataset, ckpt, protocol)
 ``<out>/per_image/<ckpt>__<P>.csv``  per-image PSNR/SSIM, so a reviewer can
                                  recompute any aggregate without trusting ours
 
 Usage
 -----
     python scripts/protocol_matrix.py --ckpt models/sr_generator_scale4_best.pth --scale 4
-    python scripts/protocol_matrix.py --ckpt_dir models/seeds --scale 4 --out results/protocol_matrix
-    python scripts/protocol_matrix.py --ckpt_dir models/seeds --scale 4 --protocols P3,P5,P6
-    python scripts/protocol_matrix.py --ckpt ... --max_images 20        # quick look
+    python scripts/protocol_matrix.py --ckpt_dir models/seeds --scale 4
+    python scripts/protocol_matrix.py --ckpt_list ckpts.txt --datasets div2k/val,set14
+    python scripts/protocol_matrix.py --baseline --datasets div2k/val   # bicubic, no model
+    python scripts/protocol_matrix.py --legacy ...                      # equivalence check
 """
 
 from __future__ import annotations
@@ -67,7 +84,8 @@ _EXTS = (".png", ".jpg", ".jpeg", ".bmp")
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 #: Protocol definitions. `sampling` x `metric` x `degrade` is the whole axis
-#: system; the six named protocols are points in that space, not six code paths.
+#: system; the eight named protocols are points in that space, not eight code
+#: paths.
 PROTOCOLS = {
     "P1": dict(sampling="random", metric="rgb", degrade="tv_bicubic_aa",
                agg="best_of_n", label="random crop, best-of-N"),
@@ -152,51 +170,73 @@ def _crop_boxes(h, w, crop, n, rng):
              crop, crop) for _ in range(n)]
 
 
-@torch.no_grad()
-def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng):
-    """Return per-image (psnr, ssim) for one image under one protocol.
+def _boxes_for(proto, h, w, crop, n_random, rng):
+    if proto["sampling"] == "center":
+        return [((h - min(crop or h, h)) // 2, (w - min(crop or w, w)) // 2,
+                 min(crop or h, h), min(crop or w, w))]
+    if proto["sampling"] == "random":
+        return _crop_boxes(h, w, crop, n_random, rng)
+    return [(0, 0, h, w)]
 
-    For ``best_of_n`` the returned pair is the max over the N windows, which is
-    exactly the old behaviour and exactly why P1 is not comparable to P2.
+
+def _measure(out, hr, proto, border):
+    """PSNR/SSIM of one SR output under one protocol's metric.
+
+    Split out so the grouped path can measure a single forward pass several
+    ways without duplicating the switch.
+    """
+    if proto["metric"] == "rgb":
+        return (float(psnr_per_image(out, hr).mean()),
+                float(ssim_per_image(out, hr).mean()))
+    if proto["metric"] == "rgb_shave":
+        o, h = shave(out, border), shave(hr, border)
+        return (float(psnr_per_image(o, h).mean()),
+                float(ssim_per_image(o, h).mean()))
+    if proto["metric"] == "y":
+        return (float(psnr_y(out, hr, border=0).mean()),
+                float(ssim_y(out, hr, border=0).mean()))
+    if proto["metric"] == "y_shave":
+        return (float(psnr_y(out, hr, border=border).mean()),
+                float(ssim_y(out, hr, border=border).mean()))
+    raise ValueError(proto["metric"])
+
+
+def _forward(model, hr_pil, box, scale, degrade, baseline):
+    """One crop -> one SR output on the HR grid. No metrics, no policy."""
+    top, left, ch, cw = box
+    patch = hr_pil.crop((left, top, left + cw, top + ch))
+    hr = TF.to_tensor(patch).unsqueeze(0).to(DEVICE)
+    lr = build_lr(hr, scale, mode=degrade)
+    if baseline:
+        # The classic baseline: LR (already produced by `degrade`) pushed back
+        # up with plain bicubic. No network, so every protocol still applies.
+        out = torch.nn.functional.interpolate(
+            lr, size=list(hr.shape[-2:]), mode="bicubic", align_corners=False)
+        return out.clamp(0, 1), hr
+    out = model(lr).clamp(0, 1)
+    if out.shape[-2:] != hr.shape[-2:]:
+        # The model's true output is lr*scale; when H/W are not divisible by
+        # the scale, the grid differs by a pixel. Resize back so PSNR is
+        # measured on the HR grid -- an evaluation-time normalisation, not a
+        # second upscale (same convention as scripts/eval_baseline.py).
+        out = TF.resize(out, list(hr.shape[-2:]), antialias=False)
+    return out, hr
+
+
+def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng,
+              baseline=False):
+    """Legacy path: ONE protocol, opening the image per protocol.
+
+    Kept verbatim (modulo the baseline switch) so `--legacy` can prove the
+    grouped path produces bit-identical numbers.
     """
     w, h = hr_pil.size
-    if proto["sampling"] == "center":
-        boxes = [((h - min(crop or h, h)) // 2, (w - min(crop or w, w)) // 2,
-                  min(crop or h, h), min(crop or w, w))]
-    elif proto["sampling"] == "random":
-        boxes = _crop_boxes(h, w, crop, n_random, rng)
-    else:
-        boxes = [(0, 0, h, w)]
-
+    boxes = _boxes_for(proto, h, w, crop, n_random, rng)
     best = None
     vals = []
-    for (top, left, ch, cw) in boxes:
-        patch = hr_pil.crop((left, top, left + cw, top + ch))
-        hr = TF.to_tensor(patch).unsqueeze(0).to(DEVICE)
-        lr = build_lr(hr, scale, mode=proto["degrade"])
-        out = model(lr).clamp(0, 1)
-        if out.shape[-2:] != hr.shape[-2:]:
-            # The model's true output is lr*scale; when H/W are not divisible by
-            # the scale, the grid differs by a pixel. Resize back so PSNR is
-            # measured on the HR grid -- an evaluation-time normalisation, not a
-            # second upscale (same convention as scripts/eval_baseline.py).
-            out = TF.resize(out, list(hr.shape[-2:]), antialias=False)
-
-        if proto["metric"] == "rgb":
-            p = float(psnr_per_image(out, hr).mean())
-            s = float(ssim_per_image(out, hr).mean())
-        elif proto["metric"] == "rgb_shave":
-            p = float(psnr_per_image(shave(out, border), shave(hr, border)).mean())
-            s = float(ssim_per_image(shave(out, border), shave(hr, border)).mean())
-        elif proto["metric"] == "y":
-            p = float(psnr_y(out, hr, border=0).mean())
-            s = float(ssim_y(out, hr, border=0).mean())
-        elif proto["metric"] == "y_shave":
-            p = float(psnr_y(out, hr, border=border).mean())
-            s = float(ssim_y(out, hr, border=border).mean())
-        else:
-            raise ValueError(proto["metric"])
-
+    for box in boxes:
+        out, hr = _forward(model, hr_pil, box, scale, proto["degrade"], baseline)
+        p, s = _measure(out, hr, proto, border)
         vals.append((p, s))
         best = (p, s) if best is None or p > best[0] else best
 
@@ -207,25 +247,196 @@ def score_one(model, hr_pil, proto, scale, border, crop, n_random, rng):
     return vals[0]
 
 
-def run(args):
-    val_dir = os.path.join(args.data_root, "div2k", "val")
-    if args.task == "lowlight":
-        val_dir = os.path.join(args.data_root, "lol", "val", "high")
-    if not os.path.isdir(val_dir):
-        print(f"[!] no validation images at {val_dir}")
-        return 2
-    files = _load_images(val_dir, args.max_images)
-    if not files:
-        print(f"[!] {val_dir} is empty")
-        return 2
+def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
+                baseline=False):
+    """Grouped path: every requested protocol for ONE image.
 
+    Protocols that share (degrade, sampling) share one forward pass -- they
+    differ only in how that tensor is measured. P1 is alone in its group
+    because `best_of_n` needs N draws, and it keeps a dedicated RNG consumed in
+    image order, which is exactly the order the legacy loop used.
+    """
+    w, h = hr_pil.size
+    groups = {}
+    for p in wanted:
+        key = (PROTOCOLS[p]["degrade"], PROTOCOLS[p]["sampling"])
+        groups.setdefault(key, []).append(p)
+
+    out = {}
+    for (degrade, sampling), plist in groups.items():
+        proto0 = PROTOCOLS[plist[0]]
+        boxes = _boxes_for(proto0, h, w, crop, n_random, rng)
+        got = []
+        best = None
+        for box in boxes:
+            o, hr = _forward(model, hr_pil, box, scale, degrade, baseline)
+            per = {p: _measure(o, hr, PROTOCOLS[p], border) for p in plist}
+            got.append(per)
+            if best is None or per[plist[0]][0] > best[plist[0]][0]:
+                best = per
+        for p in plist:
+            agg = PROTOCOLS[p]["agg"]
+            if agg == "best_of_n":
+                out[p] = best[p]
+            elif agg == "mean_of_n":
+                out[p] = (statistics.mean(g[p][0] for g in got),
+                          statistics.mean(g[p][1] for g in got))
+            else:
+                out[p] = got[0][p]
+    return out
+
+
+def _resolve_datasets(args):
+    """Return [(name, dir), ...]; name is what lands in the output."""
+    if args.datasets:
+        out = []
+        for spec in [s.strip() for s in args.datasets.split(",") if s.strip()]:
+            out.append((spec, os.path.join(args.data_root, spec)))
+        return out
+    if args.task == "lowlight":
+        return [("lol/val", os.path.join(args.data_root, "lol", "val", "high"))]
+    return [("div2k/val", os.path.join(args.data_root, "div2k", "val"))]
+
+
+def _collect_ckpts(args):
     ckpts = []
     if args.ckpt:
         ckpts.extend(args.ckpt)
+    if args.ckpt_list:
+        with open(args.ckpt_list) as f:
+            ckpts.extend(ln.strip() for ln in f if ln.strip() and not ln.startswith("#"))
     if args.ckpt_dir:
         ckpts.extend(find_checkpoints(args.ckpt_dir))
-    if not ckpts:
-        print("[!] no checkpoint given (--ckpt or --ckpt_dir)")
+    return ckpts
+
+
+def _ckpt_name(path):
+    """Unique label for a checkpoint.
+
+    A seed matrix stores `sr_generator_scale4_best.pth` under `s42/`, `s43/`,
+    ... -- identical basenames. Keying results by basename alone silently keeps
+    only the last seed (json) or overwrites the per-image CSV, which is exactly
+    the "ran 5 seeds, reported 1" failure the ledger warns about. The seed
+    directory is therefore part of the name.
+    """
+    base = os.path.splitext(os.path.basename(path))[0]
+    parent = os.path.basename(os.path.dirname(os.path.abspath(path)))
+    if len(parent) > 1 and parent[0] == "s" and parent[1:].isdigit():
+        return f"{base}__{parent}"
+    return base
+
+
+def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_prefix):
+    """Run every checkpoint over one dataset. Returns (rec_by_ckpt, rows)."""
+    rec_by_ckpt, rows = {}, []
+    per_img = os.path.join(args.out, "per_image")
+    os.makedirs(per_img, exist_ok=True)
+
+    models = []
+    if args.baseline:
+        models.append(("bicubic", None, {"source": "interpolation"}))
+    for ckpt in ckpts:
+        try:
+            m, meta = load_model(ckpt, args.task, args.scale)
+        except Exception as exc:  # noqa: BLE001
+            print(f"[!] cannot load {ckpt}: {exc}", flush=True)
+            continue
+        models.append((_ckpt_name(ckpt), m, meta))
+
+    for name, model, meta in models:
+        seed = meta.get("seed")
+        tag = f"seed={seed}" if seed else meta.get("source")
+        print(f"\n=== {ds_name} | {name} ({tag}) ===", flush=True)
+        rec = {"path": None if model is None else None, "meta": meta,
+               "protocols": {}, "dataset": ds_name}
+
+        # per protocol: list of per-image values, filled by whichever path runs
+        ps = {p: [] for p in wanted}
+        ss = {p: [] for p in wanted}
+        per_sec = {p: 0.0 for p in wanted}
+        t_ds = time.time()
+
+        if args.legacy:
+            for p in wanted:
+                rng = np.random.default_rng(args.seed)
+                t0 = time.time()
+                for f in files:
+                    hr = Image.open(f).convert("RGB")
+                    pv, sv = score_one(model, hr, PROTOCOLS[p], args.scale, border,
+                                       args.crop, args.n_random, rng, args.baseline)
+                    ps[p].append(pv)
+                    ss[p].append(sv)
+                per_sec[p] = time.time() - t0
+        else:
+            # One RNG for the whole dataset, consumed in image order: P1's
+            # window draws then match the legacy per-protocol loop exactly.
+            rng = np.random.default_rng(args.seed)
+            t0 = time.time()
+            for f in files:
+                hr = Image.open(f).convert("RGB")
+                got = score_image(model, hr, wanted, args.scale, border,
+                                  args.crop, args.n_random, rng, args.baseline)
+                for p in wanted:
+                    ps[p].append(got[p][0])
+                    ss[p].append(got[p][1])
+            # Cost is shared by the group, so it is reported per group and
+            # written to every protocol in it; `sec` is diagnostic, never an
+            # anchor.
+            shared = time.time() - t0
+            for p in wanted:
+                per_sec[p] = shared / max(1, len(set(
+                    (PROTOCOLS[q]["degrade"], PROTOCOLS[q]["sampling"]) for q in wanted)))
+
+        for p in wanted:
+            proto = PROTOCOLS[p]
+            rec["protocols"][p] = {
+                "label": proto["label"], "degrade": proto["degrade"],
+                "metric": proto["metric"], "sampling": proto["sampling"],
+                "agg": proto["agg"],
+                "psnr_mean": round(statistics.mean(ps[p]), 4),
+                "psnr_std": round(statistics.stdev(ps[p]), 4) if len(ps[p]) > 1 else None,
+                "ssim_mean": round(statistics.mean(ss[p]), 4),
+                "n_images": len(ps[p]), "sec": round(per_sec[p], 1),
+            }
+            fn = f"{name}__{p}.csv" if not tag_prefix else f"{tag_prefix}__{name}__{p}.csv"
+            with open(os.path.join(per_img, fn), "w", newline="") as fh:
+                w = csv.writer(fh)
+                w.writerow(["image", "psnr", "ssim"])
+                for fpath, pv, sv in zip(files, ps[p], ss[p]):
+                    w.writerow([os.path.basename(fpath), f"{pv:.6f}", f"{sv:.6f}"])
+            r = rec["protocols"][p]
+            print(f"  {p} {r['psnr_mean']:7.3f} dB / {r['ssim_mean']:.4f}  "
+                  f"[{proto['label']}] ({r['sec']}s)", flush=True)
+            rows.append({"dataset": ds_name, "checkpoint": name, "protocol": p,
+                         "label": proto["label"], "degrade": proto["degrade"],
+                         "metric": proto["metric"], "sampling": proto["sampling"],
+                         "agg": proto["agg"], "psnr_mean": r["psnr_mean"],
+                         "psnr_std": r["psnr_std"], "ssim_mean": r["ssim_mean"],
+                         "n_images": r["n_images"]})
+        print(f"  [{ds_name} | {name}] {time.time() - t_ds:.1f}s total", flush=True)
+        rec_by_ckpt[name] = rec
+    return rec_by_ckpt, rows
+
+
+def run(args):
+    datasets = _resolve_datasets(args)
+    usable = []
+    for name, d in datasets:
+        if not os.path.isdir(d):
+            print(f"[!] no images at {d} (dataset {name}) -- skipped", flush=True)
+            continue
+        files = _load_images(d, args.max_images)
+        if not files:
+            print(f"[!] {d} is empty -- skipped", flush=True)
+            continue
+        usable.append((name, d, files))
+    if not usable:
+        print("[!] no usable dataset")
+        return 2
+
+    ckpts = _collect_ckpts(args)
+    if not ckpts and not args.baseline:
+        print("[!] no checkpoint given (--ckpt / --ckpt_list / --ckpt_dir)")
         return 2
 
     wanted = [p.strip().upper() for p in args.protocols.split(",") if p.strip()]
@@ -235,88 +446,55 @@ def run(args):
             return 2
 
     border = args.shave if args.shave is not None else args.scale
-    print(f"[i] {len(files)} images from {val_dir} | device={DEVICE} | "
+    print(f"[i] datasets={[u[0] for u in usable]} | device={DEVICE} | "
           f"scale=x{args.scale} | shave={border} | crop={args.crop} | "
-          f"n_random={args.n_random}")
-    print(f"[i] 退化算子会被逐个协议记录; 训练侧用的是 {describe('tv_bicubic_aa')}")
+          f"n_random={args.n_random} | grouped={not args.legacy} | "
+          f"baseline={args.baseline}", flush=True)
+    print(f"[i] 退化算子会被逐个协议记录; 训练侧用的是 {describe('tv_bicubic_aa')}",
+          flush=True)
 
     os.makedirs(args.out, exist_ok=True)
-    per_image_dir = os.path.join(args.out, "per_image")
-    os.makedirs(per_image_dir, exist_ok=True)
-
+    multi = len(usable) > 1
     result = {"protocols": {p: PROTOCOLS[p] for p in wanted},
               "config": {"scale": args.scale, "shave": border, "crop": args.crop,
-                         "n_random": args.n_random, "n_images": len(files),
-                         "device": DEVICE, "data": val_dir},
-              "checkpoints": {}}
-    rows = []
+                         "n_random": args.n_random, "device": DEVICE,
+                         "grouped": not args.legacy, "baseline": args.baseline},
+              "checkpoints": {}, "datasets": {}}
+    all_rows = []
 
-    for ckpt in ckpts:
-        name = os.path.splitext(os.path.basename(ckpt))[0]
-        try:
-            model, meta = load_model(ckpt, args.task, args.scale)
-        except Exception as exc:  # noqa: BLE001
-            print(f"[!] cannot load {ckpt}: {exc}")
-            continue
-        tag = f"seed={meta.get('seed')}" if meta.get("seed") else meta.get("source")
-        print(f"\n=== {name} ({tag}) ===")
-        rec = {"path": ckpt, "meta": meta, "protocols": {}}
-
-        for p in wanted:
-            proto = PROTOCOLS[p]
-            # A fresh RNG per (checkpoint, protocol) so P1's window draws do not
-            # depend on how many protocols ran before it -- otherwise the matrix
-            # would not be reproducible from a subset of protocols.
-            rng = np.random.default_rng(args.seed)
-            t0 = time.time()
-            ps, ss = [], []
-            for f in files:
-                hr = Image.open(f).convert("RGB")
-                pv, sv = score_one(model, hr, proto, args.scale, border,
-                                   args.crop, args.n_random, rng)
-                ps.append(pv)
-                ss.append(sv)
-            rec["protocols"][p] = {
-                "label": proto["label"], "degrade": proto["degrade"],
-                "metric": proto["metric"], "sampling": proto["sampling"],
-                "agg": proto["agg"],
-                "psnr_mean": round(statistics.mean(ps), 4),
-                "psnr_std": round(statistics.stdev(ps), 4) if len(ps) > 1 else None,
-                "ssim_mean": round(statistics.mean(ss), 4),
-                "n_images": len(ps), "sec": round(time.time() - t0, 1),
-            }
-            with open(os.path.join(per_image_dir, f"{name}__{p}.csv"), "w",
-                      newline="") as fh:
-                w = csv.writer(fh)
-                w.writerow(["image", "psnr", "ssim"])
-                for fpath, pv, sv in zip(files, ps, ss):
-                    w.writerow([os.path.basename(fpath), f"{pv:.6f}", f"{sv:.6f}"])
-            r = rec["protocols"][p]
-            print(f"  {p} {r['psnr_mean']:7.3f} dB / {r['ssim_mean']:.4f}  "
-                  f"[{proto['label']}] ({r['sec']}s)")
-            rows.append({"checkpoint": name, "protocol": p, "label": proto["label"],
-                         "degrade": proto["degrade"], "metric": proto["metric"],
-                         "sampling": proto["sampling"], "agg": proto["agg"],
-                         "psnr_mean": r["psnr_mean"], "psnr_std": r["psnr_std"],
-                         "ssim_mean": r["ssim_mean"], "n_images": r["n_images"]})
-        result["checkpoints"][name] = rec
+    for ds_name, ds_dir, files in usable:
+        tag_prefix = ds_name.replace("/", "-") if multi else ""
+        recs, rows = _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border,
+                                    files, tag_prefix)
+        all_rows.extend(rows)
+        if multi:
+            result["datasets"][ds_name] = {"dir": ds_dir, "n_images": len(files),
+                                           "checkpoints": recs}
+        else:
+            # Single-dataset shape stays exactly as before, so anchor
+            # comparisons against the v3 artefact need no adapter.
+            result["checkpoints"] = recs
+            result["config"]["data"] = ds_dir
+            result["config"]["n_images"] = len(files)
 
     with open(os.path.join(args.out, "protocol_matrix.json"), "w") as f:
         json.dump(result, f, indent=2, ensure_ascii=False)
-    if rows:
+    if all_rows:
         with open(os.path.join(args.out, "protocol_matrix.csv"), "w", newline="") as f:
-            w = csv.DictWriter(f, fieldnames=list(rows[0]))
+            w = csv.DictWriter(f, fieldnames=list(all_rows[0]))
             w.writeheader()
-            w.writerows(rows)
+            w.writerows(all_rows)
 
-    # The spread is the result: if P1..P6 vary more than the models do, the
+    # The spread is the result: if protocols vary more than the models do, the
     # paper's claim is about protocols and must be phrased that way.
     print("\n=== spread across protocols (same checkpoint) ===")
-    for name, rec in result["checkpoints"].items():
-        vals = [v["psnr_mean"] for v in rec["protocols"].values()]
-        if len(vals) > 1:
-            print(f"  {name}: {min(vals):.3f} .. {max(vals):.3f} dB "
-                  f"(spread {max(vals) - min(vals):.3f} dB)")
+    for ds, blk in (result["datasets"].items() if multi
+                    else [(None, {"checkpoints": result["checkpoints"]})]):
+        for name, rec in blk["checkpoints"].items():
+            vals = [v["psnr_mean"] for v in rec["protocols"].values()]
+            if len(vals) > 1:
+                print(f"  {(ds + ' | ') if ds else ''}{name}: {min(vals):.3f} .. "
+                      f"{max(vals):.3f} dB (spread {max(vals) - min(vals):.3f} dB)")
     print(f"\n[i] wrote {args.out}/protocol_matrix.{{json,csv}} and per_image/*.csv")
     return 0
 
@@ -325,10 +503,15 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ckpt", action="append", help="checkpoint path (repeatable)")
+    ap.add_argument("--ckpt_list", default="",
+                    help="file with one checkpoint path per line (# comments ok)")
     ap.add_argument("--ckpt_dir", default="", help="directory of checkpoints (recursive)")
     ap.add_argument("--task", choices=["sr", "lowlight"], default="sr")
     ap.add_argument("--scale", type=int, default=4, choices=[1, 2, 4])
     ap.add_argument("--data_root", default="data")
+    ap.add_argument("--datasets", default="",
+                    help="comma list of dirs under --data_root, e.g. div2k/val,set14; "
+                         "empty = derive from --task")
     ap.add_argument("--protocols", default=",".join(PROTOCOLS),
                     help=f"comma list from {sorted(PROTOCOLS)}")
     ap.add_argument("--crop", type=int, default=96,
@@ -340,6 +523,11 @@ def main(argv=None):
                     help="border pixels for shave protocols (default = scale)")
     ap.add_argument("--max_images", type=int, default=0, help="0 = all")
     ap.add_argument("--seed", type=int, default=42)
+    ap.add_argument("--baseline", action="store_true",
+                    help="skip the network, report bicubic-upsampled LR instead; "
+                         "gives Figure 1 the reference line it needs")
+    ap.add_argument("--legacy", action="store_true",
+                    help="old per-protocol loop, for bit-exact equivalence tests only")
     ap.add_argument("--out", default="results/protocol_matrix")
     a = ap.parse_args(argv)
     return run(a)
