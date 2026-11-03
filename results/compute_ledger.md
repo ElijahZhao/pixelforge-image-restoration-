@@ -25,18 +25,18 @@ Kaggle 的周配额只扣 GPU 会话。**对账内核（`protocol-repo`）刻意
 | # | 起 | 内核 · 版本 | 时长 | 硬件 | 在干什么 | 结局 |
 |---|---|---|---|---|---|---|
 | 1 | 11-01 20:11 | `smoke` v1 | 18 s | T4 | 环境自检：torch / CUDA / 磁盘 / 内存 | ✅ 通过 |
-| 2 | 11-01 20:15 | `smoke` v2 | 24 s | T4 | 环境自检（补齐 GPU 型号与显存） | ✅ 通过 |
-| 3 | 11-01 20:30 | `smoke2` v1 | 6 s | T4 | 挂载探测：找 `/kaggle/input` 固件 | ❌ 输入目录未挂载 |
+| 2 | 11-01 20:15 | `smoke` v2 | 24 s | T4 | 环境自检（补 GPU 型号与显存） | ✅ 通过 |
+| 3 | 11-01 20:30 | `smoke2` v1 | 6 s | T4 | 挂载探测：在 `/kaggle/input` 找固件 | ❌ 输入目录未挂载 |
 | 4 | 11-01 20:30 | `smoke2` v2 | 30 s | T4 | 挂载探测：确认 working 目录可写 | ✅ 通过 |
 | 5 | 11-01 21:48 | `io-probe` v1 | 18 s | T4 | IO 探测：写盘位置 / 软链 / 缓存复用 | ✅ 通过 |
-| 6 | 11-01 21:55 | `eval-protocol` v1 | 6.6 min | T4 | 首次对外评估 SR×2 / SR×4，100 张 DIV2K val | ⚠️ 拿到 27.47 / 32.35，随后低光分支崩溃 |
-| 7 | 11-01 22:08 | `eval-protocol` v2 | 7.2 min | T4 | 重跑评估，补齐 cross-check | ❌ LOL val 路径不存在 |
+| 6 | 11-01 21:55 | `eval-protocol` v1 | 6.6 min | T4 | 首次对外评估：SR×2 / SR×4，100 张 DIV2K val | ⚠️ 拿到 27.47 / 32.35，随后低光分支崩溃 |
+| 7 | 11-01 22:08 | `eval-protocol` v2 | 7.2 min | T4 | 重跑评估，补 cross-check | ❌ LOL val 路径不存在 |
 | 8 | 11-01 22:31 | `eval-protocol` v3 | 1.1 min | T4 | 重跑评估：改从 HF parquet 取 LOL | ❌ `train/datasets.py` 遮蔽了 HF `datasets` |
 | 9 | 11-01 22:34 | `eval-protocol` v4 | 6.9 min | T4 | 最终评估：三任务 + 逐图明细 | ✅ 5 个产物，此后所有表格引用它 |
 | 10 | 11-02 09:24 | `protocol-y` v1 | 5.5 min | T4 | Y 通道 + shave 口径复评，6 个口径一次跑完 | ✅ P5 锚点来源 |
 | 11 | 11-02 10:27 | `perceptual-ablation` v1 | 3.0 min | T4 | 感知消融：软链已存在，启动即挂 | ❌ FileExistsError |
 | 12 | 11-02 10:32 | `perceptual-ablation` v2 | **3.73 h** | T4 | 感知消融：VGG 感知开 / 关各训一次 + 评估 | ✅ 权重与日志齐全 |
-| 13 | 11-02 17:40 | `protocol-matrix` v1 | 41.1 min | T4 | 协议矩阵首跑：两版权重 × 多协议 | ⚠️ 第二版权重缺失，只跑了一组 |
+| 13 | 11-02 17:40 | `protocol-matrix` v1 | 41.1 min | T4 | 协议矩阵首跑：两版权重 × 多协议 | ⚠️ 第二版权重找不到，只跑了一组 |
 | 14 | 11-02 18:26 | `protocol-matrix` v2 | 54 s | T4 | 协议矩阵：改权重查找路径 | ❌ 仍找不到第二版权重 |
 | 15 | 11-02 18:38 | `protocol-matrix` v3 | 48 s | T4 | 协议矩阵：改用 base64 内嵌权重 | ❌ 内嵌模块没生成 |
 | 16 | 11-02 19:09 | `protocol-matrix` v4 | 48 s | T4 | 协议矩阵：核对内嵌权重体积 | ❌ 仍失败 |
