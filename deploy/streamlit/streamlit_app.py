@@ -86,6 +86,34 @@ TEXTS = {
             "Code &amp; preprint: "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
+        "about_title": "ℹ️ About this project",
+        "about_body": (
+            "PixelForge is a from-scratch image-restoration toolkit: it trains "
+            "small neural networks to upscale photos (×2, ×4) and brighten "
+            "dark ones, then ships them as the one-click web tool you just "
+            "used.<br><br>"
+            "<b>Why the paper matters (the key idea):</b> how we <i>evaluate</i> "
+            "a restoration model decides who \"wins\". We show the same model "
+            "can look like a clear winner or a loser depending only on the "
+            "evaluation protocol (crop size, colour space, how the low-res "
+            "input is built). Takeaway: report the protocol, or the number "
+            "means nothing.<br><br>"
+            "<b>What we did:</b><br>"
+            "• Trained every model from scratch (no pretrained weights) and "
+            "verified the results hold across 5 random seeds — seed-to-seed "
+            "variation is well under 0.1 dB, far smaller than the swings "
+            "caused by changing the evaluation protocol.<br>"
+            "• Ran a matrix of evaluation protocols to expose how measurement "
+            "choices move the verdict.<br>"
+            "• Fully reproducible: training logs, per-image CSVs, and code are "
+            "public.<br><br>"
+            "<b>Significance:</b> a small, honest benchmark showing that for "
+            "lightweight restoration, the evaluation protocol — not just the "
+            "model — is the result.<br><br>"
+            "Paper: submitted to Preprints.org (independent researcher). "
+            "Code &amp; preprint: "
+            "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
+        ),
         "upload_label": "Upload an image",
         "resized_note": "Image is {w}×{h} — larger than the {limit_mpx:.1f} Mpx memory budget on Streamlit Community Cloud's free tier (~1 GB RAM). Auto-downscaled to {nw}×{nh} before inference to keep the app from being OOM-killed.",
         "bomb_error": "🚫 This image is too large to process safely on the free tier (~1 GB RAM) and was rejected to avoid crashing the app. Please upload an image under ~50 Mpx (e.g. downscale it first).",
@@ -180,6 +208,25 @@ TEXTS = {
             "📄 **论文**<br>"
             "《评测协议即结论：评估选择如何翻转轻量图像复原的胜负判定》<br>"
             "已投稿 Preprints.org（独立研究者）。代码与预印本见 "
+            "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
+        ),
+        "about_title": "ℹ️ 关于本项目",
+        "about_body": (
+            "PixelForge 是一个从零自研的图像复原工具集：它训练轻量神经网络 "
+            "来放大照片（×2、×4）并提亮暗光照片，再包装成你刚才用的「一键修复」"
+            "网页工具。<br><br>"
+            "<b>为什么这篇论文重要（核心观点）：</b>怎么<i>评测</i>一个复原模型，"
+            "决定了谁「赢」。我们证明：同一个模型，仅仅因为评测协议不同"
+            "（裁剪尺寸、色彩空间、低分辨率输入怎么生成），既可以被判为明显胜出，"
+            "也可以被判为落败。结论：不写清协议，数字就没有意义。<br><br>"
+            "<b>我们具体做了什么：</b><br>"
+            "• 每个模型都从零训练（无预训练权重），并用 5 个随机种子验证结论稳健"
+            "——种子间差异远小于 0.1 dB，比「换一套评测协议」带来的波动小得多。<br>"
+            "• 跑了由多套评测协议组成的矩阵，揭示「测量选择」如何左右胜负判定。<br>"
+            "• 全程可复现：训练日志、逐图 CSV、代码全部公开。<br><br>"
+            "<b>意义：</b>一个小而诚实的基准——说明在轻量图像复原里，"
+            "「评测协议」本身往往就是「结论」。<br><br>"
+            "论文：已投稿 Preprints.org（独立研究者）。代码与预印本见 "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "upload_label": "上传图片",
@@ -816,6 +863,8 @@ with st.sidebar:
     st.caption(T["trained_caption"], unsafe_allow_html=True)
     st.divider()
     st.markdown(T["paper_block"], unsafe_allow_html=True)
+    with st.expander(T["about_title"], expanded=False):
+        st.markdown(T["about_body"], unsafe_allow_html=True)
 
 st.markdown(f'<p class="pf-section-title">{T["sec_upload"]}</p>',
             unsafe_allow_html=True)
