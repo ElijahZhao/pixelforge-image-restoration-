@@ -78,6 +78,14 @@ TEXTS = {
             "· SR×2 — **32.35**<br>"
             "· Low-light — **18.32**"
         ),
+        "paper_block": (
+            "📄 **Paper**<br>"
+            "“The Protocol Is the Result: How Evaluation Choices Flip the "
+            "Verdict on Lightweight Image Restoration”<br>"
+            "Submitted to Preprints.org (independent researcher). "
+            "Code &amp; preprint: "
+            "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
+        ),
         "upload_label": "Upload an image",
         "resized_note": "Image is {w}×{h} — larger than the {limit_mpx:.1f} Mpx memory budget on Streamlit Community Cloud's free tier (~1 GB RAM). Auto-downscaled to {nw}×{nh} before inference to keep the app from being OOM-killed.",
         "bomb_error": "🚫 This image is too large to process safely on the free tier (~1 GB RAM) and was rejected to avoid crashing the app. Please upload an image under ~50 Mpx (e.g. downscale it first).",
@@ -167,6 +175,12 @@ TEXTS = {
             "· SR×4 — **27.47**<br>"
             "· SR×2 — **32.35**<br>"
             "· 低光 — **18.32**"
+        ),
+        "paper_block": (
+            "📄 **论文**<br>"
+            "《评测协议即结论：评估选择如何翻转轻量图像复原的胜负判定》<br>"
+            "已投稿 Preprints.org（独立研究者）。代码与预印本见 "
+            "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "upload_label": "上传图片",
         "resized_note": "图片为 {w}×{h}，超过 Streamlit Community Cloud 免费档（约 1GB 内存）的 {limit_mpx:.1f} Mpx 内存预算；已在推理前自动等比缩小到 {nw}×{nh}，避免应用被 OOM 杀掉（表现为反复崩溃 / \"Oh no.\" 空白页）。",
@@ -800,6 +814,8 @@ with st.sidebar:
     st.radio(T["scale_label"], ["2", "4"], index=1, help=T["scale_help"], key="scale")
     st.divider()
     st.caption(T["trained_caption"], unsafe_allow_html=True)
+    st.divider()
+    st.markdown(T["paper_block"], unsafe_allow_html=True)
 
 st.markdown(f'<p class="pf-section-title">{T["sec_upload"]}</p>',
             unsafe_allow_html=True)

@@ -5,6 +5,16 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.11.1] - 2026-11-04
+
+**README 数据校正 + Streamlit 在线 Demo 增补论文入口**。
+
+### Fixed
+- `README.zh-CN.md` 的 SR×4 观感段落仍残留被撤回的旧结论（"更柔/更灰，1.39 vs 1.45"）。已与英文版同步为已更正表述：模型**并不更柔**，梯度均值 **1.92 vs 1.45**，反而更锐；早期相反说法两半均错。
+
+### Added
+- Streamlit 在线 Demo 侧边栏新增「📄 论文」区块（中英双语）：注明论文标题、已投稿 Preprints.org（独立研究者），并链接 GitHub 仓库（含 `preprint/` 预印本目录）。推送后 Streamlit Cloud 自动重新部署。
+
 ## [1.11.0] - 2026-11-04
 
 **作者改为独立研究者 + 论文提交 Preprints.org + 仓库整理收尾**。
