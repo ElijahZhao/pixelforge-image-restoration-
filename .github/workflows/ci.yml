@@ -112,6 +112,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.lock.txt
 
+      # The manuscript is compiled for real, so the job needs a LaTeX
+      # toolchain. texlive-latex-recommended plus texlive-latex-extra
+      # covers booktabs, multirow, microtype and the rest of the preamble.
+      - name: Install the LaTeX toolchain
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq --no-install-recommends \
+            texlive-latex-base texlive-latex-recommended texlive-latex-extra \
+            texlive-fonts-recommended
+
       # The paper's tables are generated from the result CSVs and checked
       # against FACTS.md. If a number in the source data changes without the
       # table being regenerated, this job fails -- which is the point: a
@@ -138,3 +148,33 @@ jobs:
         run: |
           python3.11 scripts/build_public_release.py --check
           python3.11 scripts/verify_public_release.py
+
+      # The manuscript is checked the same way: it must compile, and every
+      # number in its prose must be traceable to FACTS.md or to the
+      # generated tables. A number nobody can source is a number nobody can
+      # check.
+      - name: Build the manuscript
+        run: |
+          cd paper
+          pdflatex -interaction=nonstopmode main.tex
+          bibtex main
+          pdflatex -interaction=nonstopmode main.tex
+          pdflatex -interaction=nonstopmode main.tex
+          # A LaTeX error must fail the job, and so must an unresolved
+          # reference or a box that runs past the margin.
+          ! grep -qE "^! " main.log
+          ! grep -qi "undefined" main.log
+          ! grep -q "Overfull" main.log
+
+      - name: Check the manuscript's numbers against FACTS.md
+        run: python3.11 scripts/check_manuscript_numbers.py
+
+      - name: Check the manuscript's prose against the generated tables
+        run: python3.11 scripts/check_prose_against_tables.py
+
+      # The submission archive must be self-sufficient: the platform asks
+      # for "all files necessary, including the .bib file, to recreate the
+      # PDF". The script proves it by unpacking the archive and compiling
+      # it in isolation, with no access to the rest of the repository.
+      - name: Build and verify the submission archive
+        run: python3.11 scripts/make_submission_package.py

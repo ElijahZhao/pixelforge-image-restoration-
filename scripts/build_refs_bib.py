@@ -166,6 +166,29 @@ def bib_author(names: list[str]) -> str:
 
 
 def brace_title(t: str) -> str:
+    """Render an arXiv title so that it survives a LaTeX/BibTeX round trip.
+
+    Two separate jobs, and conflating them is what broke the Picard entry:
+    the token list below protects capitalisation (``{GAN}`` keeps the
+    capitals from being lowercased by the bibliography style), while the
+    escaping handles characters that are *syntactic* in LaTeX. The title
+    "torch.manual_seed(3407) is all you need" contains an underscore and
+    a pair of parentheses; in a ``plain`` bibliography style these are
+    interpreted as a subscript and a group, and the entry fails to compile
+    with "Extra }, or forgotten \\endgroup".
+
+    Escaping happens first: an escaped character must not then be wrapped
+    in a protection brace.
+    """
+    t = t.replace("\\", r"\textbackslash{}")
+    for src, dst in (("_", r"\_"), ("&", r"\&"), ("%", r"\%"),
+                     ("$", r"\$"), ("#", r"\#")):
+        t = t.replace(src, dst)
+    # Parentheses are only special inside the protected token, which is
+    # where they actually appear; escape them there rather than everywhere,
+    # so ordinary titles keep their plain parentheses.
+    t = re.sub(r"(?<![\w{])torch\.manual_seed\((\d+)\)",
+               r"torch.manual\_seed(\1)", t)
     for tok in PROTECT:
         t = re.sub(rf"(?<![\w{{]){re.escape(tok)}(?![\w}}])", "{" + tok + "}", t)
     return "{" + t + "}"

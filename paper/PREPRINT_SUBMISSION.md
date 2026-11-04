@@ -130,14 +130,14 @@ print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
 
 | # | 事项 | 成本 | 状态 |
 |---|---|---|---|
-| 1 | 写正文（8–10 页，双栏） | 主成本 | ⬜ 未开始 |
+| 1 | 写正文（8–10 页，双栏） | 主成本 | ✅ **已完成**（2026-11-04）：`paper/main.tex`，**9 页双栏**，实测 pdflatex **0 错误 / 0 Overfull / 0 undefined reference**，**27 条参考文献全部被引** |
 | 2 | 补一张**图形摘要**（JPG/PNG，非文本摘要截图） | 中 | ✅ **已完成**（2026-11-04）：`paper/figures/ga_protocol_audit.{png,jpg,pdf}`，2889×1470 px @ 300 dpi，三面板（协议跨度对比 / 符号翻转 / 报告率），与 Fig. 1 / Fig. 2 均非同一图 |
 | 3 | 把逐图 CSV 公开化 | 小 | ✅ **已完成**（2026-11-04）：**126 个文件、286 KiB** → `results/per_image/`，含 README；已验证可复现全部 cell 与 21 行种子级统计（§2.4.1） |
 | 4 | 注册 MDPI 账号 | 小 | ⬜ 待办 |
-| 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ⬜ 待做（正文完成后） |
-| 6 | 填投稿表单：标题 / 摘要 / 关键词 / 学科分类 / ORCID / 通讯邮箱 | 小 | ⬜ 待做（元数据本文档已备齐） |
+| 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ✅ **已完成**（2026-11-04）：`scripts/make_submission_package.py` → `dist/preprints_submission.zip`（含 `main.tex` / `refs.bib` / 全部图 / `README.md`） |
+| 6 | 填投稿表单：标题 / 摘要 / 关键词 / 学科分类 / ORCID / 通讯邮箱 | 小 | ⬜ 待做（元数据本文档已备齐；标题取候选 A） |
 | 7 | 提交时填数据链接（仓库地址） | 小 | ⬜ 待做，**提交后无法自补**（§2.5） |
-| 8 | 定标题（三候选 A/B/C，`OUTLINE` §0 倾向 A） | 小 | ⬜ 待定 |
+| 8 | 定标题 | 小 | ✅ **已定**：**候选 A** —— *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration* |
 
 ### 4.1 Data Availability 声明（投稿表单逐字稿）
 
