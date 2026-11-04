@@ -211,7 +211,7 @@
 
 | # | 缺口 | 阻塞什么 | 成本 | 状态 |
 |---|---|---|---|---|
-| ~~1~~ | ~~作者署名、单位、通讯邮箱~~ | ~~一切对外动作~~ | 0 | ✅ **已提供**（2026-11-04）：**Yulin Zhao**（又名 Elijah Zhao），ORCID `0009-0005-4623-8465`，邮箱 `20233407131@stu.huel.edu.cn`，机构 **Henan University of Economics and Law**（郑州），学院不填。`CITATION.cff` 已写入并过 CFF 1.2.0 校验器；投稿元数据见 `paper/PREPRINT_SUBMISSION.md` |
+| ~~1~~ | ~~作者署名、单位、通讯邮箱~~ | ~~一切对外动作~~ | 0 | ✅ **已提供**：**Yulin Zhao**（又名 Elijah Zhao），ORCID `0009-0005-4623-8465`，邮箱 `20233407131@stu.huel.edu.cn`，**Independent Researcher（独立研究者，无机构归属）**。`CITATION.cff` 已写入并过 CFF 1.2.0 校验器；投稿元数据见 `paper/PREPRINT_SUBMISSION.md` |
 | ~~2~~ | ~~`refs.bib`~~ | — | **已生成 `paper/refs.bib`：27 条**（20 inproceedings + 4 misc + 3 article），由 `scripts/build_refs_bib.py` 从 arXiv API 抓取并**逐条校验标题**，手改无效 | ✅ **2026-11-04 完成** |
 | **3** | Table 1（七篇对比） | §2 | 从查新报告改写；7 篇出处已核 | ⬜ **出处已清** |
 | ~~4~~ | ~~§2.3 的 ML 评测谱系五篇~~ | — | **五篇摘要已读**（2026-11-04）：用途改了两条（Dodge 是"报预算"不是"报分布"、Bouthillier 要写"训练方差 vs 评测方差"的分界），Musgrave 的"归零"改为"marginal at best"。`OUTLINE` 已补 §2.3 | ✅ **完成**，见 `FACTS` §10-E51 |

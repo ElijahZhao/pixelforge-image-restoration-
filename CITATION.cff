@@ -12,10 +12,9 @@ authors:
     alias: "Elijah Zhao"
     orcid: "https://orcid.org/0009-0005-4623-8465"
     email: "20233407131@stu.huel.edu.cn"
-    affiliation: "Henan University of Economics and Law, Zhengzhou, China"
+    affiliation: "Independent Researcher"
     # 姓名以 ORCID 记录为准（Yulin Zhao），Elijah Zhao 为别名；
-    # 机构英文名取自学校章程（"Henan University of Economics and Law"，缩写 HUEL），
-    # 注意 ORCID 记录里的 "Economic and Law" 少一个 s，是 ORCID 上的笔误，不要沿用。
+    # 作者为独立研究者，无机构归属。
 license: MIT
 repository-code: "https://github.com/ElijahZhao/pixelforge-image-restoration-"
 url: "https://pixelforge-image-restoration.streamlit.app/"

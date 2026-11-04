@@ -12,12 +12,12 @@
 | 姓名 | **Yulin Zhao** | ORCID 记录的姓名（given-names = Yulin, family-names = Zhao） |
 | 别名 | Elijah Zhao（"also known as"） | ORCID 记录的 "Also known as" 条目；SciProfiles 页显示为 "Mr. Elijah Zhao" |
 | ORCID | `https://orcid.org/0009-0005-4623-8465` | 实查：该 ORCID 页面上方即显示此姓名与别名 |
-| 通讯邮箱 | `20233407131@stu.huel.edu.cn` | 官方 Instructions 明写"应尽可能使用机构邮箱"；该邮箱是学生邮箱（`stu.huel.edu.cn`），而 ORCID 记录的 **verified email domain 正是 `huel.edu.cn`**——机构归属闭环 |
-| 机构 | **Henan University of Economics and Law**（河南财经政法大学，缩写 HUEL），中国郑州 | 学校章程第一条明文："英文名称为 'Henan University of Economics and Law'，英文缩写 'HUEL'" |
-| 学院 | **不填** | 用户决定（2026-11-04）。Preprints.org 要求 affiliations，但学校层面已满足 |
+| 通讯邮箱 | `20233407131@stu.huel.edu.cn` | 作者联系方式（独立研究者，无机构邮箱；该邮箱仅作通讯用途） |
+| 机构 | **Independent Researcher**（独立研究者，无机构归属） | 用户 2026-11-04 明确：作者为独立研究者，不挂靠任何学校 / 学院 |
+| 学院 | **不填** | 独立研究者无学院 |
 | 稿件类型 | **Article** | 官方列出的适合类型；本文是原创研究，非 review / conference paper |
 
-⚠️ **一个必须避开的坑**：ORCID 记录里机构写成 **"Henan University of Economic and Law"**（少一个 s）。那是 ORCID 上的笔误，**与学校章程不符**。投稿一律用章程里的 **Economics and Law**。已同步写入 `CITATION.cff` 的注释。
+⚠️ **备注**：ORCID 记录里机构曾写成 **"Henan University of Economic and Law"**（少一个 s），是 ORCID 上的笔误；因作者现为独立研究者、不再挂靠该校，投稿与仓库元数据均不再使用任何学校 / 学院名称，统一填 **Independent Researcher**。
 
 ### 1.1 已写入仓库的位置
 

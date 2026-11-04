@@ -46,8 +46,8 @@
 | Manuscript type | **Article** |
 | Author | **Yulin Zhao**（别名 Elijah Zhao） |
 | ORCID | `0009-0005-4623-8465` |
-| Corresponding author email | `20233407131@stu.huel.edu.cn`（机构邮箱，`huel.edu.cn`） |
-| Affiliation | **Henan University of Economics and Law**, Zhengzhou, China |
+| Corresponding author email | `20233407131@stu.huel.edu.cn` |
+| Affiliation | **Independent Researcher**（独立研究者，无机构归属） |
 | Subject area | Computer Science and Mathematics → Artificial Intelligence and Machine Learning |
 | Keywords | evaluation protocol; reproducibility; image super-resolution; low-light enhancement; PSNR; reporting standards |
 | Data link | <https://github.com/ElijahZhao/pixelforge-image-restoration-/tree/main/results/per_image> |
