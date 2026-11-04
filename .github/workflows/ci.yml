@@ -95,3 +95,46 @@ jobs:
 
       - name: Build
         run: pnpm build
+
+  paper:
+    name: paper assets (tables, facts, public release)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock.txt
+
+      # The paper's tables are generated from the result CSVs and checked
+      # against FACTS.md. If a number in the source data changes without the
+      # table being regenerated, this job fails -- which is the point: a
+      # table that disagrees with the data it claims to summarise must not
+      # reach a reader.
+      - name: Regenerate tables and check they agree with FACTS.md
+        run: |
+          python3.11 scripts/make_tables.py
+          git diff --exit-code -- paper/tables/
+
+      - name: Check Table 1 (seven nearest neighbours) against refs.bib
+        run: |
+          python3.11 scripts/make_table1.py
+          git diff --exit-code -- paper/tables/table1_neighbours.
+
+      # FACTS.md is the paper's source of truth. Its errata table must stay
+      # contiguous and structurally valid, or the record stops being readable.
+      - name: Check FACTS.md structure
+        run: python3.11 scripts/check_facts_structure.py
+
+      # The public per-image release must reproduce every reported cell.
+      # This is the promise the Data Availability statement makes.
+      - name: Check the public per-image release reproduces the reported cells
+        run: |
+          python3.11 scripts/build_public_release.py --check
+          python3.11 scripts/verify_public_release.py

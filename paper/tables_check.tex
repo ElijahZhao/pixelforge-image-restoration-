@@ -1,0 +1,40 @@
+% Compile harness for the paper's tables.
+%
+% Every generated table is included here and compiled with pdflatex, so a
+% table that breaks the build is caught before the manuscript is assembled.
+% The checks that matter:
+%   * no LaTeX errors
+%   * no Overfull \hbox (a table wider than the page)
+%   * every \label is unique and every \ref resolves
+%
+% Run:  pdflatex -interaction=nonstopmode -halt-on-error tables_check.tex
+
+\documentclass[10pt,twocolumn]{article}
+\usepackage[margin=1.6cm]{geometry}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{array}
+\usepackage{hyperref}
+
+\begin{document}
+
+\input{tables/table1_neighbours}
+\input{tables/table2_protocols}
+\input{tables/table3_setup}
+\input{tables/table4_task_ratios}
+\input{tables/table5_sign_flip}
+\input{tables/table6_literature}
+\input{tables/table7_checklist}
+\input{tables/tableA1_matrix}
+\input{tables/tableA2_gains}
+\input{tables/tableA3_audit}
+
+% Reference every label so that a missing one becomes an error.
+\section*{Label check}
+Refs:~\ref{tab:nearest-neighbours}, \ref{tab:protocols}, \ref{tab:setup},
+\ref{tab:span-vs-gain}, \ref{tab:sign-flip}, \ref{tab:reporting-rates},
+\ref{tab:checklist}, \ref{tab:full-matrix}, \ref{tab:per-protocol-gains},
+\ref{tab:f3-breakdown}.
+
+\end{document}

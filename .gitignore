@@ -72,6 +72,20 @@ web/vercel/
 # reproducibility — must come AFTER the global *.log rule to take effect.
 !results/logs_batch16_20261007/*.log
 
+# LaTeX build by-products. The paper's figures are committed, but the
+# auxiliary files a pdflatex run leaves behind are not: they are machine-
+# specific and change on every build, so committing them would make every
+# compile show up as a diff.
+*.aux
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+paper/tables_check.pdf
+paper/main.pdf
+
 # Packed source archives (avoid committing redundant zips)
 pixelforge-source.zip
 *.zip

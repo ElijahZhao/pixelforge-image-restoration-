@@ -181,13 +181,19 @@
 |---|---|---|---|
 | **Fig. 1** | 6-panel | 8 协议 PSNR + 增益，三任务 | ✅ 已生成（PDF + PNG），×2 基线已补全 |
 | **Fig. 2** | 折线 | 采样数 → PSNR 噪声 | ✅ 定稿（单栏 3.43 in，`scripts/make_figure2.py`） |
-| Table 1 | 表 | 七篇最近邻对比（谁做了什么/我们补什么） | ⬜ 从查新报告改写 |
-| Table 2 | 表 | P1–P8 协议定义 | ✅ 定义已备好（`FACTS.md` §4），待排版 |
-| Table 3 | 表 | 模型/数据/训练配置 | ✅ 已备好（`FACTS.md` §1–3），待排版 |
-| Table 4 | 表 | 方差分解：种子 std vs 协议跨度 vs 训练增益 | ✅ 已备好（`FACTS.md` §6），待排版 |
-| Table 5 | 表 | 三任务 × 8 协议完整 PSNR（±std） | ✅ 已备好（`FACTS.md` §5），由 CSV 生成 |
-| Table 6 | 表 | 最小报告清单 + 文献达标率 | ✅ 达标率已备好（`FACTS.md` §8） |
-| Table A1–A3 | 附录 | 逐种子矩阵、复现命令、文献编码 | ⬜ |
+| **GA** | 图形摘要 | 协议跨度 / 符号翻转 / 报告率 三面板 | ✅ 已生成（`paper/figures/ga_protocol_audit.{png,jpg,pdf}`，2889×1470 px @300 dpi，比例 1.965） |
+| Table 1 | 表 | 七篇最近邻对比（谁做了什么/我们补什么） | ✅ **已完成**（2026-11-04）：`scripts/make_table1.py` → `paper/tables/table1_neighbours.{md,tex}`；`--check` 验证 7 个 bib key 都存在于 `refs.bib` |
+| Table 2 | 表 | P1–P8 协议定义 | ✅ 已排版（`paper/tables/table2_protocols.{md,tex}`，`scripts/make_tables.py` 生成） |
+| Table 3 | 表 | 模型/数据/训练配置 | ✅ 已排版（`table3_setup`） |
+| Table 4 | 表 | 协议跨度 vs 训练增益（分任务比值） | ✅ 已排版（`table4_task_ratios`） |
+| Table 5 | 表 | 符号翻转：同一权重、一个布尔开关 | ✅ 已排版（`table5_sign_flip`） |
+| Table 6 | 表 | 63 篇文献的报告率（含 Wilson CI） | ✅ 已排版（`table6_literature`） |
+| Table 7 | 表 | 六条最小报告清单 + 文献达标率 | ✅ 已排版（`table7_checklist`） |
+| Table A1 | 附录 | 21 个协议单元 × 5 seed 的完整矩阵 | ✅ 已排版（`tableA1_matrix`） |
+| Table A2 | 附录 | 逐协议增益 + 不可用的 naive 混合值 | ✅ 已排版（`tableA2_gains`） |
+| Table A3 | 附录 | F3 在 SR 子集上的分解 | ✅ 已排版（`tableA3_audit`） |
+
+> **表号已在 2026-11-04 统一**（E76）。此前本表把 Table 1 定义为"七篇最近邻"、Table 2 为协议定义……而 `scripts/make_tables.py` 实际产出的是 `table1_protocols` / `table2_setup` / …… **两套编号整体错位，且"七篇最近邻"这张表当时根本不存在**。现以**脚本实际产出**为准：Table 1 = 最近邻，Table 2–7 = 脚本生成的六张表，A1–A3 不变。`scripts/make_tables.py` 的 TABLES 注册表里每张表带**显式 LaTeX label**（不再从 caption 字符串猜测），十张表经 `paper/tables_check.tex` 实测编译：**0 错误、0 Overfull、全部 \ref 可解析**。
 
 > **取数唯一入口是 `FACTS.md`**。本文件的数字总账已被 FACTS 取代，保留仅为对照。
 

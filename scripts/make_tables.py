@@ -25,7 +25,7 @@ Sources
     results/p1_inf_alignment.csv            P1's 95-image intersection with the model
     results/seeds/*/aggregate.csv           per-run seed statistics
     paper/data/fig2_sampling_noise.csv      Fig. 2 sampling-noise curve
-    archive_private/05-论文规划/文献抽样编码表.csv   literature audit coding (F1-F7)
+    paper/data/literature_audit_coding.csv  literature audit coding (F1-F7)
 """
 
 from __future__ import annotations
@@ -136,7 +136,7 @@ def fmt(x, nd=4):
 
 def load_matrix():
     path = _p("results", "protocol_matrix_fig1_wide.csv")
-    need(path, "Table 1/3/4")
+    need(path, "Tables 2/4/5 and A1")
     rows = read_csv(path)
     out = {}
     for r in rows:
@@ -146,13 +146,17 @@ def load_matrix():
 
 def load_gain():
     path = _p("results", "model_vs_bicubic_gain.csv")
-    need(path, "Table 4")
+    need(path, "Tables 4/5 and A2")
     return {(r["task"], r["protocol"]): r for r in read_csv(path)}
 
 
 def load_audit():
-    path = _p("archive_private", "05-论文规划", "文献抽样编码表.csv")
-    need(path, "Table 5")
+    # The coding sheet is public (paper/data/literature_audit_coding.csv) so
+    # that the literature table can be regenerated from a clone, and so that
+    # the coding decisions behind every reported rate are auditable. The
+    # private archive keeps the original; the public copy is byte-identical.
+    path = _p("paper", "data", "literature_audit_coding.csv")
+    need(path, "Tables 6/7 and A3")
     rows = [r for r in read_csv(path) if r["编号"] != "示例"]
     return rows
 
@@ -223,7 +227,7 @@ def p1_bicubic_band(matrix):
     computed on the 95-image intersection with the model.
     """
     path = _p("results", "p1_inf_alignment.csv")
-    need(path, "Table 4")
+    need(path, "Table 5 and Appendix Table A2")
     rows = read_csv(path)
     vals = []
     for r in rows:
@@ -362,7 +366,7 @@ def check_against_facts(matrix, gain, counts):
 # --------------------------------------------------------------------------
 
 def table_protocol_defs():
-    """Table 1 -- the eight protocols."""
+    """Table 2 -- the eight protocols."""
     head = ["", "Description", "Degradation", "Metric", "Sampling", "Aggregation"]
     body = []
     for p in ("P1", "P2", "P3", "P4", "P5", "P6", "P7", "P8"):
@@ -382,7 +386,7 @@ def table_protocol_defs():
 
 
 def table_setup():
-    """Table 2 -- models, data, environments."""
+    """Table 3 -- models, data, environments."""
     head = ["", "SR $\\times$4", "SR $\\times$2", "Low-light"]
     body = [
         ["Architecture", "SRResNet (SRCNN-style)", "SRCNN", "U-Net"],
@@ -408,7 +412,7 @@ def table_setup():
 
 
 def table_task_ratios(matrix, gain):
-    """Table 3 -- per-task protocol span vs. training gain."""
+    """Table 4 -- per-task protocol span vs. training gain."""
     r = ratios(matrix, gain)
     head = ["", "SR $\\times$4", "SR $\\times$2", "Low-light"]
     rows_spec = [
@@ -445,7 +449,7 @@ def table_task_ratios(matrix, gain):
 
 
 def table_sign_flip(matrix, gain):
-    """Table 4 -- the sign flip and the two-task replication."""
+    """Table 5 -- the sign flip and the two-task replication."""
     head = ["", "SR $\\times$4 (SRResNet)", "SR $\\times$2 (SRCNN)", "Low-light (U-Net)"]
     def cell(task, proto, field, nd=4):
         # Low-light has no P6-P8: it is a paired task with no synthetic
@@ -494,7 +498,7 @@ def table_sign_flip(matrix, gain):
 
 
 def table_literature(counts):
-    """Table 5 -- what 63 recent papers actually report."""
+    """Table 6 -- what 63 recent papers actually report."""
     n = counts["n"]
     head = ["Reported item", "Reported", "Denominator", "Rate", "Wilson 95% CI"]
     rows = []
@@ -543,7 +547,7 @@ def table_literature(counts):
 
 
 def table_checklist(counts):
-    """Table 6 -- the six-item minimum reporting checklist."""
+    """Table 7 -- the six-item minimum reporting checklist."""
     head = ["#", "Item to report", "Why it matters (measured here)", "Literature rate"]
     body = [
         ["1", "Aggregation: per-image mean or global MSE",
@@ -653,23 +657,29 @@ def table_appendix_audit(counts):
     return "F3 breakdown on the SR subset.", head, body, notes
 
 
-#: Each entry: (output name, builder, tuple of sources it needs).
+#: Each entry: (output name, builder, tuple of sources it needs, LaTeX label).
 #: Declared explicitly rather than inferred from the signature, so adding a
 #: table cannot silently break the dispatcher.
+#:
+#: The label is explicit too. Deriving it from the caption produced tags like
+#: `tab:setup:-models,` -- a comma inside a label is legal LaTeX but is
+#: miserable to write as `\\ref{tab:...}`, and the truncated form was not a
+#: name anyone would guess when writing the body. Guessing an identifier from
+#: a string is the same class of mistake this paper argues against.
 S_MATRIX = "matrix"
 S_GAIN = "gain"
 S_COUNTS = "counts"
 
 TABLES = [
-    ("table1_protocols", table_protocol_defs, ()),
-    ("table2_setup", table_setup, ()),
-    ("table3_task_ratios", table_task_ratios, (S_MATRIX, S_GAIN)),
-    ("table4_sign_flip", table_sign_flip, (S_MATRIX, S_GAIN)),
-    ("table5_literature", table_literature, (S_COUNTS,)),
-    ("table6_checklist", table_checklist, (S_COUNTS,)),
-    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,)),
-    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN)),
-    ("tableA3_audit", table_appendix_audit, (S_COUNTS,)),
+    ("table2_protocols", table_protocol_defs, (), "protocols"),
+    ("table3_setup", table_setup, (), "setup"),
+    ("table4_task_ratios", table_task_ratios, (S_MATRIX, S_GAIN), "span-vs-gain"),
+    ("table5_sign_flip", table_sign_flip, (S_MATRIX, S_GAIN), "sign-flip"),
+    ("table6_literature", table_literature, (S_COUNTS,), "reporting-rates"),
+    ("table7_checklist", table_checklist, (S_COUNTS,), "checklist"),
+    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,), "full-matrix"),
+    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN), "per-protocol-gains"),
+    ("tableA3_audit", table_appendix_audit, (S_COUNTS,), "f3-breakdown"),
 ]
 
 
@@ -695,7 +705,7 @@ def latex_escape(text):
                 .replace("#", "\\#"))
 
 
-def render_latex(caption, head, body, notes):
+def render_latex(caption, head, body, notes, label):
     lines = []
     ncol = len(head)
     cols = "l" + "c" * (ncol - 1)
@@ -706,12 +716,12 @@ def render_latex(caption, head, body, notes):
     lines.append("\\begin{table}[t]")
     lines.append("\\centering")
     lines.append(f"\\caption{{{latex_escape(caption)}}}")
-    lines.append(f"\\label{{tab:{caption.split('.')[0][:14].strip().lower().replace(' ', '-')}}}")
+    lines.append(f"\\label{{tab:{label}}}")
     # Width handling.
     #
     # Measured in a real pdflatex run: every table in this paper is wider
-    # than a single-column `article` text block (345 pt) -- the worst, Table 2,
-    # ran 197 pt over, and Table 1 cut off its last column entirely. These
+    # than a single-column `article` text block (345 pt) -- the worst, Table 3,
+    # ran 197 pt over, and Table 2 cut off its last column entirely. These
     # tables are wide by nature (six protocol dimensions, three tasks), and
     # the paper is set two-column, so they belong in a full-width float
     # (`table*`) anyway.
@@ -802,11 +812,11 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     fmts = [f.strip() for f in args.fmt.split(",") if f.strip()]
     available = {S_MATRIX: matrix, S_GAIN: gain, S_COUNTS: counts}
-    for name, fn, needs in TABLES:
+    for name, fn, needs, label in TABLES:
         caption, head, body, notes = fn(*[available[k] for k in needs])
         if "latex" in fmts:
             with open(os.path.join(args.out, f"{name}.tex"), "w") as f:
-                f.write(render_latex(caption, head, body, notes))
+                f.write(render_latex(caption, head, body, notes, label))
         if "md" in fmts:
             with open(os.path.join(args.out, f"{name}.md"), "w") as f:
                 f.write(render_md(caption, head, body, notes))

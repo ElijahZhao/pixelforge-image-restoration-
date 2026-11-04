@@ -67,9 +67,32 @@ print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
 → **现状核查（2026-11-04，本地实测）**：
   - ✅ `results/` 已在公开仓库（git 已跟踪 61 个文件，含 `protocol_matrix_fig1_wide.csv`、`aggregation_gap.csv`、`p1_inf_alignment.csv`、`seeds/` 下 37 个种子聚合文件）。
   - ✅ `paper/data/fig2_sampling_noise.csv`、`paper/figures/`、`paper/refs.bib` 均已公开。
-  - ⚠️ **逐图指标 CSV 未公开**：`archive_private/` 被 `.gitignore:95` 排除，GitHub API 查该目录返回 **404**，本地 `git ls-files` 计 **0** 个 `per_image` 文件。
-  - 📊 但**公开成本极低**：逐图 CSV 共 **186 个文件、合计仅 0.3 MB**，每文件是 `image,psnr,ssim` 三列的纯文本。
-  - → **结论**：把这 186 个逐图 CSV 放进公开仓库，即可满足数据可得性要求并让 §7.4.1 的逐图分布（Spearman ρ = −0.9247）可被外部复核。**这是本文最有价值的一步公开化**，因为逐图分布正是全文最反直觉、也最依赖原始数据的结论。
+  - ✅ **逐图指标 CSV 已公开化（2026-11-04 完成）**：新目录 **`results/per_image/`**，**126 个文件、286 KiB**，每个文件是一个协议单元的逐图 `image,psnr,ssim`。含 `README.md` 说明命名规则、∞ 值的处理口径与复算方法。
+  - ⚠️ **发布的是 126 个而非早先估的 186 个**，这是**修正而不是缩水**（见 §2.4.1）。
+
+### 2.4.1 为什么是 126 个而不是 186 个（E76）
+
+早先的估算（186 个、0.3 MB）是按"归档里所有 `per_image` 目录的文件数"数的，**没有核对这些文件是否就是支撑论文数字的那一批**。归档里混着三代评测产物：
+
+| 归档目录 | 是否支撑论文 | 说明 |
+|---|---|---|
+| `kernel-output-protocol-full-v2/{generator_x4_x4,srcnn_x2_x2}` | ✅ 是 | ×4 / ×2 的 5 seed × 8 协议 |
+| `kernel-output-protocol-full-v4/{lowlight_unet_x1,identity_ll}` | ✅ 是 | 低光 5 seed × 5 协议 + 恒等基线 |
+| `kernel-output-protocol-full-v3/bicubic_sr_x4` | ✅ 是 | ×4 双三次基线 |
+| `local-baseline-bicubic-sr-x2` | ✅ 是 | ×2 双三次基线（目录名与 job 名不同） |
+| `kernel-output-protocol-full-v3/{bicubic_ll_x2,lowlight_unet_x2}` | ❌ 否 | 被取代的旧版本（`lowlight_unet_x2` ≠ 权威的 `lowlight_unet_x1`） |
+| `kernel-output-protocol-repo-v1-failed/` | ❌ 否 | **失败跑**，文件名写着 `sr_generator_scale4__P3` 之类，与权威 checkpoint 名不符 |
+| `kernel-output-protocol-repo-v3/` | ❌ 否 | 早期 protocol repo 的残留 |
+
+**判定方法不是靠目录名，而是靠数值**：`scripts/verify_per_image_mapping.py` 先从文件名解析出它声称的 `(job, checkpoint, protocol)`，再把该文件重新求平均，与 `results/matrix_runs/<job>/protocol_matrix.json` 里对应 cell 的 `psnr_mean` 比对，容差 1e-3 dB。
+
+实测结果：**126 个文件全部一一对应 126 个权威 cell，无重复占用、无遗漏**；其余 57 个判定为 stale（名字指向的 cell 不存在，或数值对不上）。
+
+两个必须记下的坑：
+- **∞ 值**：双三次上采样能精确重建平坦块，MSE=0 → PSNR=+∞。权威矩阵的均值是**剔除 ∞ 后**的均值（P1 的双三次基线是 95 张图的均值，模型侧是 100 张，见 E21）。求平均时必须先滤掉非有限值，否则整列变成 `inf`。
+- **不能只靠数值匹配**：P3 与 P4 只差 4 像素 shave，均值相差约 0.01 dB，纯容差匹配会让两个文件同时"匹配"到同一个 cell。必须先用文件名定位、再用数值验证。
+
+**发布后已验证（`scripts/verify_public_release.py`）**：只用 `results/per_image/` 里的公开 CSV 重新求平均，**126/126 个 cell 全部复现**；再按种子求均值与跨种子样本标准差，得到 **21 行（3 任务 × 协议）均值与 std，与 `results/protocol_matrix_fig1_wide.csv` 逐位对账，21/21 零偏差**。
 
 ### 2.5 其余硬性条款（原文要点）
 
@@ -108,12 +131,24 @@ print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
 | # | 事项 | 成本 | 状态 |
 |---|---|---|---|
 | 1 | 写正文（8–10 页，双栏） | 主成本 | ⬜ 未开始 |
-| 2 | 补一张**图形摘要**（JPG/PNG，非文本摘要截图） | 中 | ⬜ 待做；Fig. 1 不能直接用（§2.3） |
-| 3 | 把 186 个逐图 CSV（0.3 MB）公开化 | 小 | ⬜ 待做；满足 §2.4 数据可得性 + 支撑 §7.4.1 |
+| 2 | 补一张**图形摘要**（JPG/PNG，非文本摘要截图） | 中 | ✅ **已完成**（2026-11-04）：`paper/figures/ga_protocol_audit.{png,jpg,pdf}`，2889×1470 px @ 300 dpi，三面板（协议跨度对比 / 符号翻转 / 报告率），与 Fig. 1 / Fig. 2 均非同一图 |
+| 3 | 把逐图 CSV 公开化 | 小 | ✅ **已完成**（2026-11-04）：**126 个文件、286 KiB** → `results/per_image/`，含 README；已验证可复现全部 cell 与 21 行种子级统计（§2.4.1） |
 | 4 | 注册 MDPI 账号 | 小 | ⬜ 待办 |
 | 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ⬜ 待做（正文完成后） |
 | 6 | 填投稿表单：标题 / 摘要 / 关键词 / 学科分类 / ORCID / 通讯邮箱 | 小 | ⬜ 待做（元数据本文档已备齐） |
 | 7 | 提交时填数据链接（仓库地址） | 小 | ⬜ 待做，**提交后无法自补**（§2.5） |
 | 8 | 定标题（三候选 A/B/C，`OUTLINE` §0 倾向 A） | 小 | ⬜ 待定 |
+
+### 4.1 Data Availability 声明（投稿表单逐字稿）
+
+> **Data Availability Statement:** All per-image evaluation values underlying every protocol cell reported in this work are publicly available in the accompanying repository under `results/per_image/`, together with the aggregated protocol matrix (`results/matrix_runs/`), the derived tables (`results/*.csv`), and the scripts that regenerate them. Each released CSV contains one row per test image with its PSNR and SSIM; re-averaging these files reproduces every cell reported in the paper, and the repository includes a script (`scripts/verify_public_release.py`) that performs this check. The per-image release supports the distributional analyses reported in the paper, including the per-image correlation between gradient ratio and protocol-induced shift. The DIV2K validation split and the LOL dataset are not redistributed here; they are publicly available from their original sources and are referenced accordingly.
+
+**提交时必须填的数据链接**（§2.5：提交后无法自补）：
+
+```
+https://github.com/ElijahZhao/pixelforge-image-restoration-/tree/main/results/per_image
+```
+
+⚠️ 该链接必须在**推送 `results/per_image/` 到远端之后**再填入表单——否则读者点开是 404。
 
 **投稿前最后确认**：所有作者知晓并同意 OA 发布；确认后续目标期刊接受预印本；确认工作不侵犯任何第三方权利（本文引用了 Clean-FID、KinD 等他人成果并做对比——**只报文献值、不复跑，且标注 `as reported, not re-run`**，不复制其图表数据）。

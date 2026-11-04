@@ -1,0 +1,14 @@
+**Protocol span versus training gain, per task.**
+
+|  | SR $\times$4 | SR $\times$2 | Low-light |
+|---|---|---|---|
+| Protocol span, P2-P8 (dB) | 3.889 | 3.143 | 2.250 |
+| Protocol span, incl. best-of-60 P1 (dB) | 19.794 | 15.648 | 6.067 |
+| Training gain under P3 (dB) | 0.782 | 0.863 | 10.736 |
+| Span / training gain | 4.98 | 3.64 | 0.21 |
+| Span incl. P1 / training gain | 25.33 | 18.13 | 0.57 |
+| Seed sigma, full-image protocols (dB) | 0.0190-0.0361 | 0.0268-0.0938 | 0.0346-0.0806 |
+
+1. Every quantity is same-task on both sides of every ratio. No cross-task pooled interval is given: the low-light task is a counterexample (ratio 0.21), so a pooled '5-25x' would conceal it.
+2. The low-light training gain (10.74 dB) is 4.8x its protocol span, so on that task the protocol does not dominate the conclusion. The claim is conditional: when headroom and protocol effect are of the same order, the protocol decides the conclusion.
+3. Seed sigma covers only the full-image protocols; P1 and P2 sample, so their sigma (0.2364 / 0.5584 / 0.4148) is a different quantity and is listed separately in Appendix Table A1.
