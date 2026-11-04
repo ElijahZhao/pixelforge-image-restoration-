@@ -19,7 +19,8 @@ Aggregation conventions (must match `results/seeds/aggregate.md`)
 -----------------------------------------------------------------
 * ``psnr_mean`` is the arithmetic mean over the N seeds.
 * ``psnr_std``  is the **sample** standard deviation (ddof=1), not the
-  population one. With n=5 the two differ by ~10%, which is larger than every
+  population one. With n=5 the sample one is ~12% larger (sqrt(5/4)=1.118),
+  which is larger than every
   seed effect in this project, so the choice is not cosmetic.
 * ``psnr_min`` / ``psnr_max`` are the extremes over the *seeds' means*, not over
   images. Image-level spread lives at 4-6 dB and would misrepresent the error

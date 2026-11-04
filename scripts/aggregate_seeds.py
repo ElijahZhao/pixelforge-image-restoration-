@@ -46,7 +46,8 @@ import sys
 from collections import defaultdict
 
 # Two-sided 95% t quantiles for small n (df = n-1). With 5 seeds t=2.776; a
-# normal approximation would understate the interval by ~12% at n=5.
+# normal approximation (z=1.96) would understate the interval width by ~29%
+# (1 - 1.96/2.776) at n=5, so every CI in the paper uses this table.
 T95 = {2: 12.706, 3: 4.303, 4: 3.182, 5: 2.776, 6: 2.571, 7: 2.447,
        8: 2.365, 9: 2.306, 10: 2.262, 11: 2.228, 12: 2.201}
 
