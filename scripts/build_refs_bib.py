@@ -18,7 +18,8 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
-NS = {"a": "http://www.w3.org/2005/Atom"}
+NS = {"a": "http://www.w3.org/2005/Atom",
+      "arxiv": "http://arxiv.org/schemas/atom"}
 
 # key, arxiv id, expected title fragment (lower-case, checked against the API),
 # venue, note
@@ -136,7 +137,14 @@ PROTECT = [
 ]
 
 
-def fetch(ids: list[str]) -> dict[str, tuple[str, list[str], str]]:
+def fetch(ids: list[str]) -> dict[str, tuple[str, list[str], str, str]]:
+    """id -> (title, authors, published year, primary category).
+
+    The primary category is read from the API rather than assumed: writing
+    "cs.CV" for every preprint is wrong for HyperBench (2605.21671), whose
+    primary category is eess.IV (image and video processing) with cs.CV
+    only as a secondary category.
+    """
     url = ("http://export.arxiv.org/api/query?id_list=" + ",".join(ids)
            + "&max_results=" + str(len(ids)))
     with urllib.request.urlopen(url, timeout=60) as fh:
@@ -149,7 +157,9 @@ def fetch(ids: list[str]) -> dict[str, tuple[str, list[str], str]]:
         authors = [" ".join(a.find("a:name", NS).text.split())
                    for a in e.findall("a:author", NS)]
         year = e.find("a:published", NS).text[:4]
-        out[aid] = (title, authors, year)
+        pc = e.find("arxiv:primary_category", NS)
+        primary = pc.get("term") if pc is not None else "cs.CV"
+        out[aid] = (title, authors, year, primary)
     return out
 
 
@@ -209,7 +219,7 @@ def main() -> None:
               "% Every arXiv id is fetched and its title checked before writing.",
               ""]
     for key, aid, expect, venue, year in ENTRIES:
-        title, authors, _ = meta[aid]
+        title, authors, _, primary = meta[aid]
         authors = AUTHOR_OVERRIDE.get(aid, authors)
         if expect.lower() not in title.lower():
             raise SystemExit(
@@ -221,7 +231,7 @@ def main() -> None:
                      f"  year         = {{{year}}},\n"
                      f"  eprint       = {{{aid}}},\n"
                      f"  archivePrefix= {{arXiv}},\n"
-                     f"  primaryClass = {{cs.CV}},\n"
+                     f"  primaryClass = {{{primary}}},\n"
                      f"  note         = {{arXiv preprint}},\n"
                      f"}}")
         elif "Transactions" in venue or "Journal" in venue:

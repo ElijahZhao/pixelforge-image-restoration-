@@ -140,6 +140,16 @@ jobs:
           python3.11 scripts/make_table1.py
           git diff --exit-code -- paper/tables/table1_neighbours.
 
+      # refs.bib is generated from the arXiv API, not written by hand, so it
+      # can be rebuilt and compared. A mismatch means either the API
+      # returned something different this time or the file was edited
+      # outside the generator.
+      - name: Rebuild refs.bib from the arXiv API and check it agrees
+        run: |
+          python3.11 scripts/build_refs_bib.py --out /tmp/refs_rebuilt.bib
+          git diff --exit-code -- paper/refs.bib --no-index /tmp/refs_rebuilt.bib \
+            || (echo "refs.bib differs from the generator output" && exit 1)
+
       # FACTS.md is the paper's source of truth. Its errata table must stay
       # contiguous and structurally valid, or the record stops being readable.
       - name: Check FACTS.md structure
@@ -205,3 +215,15 @@ jobs:
         run: |
           python3.11 scripts/audit_independent.py
           python3.11 scripts/audit_per_image.py
+
+      # Every reference must be a real, resolvable work whose registered
+      # title matches the one in refs.bib. The script fetches all 24 arXiv
+      # ids, compares titles and years, resolves both DOIs through
+      # Crossref and doi.org, and checks that every \cite key in the
+      # manuscript exists and every entry is cited.
+      #
+      # It reaches the network, so it is a separate step: a registry being
+      # briefly unreachable must not be reported as a broken citation.
+      - name: Audit the bibliography
+        continue-on-error: false
+        run: python3.11 scripts/check_references.py

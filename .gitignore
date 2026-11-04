@@ -90,6 +90,11 @@ paper/main.pdf
 pixelforge-source.zip
 *.zip
 
+# ...except the Preprints.org submission archive. That one is the exact file
+# that gets uploaded to the platform, so it is kept in the repository under
+# preprint/ and must stay byte-identical to what the author uploads.
+!preprint/submission/preprints_submission.zip
+
 # Locally packed release artifacts (git bundle + source tarball) handed to the
 # GPU box; regenerated on demand, not part of the repo.
 dist/

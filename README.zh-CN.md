@@ -269,7 +269,9 @@ pixelforge-image-restoration/
 │   └── models/        # 自训 TorchScript 权重（随仓库分发）
 ├── deploy/            # 部署包：streamlit/（已上线）
 ├── web/               # 前端（Next.js + Tailwind）
-├── scripts/           # 辅助脚本（生成 demo 图、评测、准备数据）
+├── paper/             # 预印本正文（LaTeX）、FACTS.md、refs.bib
+├── preprint/          # Preprints.org 投稿文件（正文 PDF、源码 zip、图形摘要）
+├── scripts/           # 辅助脚本（生成 demo 图、评测、准备数据、论文门禁）
 ├── tests/             # API 冒烟 + 真实权重集成测试 + E2E
 ├── docs/              # API.md（接口参考）
 ├── Dockerfile         # 推理服务镜像

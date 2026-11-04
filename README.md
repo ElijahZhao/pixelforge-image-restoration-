@@ -301,7 +301,9 @@ pixelforge-image-restoration/
 │   └── models/        # self-trained TorchScript weights (committed)
 ├── deploy/            # streamlit/ (live demo)
 ├── web/               # frontend (Next.js + Tailwind)
-├── scripts/           # helpers (demo figures, evaluation, data setup)
+├── paper/             # the preprint manuscript (LaTeX), FACTS.md, refs.bib
+├── preprint/          # Preprints.org submission files (manuscript, source zip, graphical abstract)
+├── scripts/           # helpers (demo figures, evaluation, data setup, paper gates)
 ├── tests/             # API smoke + real-weight integration + E2E
 ├── docs/              # API.md (interface reference)
 ├── Dockerfile         # inference service image

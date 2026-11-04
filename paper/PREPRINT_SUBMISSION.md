@@ -139,6 +139,22 @@ print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
 | 7 | 提交时填数据链接（仓库地址） | 小 | ⬜ 待做，**提交后无法自补**（§2.5） |
 | 8 | 定标题 | 小 | ✅ **已定**：**候选 A** —— *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration* |
 | 9 | **排版体检**（字号 / 浮体顺序 / 清单一致） | 小 | ✅ **已完成**（2026-11-04）：`scripts/check_layout.py`——量 PDF 每个文本行的行高（阈值 9 px ≈ 7 pt）、逐页定位「Table N:」与「Table N」引用、核对正文 `\input` 与 `paper/tables/*.tex` 双向一致。**结果：字号全部达标、无表出现在引用之前**（E84） |
+| 10 | **引用有效性审计** | 小 | ✅ **已完成**（2026-11-04 第十七轮）：`scripts/check_references.py`，**83 项检查全通过**——24 条 arXiv 逐条比对标题与年份、abs 页可达；2 条 DOI 在 Crossref 已注册且标题年份吻合、`doi.org` 可提供元数据；1 条 JMLR 落地页可达；27 个 `\cite` 键与 `refs.bib` 双向闭合（无悬空引用、无未引用条目）。**已接入 CI** |
+| 11 | **AI 使用声明**（COPE / Preprints.org 硬性要求） | 小 | ✅ **已完成**（2026-11-04 第十七轮，E93）：官方 Instructions 明文 "Use of AI tools and LLM should be properly documented in the Methods section (and if a Methods section is not available, in a suitable alternative part)"。已在正文加 `Use of AI-Assisted Tools` 声明节，如实写明 AI 助手用于写作与生成 `scripts/`，全部数字由脚本从 `results/` 原始产物产出并经独立复算校验，作者对全文负责 |
+
+### 4.1.1 第十七轮新增的外部核验（2026-11-04）
+
+| 核验对象 | 方法 | 结果 |
+|---|---|---|
+| 27 条参考文献的**元数据** | arXiv API + Crossref + doi.org + jmlr.org | ✅ 83/83 检查通过 |
+| 27 条参考文献的**引用内容**（读原文，不只看元数据） | arXiv HTML 全文 / 摘要逐条比对 | ✅ 查出并修正 **1 处实质错误（E91）**；其余 26 条断言逐条无误 |
+| Preprints.org 官方 Instructions | 官方页面原文（`?trk=` 参数可绕过 CDN 拦截） | ✅ 补出**此前遗漏的 COPE/AI 声明条款**（E93） |
+
+**E91 详情**：SEAL（Zhang et al., ICLR 2024）原文**全文没有 "crop" 一词**，它针对的是"从巨大降级空间随机抽样少量降级案例"（原文 §1、§5.3 给出 "−0.23 dB and 0.18 dB respectively, leading to contradictory conclusions" 的实例）。原稿把它写成 "random-crop evaluation"，是把 SEAL 与本文自己的 P1（随机裁剪）混为一谈。正文、Table 1、`MATERIALS` §4.1 三处已同步改正。
+
+**E92 详情**：`build_refs_bib.py` 原先对所有 `@misc` 条目硬编码 `primaryClass = {cs.CV}`，而 HyperBench（2605.21671）的主分类实为 `eess.IV`。脚本已改为从 API 的 `<arxiv:primary_category>` 读取真实分类。
+
+> **教训（已写入 `FACTS` E91–E93）**：此前的文献核验只做到"标题/作者/venue"与"摘要"两层（E20、E51 两轮），**从未读过原文全文**，因此"引它来支撑什么"这件事第一次被真正检验，就查出一处引用内容错误。这与 E73（平台规则属外部事实、必须查原文）同源——**凡是要在稿子里断言的外部事实，都要回到一手来源**。
 
 ### 4.1 Data Availability 声明（投稿表单逐字稿）
 

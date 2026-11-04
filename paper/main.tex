@@ -201,14 +201,16 @@ degradation, sampling, channel and boundary. \cite{parmar2022cleanfid}
 established that aliased versus antialiased resizing changes rankings in
 perceptual GAN evaluation---the narrative precedent for our reversal, though
 in a distributional metric rather than a distortion metric.
-\cite{zhang2024seal} showed that random-crop evaluation is unreliable in
-real-world super-resolution, and \cite{shah2026hyperbench} that protocol
-implementation differences prevent rankings from holding in hyperspectral
-super-resolution. \cite{srinivasan2026lol} documented hidden label shifts in
-low-light benchmarks, which is a property of the data rather than of the
-protocol. \cite{su2025bridging} audited perceptual quality metrics for
-super-resolution. \cite{cawley2010overfitting} gave the theory of selection
-bias: repeatedly selecting on a validation set inflates the reported
+\cite{zhang2024seal} showed that evaluating real-world super-resolution on a
+few degradation cases drawn at random from a large degradation space yields
+inconsistent and at times contradictory conclusions, and \cite{shah2026hyperbench}
+that protocol implementation differences prevent rankings from holding in
+hyperspectral super-resolution. \cite{srinivasan2026lol} documented hidden
+label shifts in low-light benchmarks, which is a property of the data rather
+than of the protocol. \cite{su2025bridging} audited perceptual quality metrics
+for super-resolution and found that some correlate with human preference only
+weakly or negatively. \cite{cawley2010overfitting} gave the theory of
+selection bias: repeatedly selecting on a validation set inflates the reported
 performance of the selected model.
 
 \input{tables/table1_neighbours}
@@ -692,6 +694,36 @@ review and editing.
 % ===========================================================================
 
 This research received no external funding.
+
+% ===========================================================================
+\section*{Use of AI-Assisted Tools}
+% ===========================================================================
+
+% Preprints.org requires this: its Instructions for Authors follow the COPE
+% position statement on authorship and AI tools, and state that "use of AI
+% tools and LLM should be properly documented in the Methods section (and if
+% a Methods section is not available, in a suitable alternative part) of the
+% manuscript". The declaration sits here, with the other statements, rather
+% than inside Section 3: adding a subsection there shifted the float queue
+% far enough to push Table 3 three pages past its first reference, which
+% `scripts/check_layout.py` rejects.
+%
+% The wording is kept to what is true of this project. The assistant wrote
+% and revised prose and wrote the analysis, table and figure scripts; every
+% number in the paper is produced by those scripts from the raw evaluation
+% outputs, and the reported values are checked by a second implementation
+% that shares no code with the generating pipeline.
+
+A large-language-model assistant was used for writing and editing assistance:
+drafting and revising prose, and writing the analysis, table and figure
+scripts in \texttt{scripts/}. Every number reported in this paper was
+produced by those scripts from the raw evaluation outputs in
+\texttt{results/}, and the reported values were checked against an
+independent reimplementation that recomputes them from the released
+per-image CSVs without sharing code with the generating pipeline. The
+assistant is not listed as an author, and the author takes full
+responsibility for the content of the manuscript, including the parts it
+drafted, and has checked them for errors.
 
 % ===========================================================================
 \section*{Conflicts of Interest}

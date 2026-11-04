@@ -234,6 +234,47 @@ def main() -> int:
         if before != after:
             print("  [warn] archive contents changed since the last build")
 
+    # The copy under preprint/submission/ is the one the author uploads to
+    # Preprints.org, so it must carry the same content as what this script
+    # produces. Two copies of the same archive drifting apart is exactly
+    # the class of error this project keeps finding (a table in one place,
+    # a different number in another), so it is checked rather than trusted.
+    #
+    # The comparison is per entry, not per file: a zip stores a timestamp
+    # per entry, so rebuilding produces a different byte sequence even when
+    # every file inside is identical. Comparing bytes would therefore fail
+    # on every run and train the reader to ignore the check.
+    published = os.path.join(REPO, "preprint", "submission",
+                              "preprints_submission.zip")
+    if os.path.exists(published):
+        with zipfile.ZipFile(OUT) as built, zipfile.ZipFile(published) as pub:
+            built_map = {n: built.read(n) for n in built.namelist()}
+            pub_map = {n: pub.read(n) for n in pub.namelist()}
+        only_built = sorted(set(built_map) - set(pub_map))
+        only_pub = sorted(set(pub_map) - set(built_map))
+        differing = sorted(n for n in set(built_map) & set(pub_map)
+                            if built_map[n] != pub_map[n])
+        if only_built or only_pub or differing:
+            detail = []
+            if only_built:
+                detail.append(f"missing from the published copy: {only_built}")
+            if only_pub:
+                detail.append(f"only in the published copy: {only_pub}")
+            if differing:
+                detail.append(f"content differs: {differing}")
+            raise SystemExit(
+                "[fail] preprint/submission/preprints_submission.zip does not "
+                "match the archive this script just built.\n  "
+                + "\n  ".join(detail)
+                + "\n       The uploaded copy must carry the same content as "
+                  "the generated one; copy it over:\n"
+                  "         cp dist/preprints_submission.zip "
+                  "preprint/submission/preprints_submission.zip")
+        print(f"  preprint/submission copy carries the same "
+              f"{len(built_map)} entries as the build")
+    else:
+        print("  [note] preprint/submission/ has no archive yet (not an error)")
+
     return 0
 
 

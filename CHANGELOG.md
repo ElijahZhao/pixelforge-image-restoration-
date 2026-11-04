@@ -5,6 +5,37 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.10.0] - 2026-11-04
+
+**参考文献有效性全量外部核验 + Preprints.org 合规补漏 + 预印本文件归档**。
+
+### Added
+
+- `scripts/check_references.py`：参考文献有效性审计，**83 项检查**——24 条 arXiv 逐条经 API 抓取比对标题与年份、abs 页可达性；2 条 DOI 在 Crossref 确认已注册且注册标题/年份吻合、`doi.org` content-negotiation 可提供元数据；1 条 JMLR 条目落地页可达；`\cite` 键与 `refs.bib` **双向闭合**（无悬空引用、无未引用条目）。**已接入 CI**（`.github/workflows/ci.yml` 新增两步）。
+- `preprint/`：GitHub 上专设的预印本目录。`submission/` 存放要上传的 3 个文件（`manuscript.pdf` / `preprints_submission.zip` / `graphical_abstract.jpg`），`archive/` 留作带 DOI 的版本归档；`README.md` 写清"哪些文件要下载、哪些要提交"与全部表单字段的逐字稿。
+- CI 新增 `Rebuild refs.bib from the arXiv API and check it agrees`：`refs.bib` 由脚本生成而非手写，重建后必须逐位一致。
+- `scripts/make_submission_package.py`：新增投稿包与 `preprint/submission/` 副本的**逐条目内容比对**（不比对字节——zip 每次重建都写入新时间戳，比字节会每次报假警），不一致即报错退出，防止"仓库里的"与"作者上传的"两份投稿包悄悄漂移。
+
+### Fixed
+
+- **E91（引用内容错误）**：原稿把 SEAL（Zhang et al., ICLR 2024）写成 "random-crop evaluation"。**该文全文没有 "crop" 一词**——它针对的是"从巨大降级空间随机抽样少量降级案例"（原文 §1、§5.3 给出 "−0.23 dB and 0.18 dB respectively, leading to contradictory conclusions"）。这是把 SEAL 与本项目自己的 P1（随机裁剪）混为一谈。正文 §2.2、Table 1（经 `make_table1.py`）、`MATERIALS` §4.1 三处同步改正。
+- **E92（参考文献元数据）**：`build_refs_bib.py` 对所有 `@misc` 条目硬编码 `primaryClass = {cs.CV}`，而 HyperBench（2605.21671）主分类实为 `eess.IV`。脚本改为从 API 的 `<arxiv:primary_category>` 读取真实分类，不再假定。
+- **E93（Preprints.org 合规）**：官方 Instructions 依 COPE 要求"AI 工具的使用应记入 Methods（或合适的替代部分）"，而原稿通篇无 AI 使用声明——本项目确实用了 LLM 助手写作与生成脚本，属必须申报而未申报。新增 `Use of AI-Assisted Tools` 声明节，如实写明 AI 助手用于写作与生成 `scripts/`，全部数字由脚本从 `results/` 原始产物产出并经不共享代码的独立复算校验，作者对全文负责。
+
+### Changed
+
+- **核验深度推进一层**：此前对文献的核验只到"标题/作者/venue"与"摘要"两级（E20、E51 两轮），**从未读过原文全文**。本轮逐条读原文（arXiv HTML 全文 / 摘要），核对了正文与 Table 1 里对每篇文献的具体断言：Keleş 的 **2.0719 dB**（原文 Table I）与 2.5068 dB 理论极限、HyperBench 的 **5→13 dB**、LOL 文献的 **1.48× 饱和度 / 14% 更暗 / pixel-identical 输入**、Bridging 的"部分度量与人类感知呈负相关"、CleanFID 的抗锯齿、Musgrave 的 "marginal at best"、Lucic 的 "no consistent advantage over the non-saturating GAN"、Bouthillier 与 Dodge 的方差/预算主张——除 SEAL 外全部无误。
+- `scripts/build_refs_bib.py`：`primaryClass` 改为数据驱动（见 E92）。
+- `paper/main.tex`：AI 声明放在声明区而非 §3——放进 §3 会把全宽浮动体 Table 3 推迟到其首次引用之后 3 页，超出 `check_layout.py` 的 2 页阈值；为此把 Table 1 的 SEAL 行压回等长，改动的是措辞而非信息量。
+- `paper/PREPRINT_SUBMISSION.md`：新增第 10、11 项待办（引用审计、AI 声明）与 §4.1.1 记录本轮外部核验过程。
+
+### Verification
+
+- 论文编译 0 error / 0 undefined / 0 Overfull / 12 页；`check_layout.py` 全通过。
+- 门禁全绿：`check_facts_structure`（E1–E93 连续升序）、`check_prose_against_tables`（58 个正文数字对 10 张表）、`check_manuscript_numbers`、`verify_public_release`（126/126 复现）、两层独立复算（`audit_independent` / `audit_per_image`）、`check_references`（83/83）。
+- pytest **81 passed, 1 skipped**。
+- 投稿包重建：15 项、60 KiB，隔离目录从零编译 12 页通过。
+
 ## [1.9.0] - 2026-11-03
 
 **种子矩阵补齐 n=5**：三个任务各 5 次独立训练全部跑完，"种子方差有多大"从推测变成实测。

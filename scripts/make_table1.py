@@ -58,9 +58,9 @@ NEIGHBOURS = [
     {
         "bib": "zhang2024seal",
         "venue": "ICLR 2024",
-        "did": "Random-crop evaluation is unreliable and flips rankings among SR methods",
-        "gap": "Sampling randomness only; degradation, channel and aggregation are held fixed",
-        "ours": "P1 vs P2 vs P3 separates crop position from the other five dimensions, with 5 seeds per cell",
+        "did": "Random sampling of degradation cases from a large space yields inconsistent and at times contradictory conclusions",
+        "gap": "Degradation-case sampling only; channel, aggregation and boundary are held fixed",
+        "ours": "P1 vs P2 vs P3 varies crop position with the other dimensions fixed, and sets sampling beside degradation, channel and aggregation, with 5 seeds per cell",
     },
     {
         "bib": "srinivasan2026lol",
