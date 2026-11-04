@@ -120,7 +120,7 @@
 - 协议间跨度：×4 **3.889 dB**（P5→P6）/ 19.794（含 P1）；×2 **3.143**（P5→**P2**）/ 15.648；低光 2.250 / 6.067。
   **注意最低协议不同**：×4 最低是 P6，×2 最低是 P2 —— "哪个协议最苛刻"本身是任务相关的。
 - 训练增益（P3，标准全图 RGB）：×4 **+0.782 dB**；×2 **+0.863 dB**。
-- **比值必须三任务并列**（`FACTS` §6）：跨度 / 训练增益 ×4 **4.98×**（含 P1 **25.3×**）、×2 **3.64×**（18.1×）、低光 **0.21×**（0.57×）。**低光是反例，不是笔误**：训练增益 10.74 dB 是协议跨度 2.25 dB 的 4.8 倍——**协议能吞掉 SR 的改进，吞不掉低光的**。原因在 headroom：SR 的 P3 增益只有 0.78 dB，低光是 10.74 dB。所以命题要写成「headroom 与协议效应同量级时，协议支配结论」，**不要用一个 5–25 倍盖住三个任务**（E57）。
+- **比值必须三任务并列**（`FACTS` §6）：跨度 / 训练增益 ×4 **4.98×**（含 P1 **25.33×**）、×2 **3.64×**（18.13×）、低光 **0.21×**（0.57×）。**低光是反例，不是笔误**：训练增益 10.74 dB 是协议跨度 2.25 dB 的 4.8 倍——**协议能吞掉 SR 的改进，吞不掉低光的**。原因在 headroom：SR 的 P3 增益只有 0.78 dB，低光是 10.74 dB。所以命题要写成「headroom 与协议效应同量级时，协议支配结论」，**不要用一个 5–25 倍盖住三个任务**（E57）。
 - 种子 std 只占**本任务**协议跨度的 **0.49–3.58%**（**按任务配对**：×4 0.49–0.93%、×2 0.85–2.98%、低光 1.54–3.58%）。**不要写成"0.5–0.9%"**——那只对 ×4 成立，拿 ×4 的跨度配 ×2 的 σ 是跨任务乱配（同 §7.7 的 E48 一类错）。
 
 **5.2 符号翻转**（Fig. 2 或 Fig. 1 下排）
@@ -242,3 +242,5 @@
 | 5 | 预印本平台 | 决定页数/模板/图宽 | **定 Preprints.org**（MDPI）。⚠️ **原写"它不收 LaTeX 源码而收 PDF"是错的**（E73）——官方 Instructions for Authors 明写 "Files should be submitted in Microsoft Word or LaTeX format. For LaTeX files, ensure that all files necessary, including the .bib file, if applicable, to recreate the PDF are included in a zip or similar archive." 两种都收，排版自由度更高，不必迁就 TMLR 模板 |
 | 6 | 作者署名与单位 | 阻塞一切对外动作 | ✅ **已提供**（2026-11-04）：**Yulin Zhao**（又名 Elijah Zhao），ORCID `0009-0005-4623-8465`，邮箱 `20233407131@stu.huel.edu.cn`，机构 **Henan University of Economics and Law**（河南财经政法大学，缩写 HUEL，郑州）。**学院不填**（用户决定）。已写入 `CITATION.cff` 并通过 CFF 1.2.0 官方校验器；投稿元数据见 `paper/PREPRINT_SUBMISSION.md` |
 | 7 | ~~参考文献 bib~~ | — | ✅ **已完成**：`paper/refs.bib` **27 条**，`scripts/build_refs_bib.py` 从 arXiv API 生成、标题不符即中止 |
+| 8 | ~~Table 1–6 + 附录 A1–A3 排版~~ | §2–§6 | ✅ **已完成**（2026-11-04）：`scripts/make_tables.py` 生成 **9 张表**（LaTeX + Markdown 双格式）到 `paper/tables/`。**表里没有一个手敲的数**——每个数都从 `results/*.csv` 与抽样编码表重算，脚本自带 `--check` 会把重算值与 `FACTS.md` 逐位对账，不一致就拒绝出表（本次即靠它抓出 E74 的取整口径不一致） |
+| 9 | ~~图形摘要~~ | Preprints.org 投稿 | ✅ **已完成**（2026-11-04）：`scripts/make_graphical_abstract.py` → `paper/figures/ga_protocol_audit.{png,jpg,pdf}`，**2889×1470 px @300 dpi**，比例 1.965（MDPI 参考 1100×560 = 1.964）。三面板：协议跨度 vs 训练增益（**含低光反例**）／一个布尔值翻转符号／63 篇的报告率。**原创构图，与 Fig.1/Fig.2 逐像素比对确认非同一图** |

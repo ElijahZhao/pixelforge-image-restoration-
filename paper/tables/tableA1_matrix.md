@@ -1,0 +1,28 @@
+**Full protocol matrix (all 21 cells x 5 seeds).**
+
+| Task | Protocol | Description | n images | Seeds | PSNR mean (dB) | SD | Min | Max |
+|---|---|---|---|---|---|---|---|---|
+| SR $\times$4 | P1 | Random 96x96 crops, best-of-60 | 100 | 5 | 44.9575 | 0.2364 | 44.5839 | 45.2077 |
+| SR $\times$4 | P2 | Centre 96x96 crop (training val) | 100 | 5 | 26.4214 | 0.0363 | 26.3672 | 26.4595 |
+| SR $\times$4 | P3 | Full image, RGB | 100 | 5 | 27.6139 | 0.0348 | 27.5637 | 27.6471 |
+| SR $\times$4 | P4 | Full image, RGB + shave | 100 | 5 | 27.6024 | 0.0348 | 27.5522 | 27.6356 |
+| SR $\times$4 | P5 | Full image, Y + shave | 100 | 5 | 29.0523 | 0.0361 | 29.0014 | 29.0878 |
+| SR $\times$4 | P6 | Full image, Y + shave, **no antialias** | 100 | 5 | 25.1631 | 0.0190 | 25.1410 | 25.1854 |
+| SR $\times$4 | P7 | Full image, Y + shave, PIL bicubic | 100 | 5 | 29.0433 | 0.0359 | 28.9927 | 29.0786 |
+| SR $\times$4 | P8 | Full image, RGB, PIL bicubic | 100 | 5 | 27.6006 | 0.0345 | 27.5510 | 27.6337 |
+| SR $\times$2 | P1 | Random 96x96 crops, best-of-60 | 100 | 5 | 46.3340 | 0.5584 | 45.7223 | 46.9611 |
+| SR $\times$2 | P2 | Centre 96x96 crop (training val) | 100 | 5 | 30.6859 | 0.0685 | 30.5702 | 30.7399 |
+| SR $\times$2 | P3 | Full image, RGB | 100 | 5 | 32.1630 | 0.0670 | 32.0626 | 32.2318 |
+| SR $\times$2 | P4 | Full image, RGB + shave | 100 | 5 | 32.1623 | 0.0671 | 32.0621 | 32.2311 |
+| SR $\times$2 | P5 | Full image, Y + shave | 100 | 5 | 33.8290 | 0.0272 | 33.7855 | 33.8581 |
+| SR $\times$2 | P6 | Full image, Y + shave, **no antialias** | 100 | 5 | 31.1048 | 0.0938 | 31.0229 | 31.2636 |
+| SR $\times$2 | P7 | Full image, Y + shave, PIL bicubic | 100 | 5 | 33.8085 | 0.0268 | 33.7653 | 33.8371 |
+| SR $\times$2 | P8 | Full image, RGB, PIL bicubic | 100 | 5 | 32.1415 | 0.0656 | 32.0426 | 32.2090 |
+| Low-light | P1 | Random 96x96 crops, best-of-60 | 15 | 5 | 24.5767 | 0.4148 | 23.9722 | 25.0431 |
+| Low-light | P2 | Centre 96x96 crop (training val) | 15 | 5 | 20.5687 | 0.5303 | 19.9755 | 21.2620 |
+| Low-light | P3 | Full image, RGB | 15 | 5 | 18.5094 | 0.0363 | 18.4580 | 18.5450 |
+| Low-light | P4 | Full image, RGB + shave | 15 | 5 | 18.5195 | 0.0346 | 18.4657 | 18.5516 |
+| Low-light | P5 | Full image, Y + shave | 15 | 5 | 20.7590 | 0.0806 | 20.6579 | 20.8560 |
+
+1. The complete matrix: 21 protocol cells x 5 seeds = 105 evaluations. Low-light has no P6-P8, so the cell count is 21, not 8 x 3 x 5 = 120.
+2. Seed SD is the sample standard deviation (ddof=1) over the five seeds.
