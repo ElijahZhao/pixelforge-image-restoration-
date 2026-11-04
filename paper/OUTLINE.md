@@ -189,9 +189,9 @@
 | Table 5 | 表 | 符号翻转：同一权重、一个布尔开关 | ✅ 已排版（`table5_sign_flip`） |
 | Table 6 | 表 | 63 篇文献的报告率（含 Wilson CI） | ✅ 已排版（`table6_literature`） |
 | Table 7 | 表 | 六条最小报告清单 + 文献达标率 | ✅ 已排版（`table7_checklist`） |
-| Table A1 | 附录 | 21 个协议单元 × 5 seed 的完整矩阵 | ✅ 已排版（`tableA1_matrix`） |
-| Table A2 | 附录 | 逐协议增益 + 不可用的 naive 混合值 | ✅ 已排版（`tableA2_gains`） |
-| Table A3 | 附录 | F3 在 SR 子集上的分解 | ✅ 已排版（`tableA3_audit`） |
+| Table A1 | 附录 | 21 个协议单元 × 5 seed 的完整矩阵 | ✅ 已排版（`tableA1_matrix`）·**已入稿件**（`tab:full-matrix`，E85） |
+| Table A2 | 附录 | 逐协议增益 + 不可用的 naive 混合值 | ✅ 已排版（`tableA2_gains`）·**已入稿件**（`tab:per-protocol-gains`，E85） |
+| Table A3 | 附录 | F3 在 SR 子集上的分解 | ✅ 已排版（`tableA3_audit`）·**已入稿件**（`tab:f3-breakdown`，E85） |
 
 > **表号已在 2026-11-04 统一**（E76）。此前本表把 Table 1 定义为"七篇最近邻"、Table 2 为协议定义……而 `scripts/make_tables.py` 实际产出的是 `table1_protocols` / `table2_setup` / …… **两套编号整体错位，且"七篇最近邻"这张表当时根本不存在**。现以**脚本实际产出**为准：Table 1 = 最近邻，Table 2–7 = 脚本生成的六张表，A1–A3 不变。`scripts/make_tables.py` 的 TABLES 注册表里每张表带**显式 LaTeX label**（不再从 caption 字符串猜测），十张表经 `paper/tables_check.tex` 实测编译：**0 错误、0 Overfull、全部 \ref 可解析**。
 
@@ -248,5 +248,5 @@
 | 5 | 预印本平台 | 决定页数/模板/图宽 | **定 Preprints.org**（MDPI）。⚠️ **原写"它不收 LaTeX 源码而收 PDF"是错的**（E73）——官方 Instructions for Authors 明写 "Files should be submitted in Microsoft Word or LaTeX format. For LaTeX files, ensure that all files necessary, including the .bib file, if applicable, to recreate the PDF are included in a zip or similar archive." 两种都收，排版自由度更高，不必迁就 TMLR 模板 |
 | 6 | 作者署名与单位 | 阻塞一切对外动作 | ✅ **已提供**（2026-11-04）：**Yulin Zhao**（又名 Elijah Zhao），ORCID `0009-0005-4623-8465`，邮箱 `20233407131@stu.huel.edu.cn`，机构 **Henan University of Economics and Law**（河南财经政法大学，缩写 HUEL，郑州）。**学院不填**（用户决定）。已写入 `CITATION.cff` 并通过 CFF 1.2.0 官方校验器；投稿元数据见 `paper/PREPRINT_SUBMISSION.md` |
 | 7 | ~~参考文献 bib~~ | — | ✅ **已完成**：`paper/refs.bib` **27 条**，`scripts/build_refs_bib.py` 从 arXiv API 生成、标题不符即中止 |
-| 8 | ~~Table 1–6 + 附录 A1–A3 排版~~ | §2–§6 | ✅ **已完成**（2026-11-04）：`scripts/make_tables.py` 生成 **9 张表**（LaTeX + Markdown 双格式）到 `paper/tables/`。**表里没有一个手敲的数**——每个数都从 `results/*.csv` 与抽样编码表重算，脚本自带 `--check` 会把重算值与 `FACTS.md` 逐位对账，不一致就拒绝出表（本次即靠它抓出 E74 的取整口径不一致） |
+| 8 | ~~Table 1–6 + 附录 A1–A3 排版~~ | §2–§6 | ✅ **已完成**（2026-11-04）：`scripts/make_tables.py` 生成 **10 张表**（LaTeX + Markdown 双格式）到 `paper/tables/`（正文 Table 1–7 + 附录 A1–A3）。**表里没有一个手敲的数**——每个数都从 `results/*.csv` 与抽样编码表重算，脚本自带 `--check` 会把重算值与 `FACTS.md` 逐位对账，不一致就拒绝出表（本次即靠它抓出 E74 的取整口径不一致）。**附录三表已于 2026-11-04 纳入稿件**（E85：此前只生成未入稿，而 Table 4 的表注已指向 "Appendix Table A1"） |
 | 9 | ~~图形摘要~~ | Preprints.org 投稿 | ✅ **已完成**（2026-11-04）：`scripts/make_graphical_abstract.py` → `paper/figures/ga_protocol_audit.{png,jpg,pdf}`，**2889×1470 px @300 dpi**，比例 1.965（MDPI 参考 1100×560 = 1.964）。三面板：协议跨度 vs 训练增益（**含低光反例**）／一个布尔值翻转符号／63 篇的报告率。**原创构图，与 Fig.1/Fig.2 逐像素比对确认非同一图** |

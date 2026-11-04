@@ -176,10 +176,12 @@ def check_manifest() -> list[str]:
         for f in os.listdir(TABLES)
         if f.endswith(".tex")
     }
-    # The appendix tables are generated but not part of the manuscript.
+    # Every generated table must be used. The appendix tables (A1-A3) are
+    # part of the manuscript too: they were planned as a manuscript
+    # appendix, and Table 4's own note points the reader at "Appendix
+    # Table A1", so a manuscript without them would contain a reference
+    # to a table that does not exist.
     for name in sorted(available - used):
-        if name.startswith("tableA"):
-            continue
         problems.append(
             f"paper/tables/{name}.tex exists but the manuscript never \\inputs it"
         )

@@ -48,6 +48,9 @@ TABLE_FILES = {
     "tab:sign-flip": "table5_sign_flip.md",
     "tab:reporting-rates": "table6_literature.md",
     "tab:checklist": "table7_checklist.md",
+    "tab:full-matrix": "tableA1_matrix.md",
+    "tab:per-protocol-gains": "tableA2_gains.md",
+    "tab:f3-breakdown": "tableA3_audit.md",
 }
 
 #: Prose values that are deliberately not in the table they are discussed

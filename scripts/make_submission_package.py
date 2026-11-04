@@ -62,6 +62,9 @@ TABLE_FILES = [
     "tables/table5_sign_flip.tex",
     "tables/table6_literature.tex",
     "tables/table7_checklist.tex",
+    "tables/tableA1_matrix.tex",
+    "tables/tableA2_gains.tex",
+    "tables/tableA3_audit.tex",
 ]
 
 README = """\

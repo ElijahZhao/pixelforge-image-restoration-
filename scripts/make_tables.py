@@ -687,9 +687,12 @@ TABLES = [
     ("table5_sign_flip", table_sign_flip, (S_MATRIX, S_GAIN), "sign-flip", True),
     ("table6_literature", table_literature, (S_COUNTS,), "reporting-rates", False),
     ("table7_checklist", table_checklist, (S_COUNTS,), "checklist", True),
-    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,), "full-matrix", False),
-    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN), "per-protocol-gains", False),
-    ("tableA3_audit", table_appendix_audit, (S_COUNTS,), "f3-breakdown", False),
+    # The appendix tables are full-width for the same reason the body
+    # tables are: they carry many columns (the complete matrix has nine),
+    # and a `table` in a two-column paper would scale them past reading.
+    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,), "full-matrix", True),
+    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN), "per-protocol-gains", True),
+    ("tableA3_audit", table_appendix_audit, (S_COUNTS,), "f3-breakdown", True),
 ]
 
 

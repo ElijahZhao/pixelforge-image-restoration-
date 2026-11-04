@@ -2,7 +2,7 @@
 % Requires: \usepackage{booktabs} \usepackage{graphicx}
 % The \resizebox around the tabular fits it to the text width;
 % use it inside a full-width float (table*) in a two-column paper.
-\begin{table}[!htbp]
+\begin{table*}[!htbp]
 \centering
 \caption{Per-protocol gains and the naive mixed figure that must not be used.}
 \label{tab:per-protocol-gains}
@@ -40,4 +40,4 @@ Low-light & P5 & 20.7590 & 9.2787 & 11.4803 & - & - \\
 \textbf{(a)} The last column mixes the 95-image bicubic aggregate with the model's 100-image aggregate. It is shown only to be excluded: on SR x4 it reports +0.1748 where the aligned figure is -0.5793, i.e. the sign is masked by the mismatch. The paper reports the aligned column.\\
 \textbf{(b)} P1 is aligned on 95 images because the bicubic reference is +inf on 5 of them.\\
 \end{minipage}
-\end{table}
+\end{table*}
