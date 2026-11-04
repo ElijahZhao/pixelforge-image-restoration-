@@ -1,7 +1,7 @@
 # Preprints.org 相关文件
 
 本目录集中存放投稿到 [Preprints.org](https://www.preprints.org/) 所需的全部文件。
-元数据填写稿见 [`paper/PREPRINT_SUBMISSION.md`](../paper/PREPRINT_SUBMISSION.md)（字段逐条核实过官方 Instructions）。
+元数据填写稿见[资料库存档](https://www.workbuddy.cn/space/d/AOJqt6VN9mLDKH2u788uH5)（字段逐字稿，已逐条核实官方 Instructions）。
 
 - 目标期刊平台：Preprints.org（MDPI 运营），稿件类型 **Article**
 - 学科分类：**Computer Science and Mathematics** → **Artificial Intelligence and Machine Learning**
@@ -38,7 +38,7 @@
 | 2 | LaTeX source (zip) | `submission/preprints_submission.zip` | 15 项：`main.tex` + `refs.bib` + 10 张表 + 2 张图 + `README.md`；已验证从零隔离编译通过 |
 | 3 | Graphical abstract (JPG) | `submission/graphical_abstract.jpg` | 平台独立上传项 |
 
-### 2.2 表单字段（逐字稿见 `paper/PREPRINT_SUBMISSION.md`）
+### 2.2 表单字段（逐字稿见[资料库存档](https://www.workbuddy.cn/space/d/AOJqt6VN9mLDKH2u788uH5)）
 
 | 字段 | 填写值 |
 |---|---|
