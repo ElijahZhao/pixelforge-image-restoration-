@@ -1,0 +1,449 @@
+{
+  "protocols": {
+    "P1": {
+      "sampling": "random",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "best_of_n",
+      "label": "random crop, best-of-N"
+    },
+    "P2": {
+      "sampling": "center",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "centre crop (training val)"
+    },
+    "P3": {
+      "sampling": "full",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, RGB"
+    },
+    "P4": {
+      "sampling": "full",
+      "metric": "rgb_shave",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, RGB + shave"
+    },
+    "P5": {
+      "sampling": "full",
+      "metric": "y_shave",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, Y + shave"
+    }
+  },
+  "config": {
+    "scale": 1,
+    "shave": 1,
+    "crop": 96,
+    "n_random": 60,
+    "device": "cuda",
+    "grouped": true,
+    "baseline": false,
+    "paired": true,
+    "data": "data/lol/val/high",
+    "n_images": 15
+  },
+  "checkpoints": {
+    "lowlight_srcnn_scale2_best__s42": {
+      "path": null,
+      "meta": {
+        "seed": 42,
+        "crop_size": 128,
+        "tag": "seeds/s42",
+        "epoch": 94,
+        "val_psnr": 18.535799344380695,
+        "source": "state_dict"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 25.0431,
+          "psnr_std": 4.8948,
+          "ssim_mean": 0.8189,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.2
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 21.262,
+          "psnr_std": 5.9154,
+          "ssim_mean": 0.7787,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.2
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5358,
+          "psnr_std": 3.8246,
+          "ssim_mean": 0.7492,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.2
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5457,
+          "psnr_std": 3.8295,
+          "ssim_mean": 0.7496,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.2
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 20.7717,
+          "psnr_std": 4.3355,
+          "ssim_mean": 0.8478,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.2
+        }
+      },
+      "dataset": "lol/val/high"
+    },
+    "lowlight_srcnn_scale2_best__s43": {
+      "path": null,
+      "meta": {
+        "seed": 43,
+        "crop_size": 128,
+        "tag": "seeds/s43",
+        "epoch": 38,
+        "val_psnr": 18.521223068237305,
+        "source": "state_dict"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 24.3782,
+          "psnr_std": 5.9684,
+          "ssim_mean": 0.7803,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 20.0975,
+          "psnr_std": 5.5352,
+          "ssim_mean": 0.7602,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5212,
+          "psnr_std": 3.8151,
+          "ssim_mean": 0.7411,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5261,
+          "psnr_std": 3.8162,
+          "ssim_mean": 0.7415,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 20.8103,
+          "psnr_std": 4.4495,
+          "ssim_mean": 0.837,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        }
+      },
+      "dataset": "lol/val/high"
+    },
+    "lowlight_srcnn_scale2_best__s44": {
+      "path": null,
+      "meta": {
+        "seed": 44,
+        "crop_size": 128,
+        "tag": "seeds/s44",
+        "epoch": 110,
+        "val_psnr": 18.45799668629964,
+        "source": "state_dict"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 24.8127,
+          "psnr_std": 5.2661,
+          "ssim_mean": 0.8032,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 20.7254,
+          "psnr_std": 5.8362,
+          "ssim_mean": 0.7681,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.458,
+          "psnr_std": 3.5216,
+          "ssim_mean": 0.7439,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.4657,
+          "psnr_std": 3.5227,
+          "ssim_mean": 0.7441,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 20.6993,
+          "psnr_std": 4.0982,
+          "ssim_mean": 0.8415,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        }
+      },
+      "dataset": "lol/val/high"
+    },
+    "lowlight_srcnn_scale2_best__s45": {
+      "path": null,
+      "meta": {
+        "seed": 45,
+        "crop_size": 128,
+        "tag": "seeds/s45",
+        "epoch": 71,
+        "val_psnr": 18.544968795776366,
+        "source": "state_dict"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 24.6772,
+          "psnr_std": 5.0085,
+          "ssim_mean": 0.8085,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 20.7829,
+          "psnr_std": 5.8063,
+          "ssim_mean": 0.768,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.545,
+          "psnr_std": 3.6382,
+          "ssim_mean": 0.7442,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5516,
+          "psnr_std": 3.6422,
+          "ssim_mean": 0.7447,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 20.856,
+          "psnr_std": 4.2315,
+          "ssim_mean": 0.8405,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 0.9
+        }
+      },
+      "dataset": "lol/val/high"
+    },
+    "lowlight_srcnn_scale2_best__s46": {
+      "path": null,
+      "meta": {
+        "seed": 46,
+        "crop_size": 128,
+        "tag": "seeds/s46",
+        "epoch": 57,
+        "val_psnr": 18.486762873331706,
+        "source": "state_dict"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 23.9722,
+          "psnr_std": 5.0801,
+          "ssim_mean": 0.8061,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 19.9755,
+          "psnr_std": 5.5804,
+          "ssim_mean": 0.7606,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.4868,
+          "psnr_std": 4.2378,
+          "ssim_mean": 0.7405,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 18.5083,
+          "psnr_std": 4.2635,
+          "ssim_mean": 0.7411,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 20.6579,
+          "psnr_std": 4.7506,
+          "ssim_mean": 0.8355,
+          "n_images": 15,
+          "n_inf": 0,
+          "sec": 1.0
+        }
+      },
+      "dataset": "lol/val/high"
+    }
+  },
+  "datasets": {}
+}

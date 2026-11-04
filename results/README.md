@@ -162,21 +162,30 @@ forwards instead of eight.
 
 | Protocol | Model | Bicubic | Gain |
 |---|---|---|---|
-| P1 best-of-60 | 46.334 ± 0.558 | — | — |
-| P2 centre 96² | 30.686 ± 0.069 | — | — |
-| **P3 full RGB** | **32.163 ± 0.067** | — | — |
-| P4 full RGB+shave | 32.162 ± 0.067 | — | — |
-| **P5 full Y+shave** | **33.829 ± 0.027** | — | — |
-| P6 Y+shave, no AA | 31.105 ± 0.094 | — | — |
-| P7 Y+shave, PIL | 33.809 ± 0.027 | — | — |
-| P8 full RGB, PIL | 32.142 ± 0.066 | — | — |
+| P1 best-of-60 | 46.334 ± 0.558 | 48.107 | **−1.773** |
+| P2 centre 96² | 30.686 ± 0.069 | 30.042 | +0.644 |
+| **P3 full RGB** | **32.163 ± 0.067** | 31.300 | **+0.863** |
+| P4 full RGB+shave | 32.162 ± 0.067 | 31.295 | +0.868 |
+| **P5 full Y+shave** | **33.829 ± 0.027** | 32.683 | **+1.146** |
+| P6 Y+shave, no AA | 31.105 ± 0.094 | 32.994 | **−1.889** |
+| P7 Y+shave, PIL | 33.809 ± 0.027 | 32.672 | +1.137 |
+| P8 full RGB, PIL | 32.142 ± 0.066 | 31.282 | +0.859 |
 
-> **Known gap**: the ×2 bicubic rows are empty. The stage-5 kernel ran
-> `bicubic_sr_x4` and `bicubic_ll_x2` but never `bicubic_sr_x2`, so ×2 has model
-> numbers with no same-protocol baseline. The 31.04 in the table above comes from
-> `eval_baseline.py` (P3, full RGB), which is the right reference for P3 but cannot
-> fill P5/P6/P7. Filling this costs one short kernel run; until then, **quote ×2 gains
-> only against the 31.04 P3 baseline**.
+> This baseline was **missing until 2026-11-04**. The stage-5 kernel ran
+> `bicubic_sr_x4` and `bicubic_ll_x2` but never `bicubic_sr_x2`, so for two days
+> ×2 had model numbers with no same-protocol reference. It was filled on a local
+> CPU (no GPU, 13.5 min, 100 images) — bicubic baselines need no model, so this
+> never had to cost GPU quota. The run reuses the same `protocol_matrix.py` code
+> path as the ×4 baseline, and the two agree on the one cross-check available:
+> P5 vs P7 (torchvision vs PIL bicubic) differ by 0.004 dB on ×4 and 0.011 dB on
+> ×2, the same order of magnitude, so the CPU and T4 degradation paths have not
+> drifted.
+>
+> **The sign flip reproduces, and is larger.** P5 → P6 moves from +1.146 to
+> −1.889 (a swing of **3.035 dB**, against ×4's 2.571). ×2 also flips at P1:
+> −1.773, because the bicubic best-of-60 reaches 48.107 and no model output does.
+> That second flip is a property of the protocol, not of the model — see the note
+> under "Three things this table says".
 
 **Low-light — U-Net, 5 seeds (LOL eval15, 15 pairs, paired input)**
 
@@ -194,22 +203,30 @@ forwards instead of eight.
 > (`clamp(x + out)`), not a super-resolution network, despite the historical
 > `scale2` in its filename.
 
-### Three things this table says
+### Four things this table says
 
-1. **P6 flips the sign.** On the exact same weights and images, switching the degrade
-   operator from antialiased to naive bicubic drops the model from +0.82 dB above
-   bicubic to **−1.75 dB below it**. Neither number is "wrong": antialiased
-   downsampling removes the aliasing the network was trained to invert, naive
-   downsampling creates it. A paper that reports only one of these is reporting an
-   artifact of its own resize call.
-2. **Protocol choice moves the number 18 dB.** For the same ×4 weight, the eight
-   protocols span **25.16 → 44.96 dB** (P1's 44.96 is the max over 60 random 96² crops,
-   an optimistic upper bound, not a comparable score). Even restricted to full-image
-   protocols, P3 (27.61) vs P5 (29.05) differ by 1.44 dB purely from the colour space
-   and border. Any cross-paper comparison must state the protocol.
-3. **The seed spread is small, the protocol spread is large.** Across 5 seeds the
+1. **P6 flips the sign — on both super-resolution tasks.** On the exact same weights
+   and images, switching the degrade operator from antialiased to naive bicubic drops
+   the model from **+0.818 dB above bicubic to −1.753 dB below it** on ×4, and from
+   **+1.146 to −1.889** on ×2. Neither number is "wrong": antialiased downsampling
+   removes the aliasing the network was trained to invert, naive downsampling creates
+   it. A paper that reports only one of these is reporting an artifact of its own
+   resize call. That the flip reproduces on a second task, a second architecture and a
+   second scale is the strongest evidence here — it is not a quirk of one model.
+2. **P1 flips too, and for a different reason.** On ×2 the model loses 1.773 dB to
+   bicubic under best-of-60. Nothing is wrong with the network: taking the maximum over
+   60 random crops lets bicubic find a near-flat patch where it is almost exact (five
+   images even score `inf`), and no model output beats a perfect reconstruction. The
+   protocol manufactures a baseline nobody can beat. On ×4 the same protocol gives
+   +0.175 instead, which is equally meaningless — it is measuring how lucky the crop
+   draw was.
+3. **Protocol choice moves the number 18 dB.** For the same ×4 weight, the eight
+   protocols span **25.16 → 44.96 dB**. Restricted to full-image protocols the span is
+   still **3.889 dB** (P5 29.052 vs P6 25.163), against a model improvement of
+   **0.782 dB** — a ratio of 5×, or 25× if P1 is included.
+4. **The seed spread is small, the protocol spread is large.** Across 5 seeds the
    standard deviation is 0.019–0.036 dB on full-image protocols; across protocols it is
-   up to 1.8 dB. Seed variance is *not* the uncertainty that matters here — protocol is.
+   3.889 dB. Seed variance is *not* the uncertainty that matters here — protocol is.
 
 ### Anchor gate (how these numbers are protected)
 
@@ -220,6 +237,32 @@ This caught a real bug on the first attempt: `pil_bicubic` returned a CPU tensor
 GPU forward raised a device mismatch, and the gate stopped the run at 1.07 minutes
 instead of publishing eight wrong protocols.
 
+### How these three CSVs are produced
+
+The tables used to be assembled by hand from the kernel outputs, so a reader could
+only check them by trusting us. They are now generated:
+
+```bash
+# 6 raw matrix JSONs -> long (105 rows) / wide (21 rows) / gain (21 rows)
+python scripts/aggregate_matrix.py --runs-root results/matrix_runs --out results
+# the paper figure, straight from those CSVs
+python scripts/make_figure1.py --out paper/figures --fmt pdf,png
+```
+
+`results/matrix_runs/` holds one `protocol_matrix.json` per kernel job — 64 KB in
+total, so the raw evidence travels with the repo. Per-image CSVs (105 files) live in
+the private archive instead; `aggregate_matrix.py` needs only the JSONs.
+
+Two conventions the script pins down, because both have been silently wrong before:
+
+- `psnr_std` is the **sample** standard deviation (ddof=1) over the 5 seeds. With n=5
+  it is ~10% larger than the population value, which is bigger than every seed effect
+  in this project.
+- the baseline's **name** comes from `paired`, not from the checkpoint key. Paired mode
+  performs no upscaling, so its reference is the capture itself; the archived
+  `identity_ll` JSON still calls that key `bicubic` because the string was hardcoded
+  before the paired path existed.
+
 ```bash
 # reproduce the matrix (needs the 15 seed weights)
 # SR: 10 checkpoints x 8 protocols, 0.587 h on a T4 (kernel v2)
@@ -227,6 +270,14 @@ python scripts/protocol_matrix.py --task sr --scale 4 --datasets div2k/val --ali
 python scripts/protocol_matrix.py --task sr --scale 2 --datasets div2k/val --align 8
 # low-light: 5 checkpoints x P1-P5 on paired real captures, 0.116 h (kernel v4)
 python scripts/protocol_matrix.py --task lowlight --scale 1 --datasets lol/val/high --align 8
+
+# the reference lines, through the same code path (no model, so CPU is enough:
+# the 100-image x2 baseline takes 13.5 min on 16 threads)
+python scripts/protocol_matrix.py --task sr --scale 4 --baseline --datasets div2k/val
+python scripts/protocol_matrix.py --task sr --scale 2 --baseline --datasets div2k/val
+python scripts/protocol_matrix.py --task lowlight --scale 1 --baseline --datasets lol/val/high --align 8
+# in paired mode --baseline returns the capture unchanged, i.e. "do nothing";
+# the CSV will name that checkpoint `identity`, not `bicubic`.
 ```
 
 `--align 8` is the U-Net downsampling multiple; it reflect-pads the HR side to a

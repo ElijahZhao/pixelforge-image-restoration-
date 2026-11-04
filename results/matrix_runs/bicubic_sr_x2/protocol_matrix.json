@@ -1,0 +1,188 @@
+{
+  "protocols": {
+    "P1": {
+      "sampling": "random",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "best_of_n",
+      "label": "random crop, best-of-N"
+    },
+    "P2": {
+      "sampling": "center",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "centre crop (training val)"
+    },
+    "P3": {
+      "sampling": "full",
+      "metric": "rgb",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, RGB"
+    },
+    "P4": {
+      "sampling": "full",
+      "metric": "rgb_shave",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, RGB + shave"
+    },
+    "P5": {
+      "sampling": "full",
+      "metric": "y_shave",
+      "degrade": "tv_bicubic_aa",
+      "agg": "per_image",
+      "label": "full image, Y + shave"
+    },
+    "P6": {
+      "sampling": "full",
+      "metric": "y_shave",
+      "degrade": "tv_bicubic_noaa",
+      "agg": "per_image",
+      "label": "full image, Y + shave, no antialias"
+    },
+    "P7": {
+      "sampling": "full",
+      "metric": "y_shave",
+      "degrade": "pil_bicubic",
+      "agg": "per_image",
+      "label": "full image, Y + shave, PIL bicubic"
+    },
+    "P8": {
+      "sampling": "full",
+      "metric": "rgb",
+      "degrade": "pil_bicubic",
+      "agg": "per_image",
+      "label": "full image, RGB, PIL bicubic"
+    }
+  },
+  "config": {
+    "scale": 2,
+    "shave": 2,
+    "crop": 96,
+    "n_random": 60,
+    "device": "cpu",
+    "grouped": true,
+    "baseline": true,
+    "paired": false,
+    "data": "data/div2k/val",
+    "n_images": 100
+  },
+  "checkpoints": {
+    "bicubic": {
+      "path": null,
+      "meta": {
+        "source": "interpolation"
+      },
+      "protocols": {
+        "P1": {
+          "label": "random crop, best-of-N",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "random",
+          "agg": "best_of_n",
+          "psnr_mean": 48.1074,
+          "psnr_std": 8.0581,
+          "ssim_mean": 0.9763,
+          "n_images": 100,
+          "n_inf": 5,
+          "sec": 161.8
+        },
+        "P2": {
+          "label": "centre crop (training val)",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "center",
+          "agg": "per_image",
+          "psnr_mean": 30.0418,
+          "psnr_std": 6.2782,
+          "ssim_mean": 0.877,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P3": {
+          "label": "full image, RGB",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 31.3001,
+          "psnr_std": 4.6894,
+          "ssim_mean": 0.8991,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P4": {
+          "label": "full image, RGB + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "rgb_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 31.2948,
+          "psnr_std": 4.6911,
+          "ssim_mean": 0.899,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P5": {
+          "label": "full image, Y + shave",
+          "degrade": "tv_bicubic_aa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 32.6834,
+          "psnr_std": 4.778,
+          "ssim_mean": 0.9091,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P6": {
+          "label": "full image, Y + shave, no antialias",
+          "degrade": "tv_bicubic_noaa",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 32.9937,
+          "psnr_std": 4.882,
+          "ssim_mean": 0.9189,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P7": {
+          "label": "full image, Y + shave, PIL bicubic",
+          "degrade": "pil_bicubic",
+          "metric": "y_shave",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 32.672,
+          "psnr_std": 4.7699,
+          "ssim_mean": 0.9088,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        },
+        "P8": {
+          "label": "full image, RGB, PIL bicubic",
+          "degrade": "pil_bicubic",
+          "metric": "rgb",
+          "sampling": "full",
+          "agg": "per_image",
+          "psnr_mean": 31.2824,
+          "psnr_std": 4.6749,
+          "ssim_mean": 0.8984,
+          "n_images": 100,
+          "n_inf": 0,
+          "sec": 161.8
+        }
+      },
+      "dataset": "div2k/val"
+    }
+  },
+  "datasets": {}
+}
