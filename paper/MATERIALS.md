@@ -9,13 +9,15 @@
 
 ## 1. 定位：写什么，不写什么
 
-**写的是**：一篇评测方法学短文。核心命题——*在轻量图像修复里，评测协议的选择能移动报告指标 3.9 dB（×4 全协议跨度 19.8 dB），是模型自身改进（0.78 dB）的 5 倍；只改一个 `antialias` 布尔值，结论从"优于基线 +0.82 dB"翻成"劣于基线 −1.75 dB"。*
+**写的是**：一篇评测方法学短文。核心命题——*在轻量图像修复里，评测协议的选择能移动报告指标 **3.9 dB**（×4 的 P5→P6；若把 best-of-60 的 P1 也算进来是 19.8 dB），是模型自身改进（0.78 dB）的 **5 倍**；只改一个 `antialias` 布尔值，结论从"优于基线 +0.82 dB"翻成"劣于基线 −1.75 dB"。*
 
 > 数字口径：3.9 / 19.8 / 0.78 都是 **×4 任务**的值（×2 是 3.14 / 15.65 / 0.86，低光是 2.25 / 6.07 / 10.74）。摘要里若只报一组，必须标明是 ×4，不能让人读成"三任务平均"。
+>
+> **3.9 与 19.8 的关系要一句话讲清，否则读者会以为其中一个打错了**：3.8892 是**去掉 P1 之后** 7 个协议的跨度（P5 29.0523 → P6 25.1631）；19.7944 是**含 P1** 的跨度——P1（best-of-60）单独就把 44.9575 拉到比次高的 P5 高 **15.9052 dB**。**主数用 3.9**：P1 是极值统计，不是"协议选择"的常规效应；19.8 只能当"含极端采样协议时的上限"提，且必须说明 P1 是 best-of-60、其基线 n=95（§7.6 与 E21）。
 
 **不写的是**：
 - 不主张性能。三个模型都不是 SOTA：按 RGB 口径，低光落后 KinD **2.36 dB**（20.87 as reported, not re-run）。**不写 Retinexformer 的 6.8 dB**——那是 Y 减 RGB（`FACTS` §9.3）。
-- 不主张系统。81 项测试（+1 skip）、CI、跨环境数值一致（**≤1e-5 dB，不是 bitwise**）是**证据可信的前提**，放 §4.1，不单列为贡献。
+- 不主张系统。**82 项测试（81 通过 + 1 跳过）**、CI、跨环境数值一致（**四项统计量差 0.0 到 1e-6 精度；验收判据 ≤1e-5 dB；不是 bitwise**）是**证据可信的前提**，放 §4.1，不单列为贡献。
 - 不主张"首次发现协议影响指标"。Keleş 2021（聚合，SISR 实测 2.07 dB）、LOL audit 2026（低光标签与测试时设置）、Clean-FID 2022（GAN 侧 resize）都在这条线上。我们主张的是**首个跨任务、跨五维度的统一审计 + 符号翻转这一具体机制**。
 
 **三条贡献（按可防御性排序）**：
@@ -72,12 +74,12 @@
 
 | 要写 | 用什么 | 出处 | 状态 |
 |---|---|---|---|
-| 4.1 三个模型 | 1.226M / 0.069M / 0.565M（实测） | `FACTS` §1 | ✅ |
+| 4.1 三个模型 | **1.224 M / 0.069 M / 0.565 M**（可训练参数，实测；不是 1.226 —— 那个含 BN buffer，见 `FACTS` §10-E43） | `FACTS` §1 | ✅ |
 | **×4 带感知损失** | 配置事实（config）：`w_pixel=1.0`、`w_percep=0.006`、`objective = 1.0*charbonnier + 0.006*vgg_perceptual`。**实测是惰性的**：成对消融 on 27.61 / off 27.60，**Δ −0.01 dB**，SSIM Δ 0.0001，锐度差 0.26%，参数收敛到同一处。**"1:8–1:17"是估算**（日志只记 total loss）。**禁写"以牺牲 PSNR 换观感"**——本项目没发生 | `FACTS` §3 + §7.9 + §10-E18/E32 | ✅ **必写，但写"设了没生效"** |
 | 4.1 可复现性 | **81 项通过 + 1 跳过**（`train/tests` 69 + `tests/` 12：API 冒烟 9、推理集成 3）；CI 三门禁（pytest+覆盖率 75%、pip-audit、tsc+next build）；跨环境数值一致 **≤1e-5 dB（实测 1e-6），不是 bitwise** | `FACTS` §9.2 + §10-E10 | ✅ |
 | 4.2 数据 | DIV2K 800/100；LOL 485/15；低光**配对无上采样** | `FACTS` §2 | ✅ |
 | 4.2 种子与轮数 | 42–46；200/100/200 轮；**Adam + cosine 退火（T_max=总轮数）** | `FACTS` §3 | ✅ 2026-11-04 补：原漏了 LR 调度 |
-| 4.3 环境 | T4 训练、本地 CPU 跑 ×2 基线、跨环境 <1e-6 dB | `FACTS` §9.2 | ✅ |
+| 4.3 环境 | T4 训练、本地 CPU 跑 ×2 基线；跨环境**四项统计量差 0.0（到 1e-6 精度）**，验收判据 ≤1e-5，**禁写 bitwise** | `FACTS` §9.2 | ✅ |
 | **验证口径交叉验证** | 训练日志 best 对到协议矩阵 1e-3 内，SR 对 P2、低光对 P3 | `FACTS` §9.1 | ✅ 极强的可信度证据 |
 
 ### §5 Results（2.5 页，核心）
@@ -93,7 +95,7 @@
 | 5.2 机制数字 | 模型侧 **−3.89/−2.72**，基线侧 **−1.32 / +0.31**（×2 是**涨**的）；剪刀差 2.57 / 3.03 | `FACTS` §7.2 | ✅ 2026-11-04 修正：×2 基线符号原写反 |
 | 5.3 跨任务 | ×2 复现且更大（3.03 dB 摆幅） | `FACTS` §5.3 | ✅ |
 | 5.3 **P1 不是"另一个翻转"，是"P1 根本不可比"** | ×4 **−0.5793**、×2 **−2.3123**（两边同取 95 张）。5 张 DIV2K 图（`0839/0843/0846/0847/0868`）被 bicubic 在 best-of-60 里**精确重建**，PSNR=∞，故基线 n=95；模型侧对应 5 张是 50–68 dB。**任何网络都不可能赢** | `FACTS` §5.3 + §10-E21 + `results/p1_inf_alignment.csv` | ✅ 2026-11-04 修正 |
-| 5.4 文献报告 | **F1 聚合 1/63 [0.3, 8.5]%；F2 验证 batch 0/63 [0.0, 5.7]%；F3 退化可复现 5/44 [5.0, 24.0]%；F4 明说 Y 通道 22/63 [24.3, 47.2]%；F7 给代码 35/63 [43.3, 67.2]%** | `FACTS` §8 | ✅ 五个比例全带 Wilson CI |
+| 5.4 文献报告 | **F1 聚合 1/63 [0.3, 8.5]%；F2 验证 batch 0/63 [0.0, 5.7]%；F3 退化可复现 5/44 [5.0, 24.0]%；F4 明说 Y 通道 22/63 [24.3, 47.2]%；F5 shave 边界 0/44 [0.0, 8.0]%；F6 val/test 同集 0/63 [0.0, 5.7]%；F7 给代码 35/63 [43.3, 67.2]%** | `FACTS` §8 | ✅ **七个比例**全带 Wilson CI。⚠️ **F6 是 2026-11-04 才补上的**（编码表一直有这列，文档漏统计），写 §5.4 时别漏 |
 | Fig. 1 / Fig. 2 / Table 4 / Table 5 | — | `paper/figures/`、`FACTS` §5 | ✅ 图齐，表待排版 |
 
 ### §6 Discussion（1 页）
@@ -101,8 +103,8 @@
 | 要写 | 用什么 | 出处 | 状态 |
 |---|---|---|---|
 | 6.1 机制 | 五个维度逐条解释 | `FACTS` §7.1–7.5 | ✅ |
-| **6.1 聚合的量化** | 逐图平均比平均 MSE 高 **1.90/2.20/1.51 dB**（全图），单块放大到 **3.14/3.47/2.77**；面积加权只贡献 0.04–0.07，98% 是 Jensen。**顺带复现 Keleş 2021 的 2.07 dB** | `FACTS` §7.6 + `results/aggregation_gap.csv` | ✅ **原稿引的 1.156 dB 口径不对，已换** |
-| 6.1 挡质疑的对照 | 换库 0.01–0.02 dB vs 换 antialias 2.7–3.9 dB，差 200 倍 | `FACTS` §7.3 | ✅ |
+| **6.1 聚合的量化** | 逐图平均比平均 MSE 高 **1.90/2.20/1.51 dB**（全图），单块放大到 **3.14/3.47/2.77**；面积加权只贡献 **−0.04～+0.07**（P1 为负），**96%** 是 Jensen。**顺带复现 Keleş 2021 的 2.07 dB** | `FACTS` §7.6 + `results/aggregation_gap.csv` | ✅ **原稿引的 1.156 dB 口径不对，已换** |
+| 6.1 挡质疑的对照 | 换库 **0.0090–0.0215 dB** vs 换 antialias **2.7242–3.8892 dB**，同列配对是 **127–432 倍**（×2 约 130、×4 约 300–430）。**别写"200 倍"**——没有任何一个同口径能得出 200 | `FACTS` §7.3 | ✅ |
 | 6.2 最小报告清单 | **六条**：聚合 / 验证 batch / 采样窗口 / 通道与 shave / 退化算子（含 `antialias`）/ 种子与 best-of-N。**摘要里压成四条**（合并「通道+shave」与「采样+batch」），正文保持六条 | `FACTS` §8 的五个比例可直接当每条的证据 | ⬜ 待写 |
 | 6.3 对审稿流程 | "不要求重跑，只要求一行字" + 可复制模板 | 需自己写 | ⬜ 待写 |
 
@@ -171,10 +173,10 @@
 | 条目 | 为什么必须引 | 核验 |
 |---|---|---|
 | Lucic, Kurach, Michalski, Gelly, Bousquet. *Are GANs Created Equal? A Large-Scale Study.* NeurIPS 2018（arXiv:1711.10337） | "同等调参预算下，改进消失"——本文符号翻转的最近亲 | ✅ 已核 |
-| Musgrave, Belongie, Lim. *A Metric Learning Reality Check.* ECCV 2020（arXiv:2003.08505） | 公平基线后，多年"改进"归零。**最能给本文定位的一篇** | ✅ 已核 |
-| Dodge, Gururangan, Card, Schwartz, Smith. *Show Your Work: Improved Reporting of Experimental Results.* EMNLP-IJCNLP 2019（arXiv:1909.03004） | 报告规范（报分布而非单点）——直接支撑 §6.2 清单 | ✅ 已核 |
-| Bouthillier, Delaunay, Bronzi, Trofimov, Nichyporuk et al. *Accounting for Variance in Machine Learning Benchmarks.* MLSys 2021（arXiv:2103.03098） | 方差来源分解的方法论 | ✅ 已核 |
-| Picard. *torch.manual_seed(3407) is all you need: On the influence of random seeds in deep learning architectures for computer vision.* arXiv:2109.08203（2021-09-16） | 种子敏感性——本文种子 std 0.02–0.09 dB 的对照 | ✅ 已核（标题是全名，引用勿简写） |
+| Musgrave, Belongie, Lim. *A Metric Learning Reality Check.* ECCV 2020（arXiv:2003.08505） | 公平基线后，多年"改进"归零。**最能给本文定位的一篇** | ✅ 已核：Crossref `10.1007/978-3-030-58595-2_41`（LNCS，2020），全文页 **681–699**；DBLP key `conf/eccv/MusgraveBL20` |
+| Dodge, Gururangan, Card, Schwartz, Smith. *Show Your Work: Improved Reporting of Experimental Results.* EMNLP-IJCNLP 2019（arXiv:1909.03004） | 报告规范（报分布而非单点）——直接支撑 §6.2 清单 | ✅ 已核：Crossref `10.18653/v1/d19-1224`，container 全称含 "**and the 9th International Joint Conference on Natural Language Processing**"，故正式写法是 **EMNLP-IJCNLP 2019**（bib 里简写 EMNLP 不算错） |
+| Bouthillier, Delaunay, Bronzi, Trofimov, Nichyporuk et al. *Accounting for Variance in Machine Learning Benchmarks.* MLSys 2021（arXiv:2103.03098） | 方差来源分解的方法论 | ✅ 已核：**MLSys 2021 官方 proceedings（Proceedings of Machine Learning and Systems 3）确认收录**。⚠️ **作者数两个版本不同**：proceedings **16 位**、arXiv **17 位**（多 Dmitriy Serdyuk）。`refs.bib` 已改用 proceedings 的 16 位（`AUTHOR_OVERRIDE`），正文若写 "Bouthillier et al." 不受影响 |
+| Picard. *torch.manual_seed(3407) is all you need: On the influence of random seeds in deep learning architectures for computer vision.* arXiv:2109.08203（2021-09-16） | 种子敏感性——本文种子 std 0.02–0.09 dB 的对照 | ✅ 已核：**纯预印本，无正式发表**（arXiv 无 `<journal_ref>`/`<doi>`，comment 只有 "fixed typos"），引用时按 arXiv 写是对的。标题是全名，**勿简写**；arXiv 的 `<title>` 把首字母自动大写成 "Torch."，原题小写 |
 
 ### 4.3 模型与数据
 
@@ -245,7 +247,7 @@
 | "待补测 #7 种子矩阵" | ✅ 已完成 |
 | "待补测 #8 文献查新" | ✅ 已完成（N=63） |
 | "39 项测试" | 现为 **82 项收集：81 通过 + 1 跳过**（`train/tests` 69、`tests/` 12）。见 §4.1 |
-| "×2 槽位是 SRResNet" | 部分是：**主仓 `models/` 的 0.783M 部署权重**是 SRResNet；**种子矩阵 `models/seeds/srcnn_x2/` 的 0.069M** 是真 SRCNN。论文用后者。见 `FACTS.md` §10-E1 |
+| "×2 槽位是 SRResNet" | 部分是：**主仓 `models/` 的 0.781 M 部署权重**是 SRResNet（781,068 可训练参数；写 0.783 是把 state_dict 元素数当参数量）；**种子矩阵 `models/seeds/srcnn_x2/` 的 0.069M** 是真 SRCNN。论文用后者。见 `FACTS.md` §10-E1 |
 | 五类维度的"11.85 dB / 11.65 dB" | 条件是 32 个 96² 块，与论文的全图口径不同，**禁止混用**。见 `FACTS.md` §11 |
 
 那份 `00-审查总账.md`（1631 行）**仍有价值**，但只作为过程记录与自我更正档案引用，不作为数字来源。

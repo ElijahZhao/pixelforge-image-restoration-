@@ -109,6 +109,26 @@ STATIC = {
 }""",
 }
 
+# The conference version of a paper is not always the arXiv version, and the
+# author list is where that shows up most often. When the venue string names a
+# conference, the proceedings' list is authoritative -- so any mismatch is
+# recorded here rather than silently inheriting the preprint's.
+#
+# 2103.03098: MLSys 2021 (Proceedings of Machine Learning and Systems 3) lists
+#  16 authors; arXiv v1 lists 17 (it adds Dmitriy Serdyuk, between Michalski
+#  and Arbel). Verified by fetching the MLSys 2021 proceedings index, not from
+#  memory. The 7th author is "Naz Sepah" on arXiv and "Nazanin Mohammadi
+#  Sepahvand" in the proceedings -- same person, full name.
+AUTHOR_OVERRIDE: dict[str, list[str]] = {
+    "2103.03098": [
+        "Xavier Bouthillier", "Pierre Delaunay", "Mirko Bronzi",
+        "Assya Trofimov", "Brennan Nichyporuk", "Justin Szeto",
+        "Nazanin Mohammadi Sepahvand", "Edward Raff", "Kanika Madan",
+        "Vikram Voleti", "Samira Ebrahimi Kahou", "Vincent Michalski",
+        "Tal Arbel", "Chris Pal", "Gaël Varoquaux", "Pascal Vincent",
+    ],
+}
+
 # Titles with acronyms or mixed case that BibTeX would otherwise lowercase.
 PROTECT = [
     "SEAL", "HyperBench", "NTIRE", "LOL", "GAN", "GANs", "PSNR", "CNN", "RGB",
@@ -167,6 +187,7 @@ def main() -> None:
               ""]
     for key, aid, expect, venue, year in ENTRIES:
         title, authors, _ = meta[aid]
+        authors = AUTHOR_OVERRIDE.get(aid, authors)
         if expect.lower() not in title.lower():
             raise SystemExit(
                 f"title mismatch for {aid}\n  expected to contain: {expect}\n  got: {title}")
