@@ -112,9 +112,9 @@ large-dataset academic SOTA (30+ dB) — the training set and model capacity are
 low-light gain is relative to a no-op baseline, not to other published methods.
 
 **What it cost to measure.** Every number above came from free-tier Kaggle T4 kernels, and
-the ledger is written down rather than remembered: **29 kernel runs, 26.4 h of wall-clock
-machine time** (19.1 h on GPU, 7.3 h on CPU — the reconciliation kernels deliberately run on
-CPU so they cost no GPU quota), of which **6.8 h went into 9 runs that failed or were voided**
+the ledger is written down rather than remembered: **34 kernel runs, 29.05 h of wall-clock
+machine time** (21.72 h on GPU, 7.33 h on CPU — the reconciliation kernels deliberately run on
+CPU so they cost no GPU quota), of which **6.84 h went into 11 runs that failed or were voided**
 and had to be redone. **1 700 training epochs** across **15 runs (3 tasks × 5 seeds)** are
 behind the seed-variance figures. The per-run breakdown, including why each run failed, is in
 [`results/compute_ledger.md`](results/compute_ledger.md) and can be regenerated with
@@ -127,7 +127,7 @@ protocol (random crop, per-image mean) — *not* comparable with the full-image 
 |---|---|---|---|
 | SR ×2 (SRCNN, 100 ep) | 30.686 ± 0.069 | [30.601, 30.771] | 30.686 (same) |
 | SR ×4 (SRResNet, 200 ep) | 26.422 ± 0.036 | [26.378, 26.466] | 26.422 (same) |
-| Low-light ×2 (SRCNN, 200 ep) | 18.032 ± 0.104 | [17.903, 18.161] | 18.510 (upper bound only) |
+| Low-light ×2 (U-Net, 200 ep) | 18.032 ± 0.104 | [17.903, 18.161] | 18.510 (upper bound only) |
 
 Seeds move the result by 0.04–0.10 dB. Toggling `antialias` alone moves it by 3.7 dB — a
 factor of ~40 more. **Seed choice is not what determines the number; the protocol label is.**
@@ -245,8 +245,10 @@ The E2E browser test (`tests/e2e/test_e2e.py`) drives a real Chromium through th
 flow. It boots two servers and a browser, so it is skipped under pytest by default; run it
 directly, or set `PIXELFORGE_RUN_E2E=1`.
 
-CI (`.github/workflows/ci.yml`) runs three jobs: pytest with a coverage gate, `pip-audit` over
-the lock file, and the frontend type-check + tests + build.
+CI (`.github/workflows/ci.yml`) runs four jobs: pytest with a coverage gate, `pip-audit` over
+the lock file, the frontend type-check + tests + build, and a paper job that regenerates every
+table from the result CSVs and checks them against `FACTS.md`, rebuilds and compiles the LaTeX
+manuscript, runs the layout check, and audits the bibliography (24 arXiv records + 2 DOIs) for validity.
 
 ## 🧰 Training
 
@@ -375,6 +377,7 @@ The engineering is complete and live; the remaining items are optional extension
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
+- **1.11.3** — Fixed stale cost figures in both READMEs (now 34 kernel runs / 29.05 h, matching `results/compute_ledger.md`); corrected the seed-variance table's low-light label from "SRCNN" to "U-Net" (the architecture is a U-Net, confirmed from the checkpoint); and updated the CI description to four jobs (added the paper job).
 - **1.11.2** — Streamlit demo adds a collapsible "About this project" section (bilingual) summarising what the project does, the key idea, and its significance for non-expert visitors; also clarifies training-provenance wording and adds a privacy note.
 - **1.11.1** — Fixed a stale Chinese README claim about SR ×4 sharpness; restored zh/en parity.
 - **1.11.0** — Author set to Independent Researcher; manuscript submitted to Preprints.org; added a Paper & Preprint section; process docs moved to the internal library.
