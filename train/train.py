@@ -320,9 +320,19 @@ def train(args):
             # repo (see results/README.md), so a table without them is not
             # comparable with any other table.
             "train_crop": "random_position",
-            "val_crop": "centre",
+            # `val_crop` differs per task and was written as "centre" for both
+            # until 2026-11-04. SuperResolutionDataset scores a fixed centre
+            # 96x96 patch; LowLightDataset keeps the FULL image so its number
+            # stays comparable with `scripts/eval_baseline.py`. The old value was
+            # not just imprecise, it was falsifiable: the low-light seed matrix
+            # reports 18.510 (best-of-200) and protocol P3 (full image) reports
+            # 18.509, while P2 (centre 96) reports 20.569 -- the training log
+            # matches the full-image protocol, not the one this field named.
+            "val_crop": "centre_96" if args.task == "sr" else "full_native",
             "val_aggregation": "per_image_mean",
-            "metric_space": "RGB, full image, no shave",
+            # Spatial extent is `val_crop`; this field only names the channel
+            # set and the border treatment, so it must not repeat "full image".
+            "metric_space": "RGB, no shave",
             "lr_degradation": "bicubic(antialias=True)",
         },
         "data": {

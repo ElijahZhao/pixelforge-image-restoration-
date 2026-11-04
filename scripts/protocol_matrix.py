@@ -451,7 +451,14 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
 
     models = []
     if args.baseline:
-        models.append(("bicubic", None, {"source": "interpolation"}))
+        # Naming the paired reference "bicubic" was wrong twice over: in paired
+        # mode no upscaling happens, so the baseline returns the capture
+        # unchanged -- it is the do-nothing line, not an interpolator. The
+        # archived low-light baseline JSON still carries the old key, so
+        # `scripts/aggregate_matrix.py` decides the reference name from
+        # `paired`, not from this string.
+        models.append(("identity" if args.paired else "bicubic", None,
+                       {"source": "interpolation" if not args.paired else "identity"}))
     for ckpt in ckpts:
         try:
             m, meta = load_model(ckpt, args.task, args.scale)
