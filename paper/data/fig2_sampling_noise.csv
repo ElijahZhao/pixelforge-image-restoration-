@@ -1,0 +1,6 @@
+n_samples,std_db,pp99_db,source
+1,1.597,5.61,bootstrap 5000x over 28 blocks of one 444x680 image
+4,0.788,3.94,bootstrap 5000x over 28 blocks of one 444x680 image
+9,0.528,2.69,bootstrap 5000x over 28 blocks of one 444x680 image
+16,0.395,2.02,bootstrap 5000x over 28 blocks of one 444x680 image
+28,0.293,1.47,bootstrap 5000x over 28 blocks of one 444x680 image
