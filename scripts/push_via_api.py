@@ -26,6 +26,7 @@ import re
 import subprocess
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 
 REPO = "ElijahZhao/pixelforge-image-restoration-"
@@ -93,22 +94,32 @@ def main() -> int:
     # a different sha even though the tree is byte-identical. Comparing shas
     # would then refuse an update that changes nothing.
     #
-    # So the check is on the *tree*: if the remote commit's tree equals the
-    # local HEAD~1's tree, the two commits describe the same content and the
-    # update is a genuine fast-forward. If the trees differ, the remote has
-    # commits this branch does not have, and the script refuses.
+    # So the check is on the *tree*: the remote must already hold exactly the
+    # content of one of this branch's ancestors. If it does, advancing the ref
+    # to the new commit is a genuine fast-forward. If the remote holds content
+    # this branch does not contain, the script refuses.
     st, remote_commit = api(f"/git/commits/{remote_sha}")
     remote_tree = remote_commit["tree"]["sha"]
     parent_tree = git("rev-parse", "HEAD~1^{tree}")
     print(f"remote tree: {remote_tree[:7]}")
-    print(f"parent tree: {parent_tree[:7]}")
+    print(f"local HEAD~1 tree: {parent_tree[:7]}")
 
-    if remote_tree != parent_tree:
-        print(f"\nREFUSING: the remote tree ({remote_tree[:7]}) differs from "
-              f"HEAD~1's tree ({parent_tree[:7]}). The remote has commits this "
+    # The remote may sit at an older ancestor of HEAD (a previous API push
+    # rebuilt the commit server-side, so its sha and tree differ from the
+    # local ones even though the content is the same). What matters is that
+    # the remote's content is somewhere in this branch's history.
+    ancestor_trees = {}
+    for anc in git("rev-list", local_head).splitlines():
+        ancestor_trees[git("rev-parse", f"{anc}^{{tree}}")] = anc
+    if remote_tree in ancestor_trees:
+        base = ancestor_trees[remote_tree]
+        print(f"\nfast-forward check passed: the remote holds the content of "
+              f"local commit {base[:7]}")
+    else:
+        print(f"\nREFUSING: the remote tree ({remote_tree[:7]}) matches no "
+              f"commit in this branch's history. The remote has content this "
               f"branch does not contain; rebase onto it before pushing.")
         return 1
-    print("\nfast-forward check passed (remote content == HEAD~1 content)")
     if args.dry_run:
         print("\n--dry-run: stopping before upload")
         return 0
@@ -118,12 +129,34 @@ def main() -> int:
     #    content-addressed, and re-creating an existing blob answers 500
     #    ("Server Error"), which looks like a transport failure but is really
     #    "you already have this". So probe first, upload only what is missing.
-    shas = git("ls-tree", "-r", local_head).splitlines()
+    #
+    #    Probing every blob in the tree would be one API round-trip per blob
+    #    -- over 350 requests for this repository, which takes minutes. Only
+    #    the paths that differ between the remote's tree and this one can hold
+    #    a missing blob, so the probe is restricted to those.
+    out = subprocess.run(
+        ["git", "diff", "--name-only", base, local_head],
+        capture_output=True, text=True, check=True).stdout
+    paths = sorted({p for p in out.splitlines() if p})
+    print(f"paths to consider: {len(paths)} (changed since the remote)")
+
     blob_shas = []
-    for line in shas:
-        meta = line.split("\t", 1)[0].split()
-        if len(meta) == 3 and meta[1] == "blob":
-            blob_shas.append(meta[2])
+    for path in paths:
+        st, entry = api(f"/contents/{urllib.parse.quote(path)}?ref={remote_sha}")
+        if st != 200:
+            continue
+        # Only a changed blob needs uploading; if the remote file already has
+        # the blob we are about to push, there is nothing to do for it.
+        want = subprocess.run(["git", "rev-parse", f"{local_head}:{path}"],
+                               capture_output=True, text=True)
+        if want.returncode != 0:
+            continue
+        want_sha = want.stdout.strip()
+        if entry.get("sha") == want_sha:
+            continue
+        if entry.get("type") != "file":
+            continue
+        blob_shas.append(want_sha)
 
     def blob_exists(sha):
         try:
@@ -137,10 +170,8 @@ def main() -> int:
             return False
 
     uploaded = 0
-    skipped = 0
     for sha in blob_shas:
         if blob_exists(sha):
-            skipped += 1
             continue
         blob = subprocess.run(["git", "cat-file", "blob", sha],
                               capture_output=True, check=True).stdout
@@ -149,8 +180,7 @@ def main() -> int:
             "encoding": "base64",
         }, method="POST")
         uploaded += 1
-    print(f"blobs: {uploaded} uploaded, {skipped} already present "
-          f"(of {len(blob_shas)})")
+    print(f"blobs: {uploaded} uploaded ({len(blob_shas)} candidates)")
 
     # 2. Build the tree recursively.
     #    A tree entry that points at a *subtree* must reference a tree the
