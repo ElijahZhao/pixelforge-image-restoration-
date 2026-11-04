@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import argparse
 import re
+import sys
+import time
 import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -144,11 +146,36 @@ def fetch(ids: list[str]) -> dict[str, tuple[str, list[str], str, str]]:
     "cs.CV" for every preprint is wrong for HyperBench (2605.21671), whose
     primary category is eess.IV (image and video processing) with cs.CV
     only as a secondary category.
+
+    The request is retried because arXiv throttles bursts of API calls and
+    a CI job that shares an IP with everyone else's can be handed a 429 or
+    a 503. A transient refusal must not be recorded as "the bibliography
+    changed": that would make the check fail for a reason that has nothing
+    to do with the manuscript. Only a response that actually arrives is
+    compared, and a missing entry is still a hard error below.
     """
-    url = ("http://export.arxiv.org/api/query?id_list=" + ",".join(ids)
+    url = ("https://export.arxiv.org/api/query?id_list=" + ",".join(ids)
            + "&max_results=" + str(len(ids)))
-    with urllib.request.urlopen(url, timeout=60) as fh:
-        root = ET.fromstring(fh.read())
+    last: Exception | None = None
+    for attempt in range(5):
+        try:
+            req = urllib.request.Request(url, headers={
+                "User-Agent": "pixelforge-refs-builder/1.0 "
+                              "(preprint submission bibliography check)",
+            })
+            with urllib.request.urlopen(req, timeout=60) as fh:
+                root = ET.fromstring(fh.read())
+            break
+        except Exception as exc:  # noqa: BLE001
+            last = exc
+            time.sleep(5 * (attempt + 1))
+    else:
+        # Exit 2 means "could not run", distinct from exit 1's "the
+        # bibliography is wrong". The CI step reads the difference: an
+        # arXiv outage is not a defect in the manuscript.
+        print(f"arXiv API unreachable after 5 attempts: {last}", file=sys.stderr)
+        sys.exit(2)
+
     out = {}
     for e in root.findall("a:entry", NS):
         aid = e.find("a:id", NS).text.rsplit("/", 1)[-1]

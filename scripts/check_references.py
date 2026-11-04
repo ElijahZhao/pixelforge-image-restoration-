@@ -16,6 +16,13 @@ project before:
 
 Exit code is non-zero when anything fails, so this can run in CI.
 
+Exit code 2 is reserved for "the check could not run": the network refused
+every attempt. That is a different statement from "a reference is broken",
+and the distinction matters in CI -- a registry being briefly unreachable
+must not be reported as a broken citation, because a reader who sees "27
+references failed" will reasonably assume the manuscript is wrong. The CI
+step treats exit 2 as inconclusive rather than as a defect.
+
     python scripts/check_references.py
 """
 from __future__ import annotations
@@ -34,6 +41,16 @@ ATOM = "http://www.w3.org/2005/Atom"
 
 FAILURES: list[str] = []
 CHECKS = 0
+
+
+class NetworkUnreachable(Exception):
+    """The registry never answered; the check could not run.
+
+    Distinct from a failed check. A reference that genuinely does not
+    resolve is a defect in the manuscript; a registry that is briefly down
+    is not, and reporting the two the same way teaches the reader to
+    distrust the report.
+    """
 
 
 def check(ok: bool, label: str, detail: str = "") -> bool:
@@ -71,6 +88,9 @@ def http_get(url: str, timeout: int = 45, accept: str = "*/*",
                 continue
             return e.code, ""
         except Exception as e:  # noqa: BLE001
+            # Status 0 marks a connection-level failure: the request never
+            # got an answer. The caller uses this to tell "the network is
+            # down" apart from "the server said no".
             last = (0, f"{type(e).__name__}: {e}")
             time.sleep(2 * (attempt + 1))
     return last
@@ -124,6 +144,8 @@ def arxiv_meta(ids: list[str]) -> dict[str, tuple[str, str]]:
     url = ("https://export.arxiv.org/api/query?id_list=" + ",".join(ids)
            + "&max_results=" + str(len(ids)))
     status, body = http_get(url)
+    if status == 0:
+        raise NetworkUnreachable(f"arXiv API unreachable: {body[:200]}")
     if status != 200:
         raise SystemExit(f"arXiv API returned {status}: {body[:200]}")
     root = ET.fromstring(body)
@@ -145,6 +167,21 @@ def main() -> None:
     ap.add_argument("--report", default="")
     args = ap.parse_args()
 
+    try:
+        run(args)
+    except NetworkUnreachable as exc:
+        print()
+        print(f"[refs] INCONCLUSIVE: {exc}")
+        print("[refs] The registry never answered, so the check did not run.")
+        print("[refs] This is not a statement about the bibliography.")
+        if args.report:
+            json.dump({"checks": None, "status": "network-unreachable",
+                       "detail": str(exc)},
+                      open(args.report, "w"), indent=2)
+        sys.exit(2)
+
+
+def run(args) -> None:
     entries = parse_bib(args.bib)
     print(f"[refs] parsed {len(entries)} entries from {args.bib}")
 
@@ -192,7 +229,10 @@ def main() -> None:
                       f"{key}: venue year inconsistent with arXiv upload year",
                       f"bib={yr} arxiv_upload={api_year}")
             # The abs page must be reachable -- readers need a working link.
-            status, _ = http_get(f"https://arxiv.org/abs/{aid}")
+            status, body = http_get(f"https://arxiv.org/abs/{aid}")
+            if status == 0:
+                raise NetworkUnreachable(
+                    f"arxiv.org/abs/{aid} unreachable: {body[:160]}")
             check(status == 200, f"{key}: arxiv.org/abs/{aid} not reachable",
                   f"HTTP {status}")
         print(f"[refs] arXiv: {len(arxiv_ids)} entries fetched, "
@@ -209,6 +249,9 @@ def main() -> None:
     for key, doi in dois.items():
         cstatus, cbody = http_get(
             "https://api.crossref.org/works/" + urllib.parse.quote(doi, safe=""))
+        if cstatus == 0:
+            raise NetworkUnreachable(
+                f"Crossref unreachable for {doi}: {cbody[:160]}")
         if not check(cstatus == 200, f"{key}: DOI not registered at Crossref",
                      f"{doi} -> HTTP {cstatus}"):
             continue
@@ -231,6 +274,9 @@ def main() -> None:
         st, body = http_get(
             "https://doi.org/" + urllib.parse.quote(doi),
             accept="application/vnd.citationstyles.csl+json")
+        if st == 0:
+            raise NetworkUnreachable(
+                f"doi.org unreachable for {doi}: {body[:160]}")
         ok = st == 200
         if ok:
             try:
@@ -247,8 +293,11 @@ def main() -> None:
             continue
         j = e.get("journal", "")
         if "Machine Learning Research" in j:
-            status, _ = http_get(
+            status, body = http_get(
                 "https://www.jmlr.org/papers/volume11/cawley10a/cawley10a.pdf")
+            if status == 0:
+                raise NetworkUnreachable(
+                    f"jmlr.org unreachable: {body[:160]}")
             check(status == 200, f"{key}: JMLR landing page not reachable", f"HTTP {status}")
             print(f"[refs] journal landing ok: {key} ({j})")
         else:
