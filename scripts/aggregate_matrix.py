@@ -66,7 +66,7 @@ WIDE_COLS = ["task", "scale", "paired", "protocol", "label", "degrade", "metric"
              "sampling", "agg", "n_images", "n_seeds", "psnr_mean", "psnr_std",
              "psnr_min", "psnr_max"]
 GAIN_COLS = ["task", "protocol", "reference", "model_mean", "reference_psnr",
-             "gain", "n_seeds"]
+             "gain", "n_seeds", "n_aligned", "gain_naive_mixed"]
 
 
 def _load(path: str):
@@ -116,7 +116,26 @@ def main() -> int:
     ap.add_argument("--runs-root", default="results/matrix_runs",
                     help="directory holding one subdirectory per kernel job")
     ap.add_argument("--out", default="results", help="where the CSVs go")
+    ap.add_argument("--p1-alignment", default="results/p1_inf_alignment.csv",
+                    help="P1 gain realigned on the images where the baseline is "
+                         "finite (produced by scripts/align_p1_inf.py); "
+                         "pass '' to fall back to the naive mixed count")
     args = ap.parse_args()
+
+    # P1's bicubic baseline can reconstruct flat patches exactly (PSNR = +inf),
+    # so its aggregate covers 95 of 100 images while the model's covers 100.
+    # `align_p1_inf.py` rebuilds both sides on the 95-image intersection; this
+    # table overrides the P1 gain when present. Missing file is not an error --
+    # the naive value is still emitted in `gain_naive_mixed`.
+    aligned: dict[str, dict] = {}
+    if args.p1_alignment and os.path.exists(args.p1_alignment):
+        with open(args.p1_alignment, newline="") as fh:
+            aligned = {r["task"]: r for r in csv.DictReader(fh)}
+        print(f"[info] P1 gains realigned from {args.p1_alignment} "
+              f"({', '.join(sorted(aligned))})")
+    else:
+        print("[warn] no P1 alignment table: P1 gain stays on the mixed count "
+              "(baseline 95 images vs model 100)", file=sys.stderr)
 
     long_rows, wide_rows, gain_rows = [], [], []
     for task, scale, paired, job, base_job in DEFAULT_JOBS:
@@ -172,6 +191,18 @@ def main() -> int:
         for proto in sorted(by_proto, key=lambda p: int(p[1:])):
             model_mean = st.mean(by_proto[proto])
             ref = base_by_proto.get(proto)
+            n_aligned: object = ""
+            naive: object = ""
+            if proto == "P1" and task in aligned:
+                # Report the like-for-like comparison: both sides averaged over
+                # the images where the baseline produced a finite PSNR. The
+                # 100-image model mean is kept in `gain_naive_mixed` so the size
+                # of the correction stays visible.
+                a = aligned[task]
+                naive = a["gain_naive_mixed"]
+                model_mean = float(a["model_mean_aligned"])
+                ref = float(a["baseline_mean_aligned"])
+                n_aligned = a["n_images_aligned"]
             gain_rows.append({
                 "task": task, "protocol": proto,
                 # `paired` decides the semantics, not the checkpoint name: the
@@ -184,6 +215,8 @@ def main() -> int:
                 "reference_psnr": f"{ref:.4f}" if ref is not None else "",
                 "gain": f"{model_mean - ref:.4f}" if ref is not None else "",
                 "n_seeds": len(by_proto[proto]),
+                "n_aligned": n_aligned,
+                "gain_naive_mixed": naive,
             })
 
     os.makedirs(args.out, exist_ok=True)

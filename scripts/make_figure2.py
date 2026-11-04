@@ -15,9 +15,10 @@ Two things the figure has to say without a caption:
   1. the noise falls as 1/sqrt(n) -- a statistical law, not an artifact of one
      unlucky experiment, so the grey reference curve is plotted on top;
   2. one sample per image (the common practice) carries ~1.6 dB of noise, which
-     is ~5x the "+0.3 dB" improvements papers routinely claim. Resolving 0.3 dB
-     needs >=16 samples per image, which for a 96x96 window means tiling most
-     of the image -- i.e. full-image evaluation.
+     is ~5x the "+0.3 dB" improvements papers routinely claim. Reaching 0.3 dB
+     needs the full 28 blocks of this 444x680 image (n=16 still carries 0.395 dB),
+     which for a 96x96 window means tiling the whole image -- i.e. full-image
+     evaluation.
 
 Honest scope, stated in the caption and repeated here: this is a *per-image*
 noise curve from a single image, not a dataset-level confidence interval. A
@@ -114,8 +115,8 @@ def draw(out_dir, fmts):
             fontsize=6.2, color="#222222", va="center", ha="left")
 
     # Where the curve drops below the claim; what that costs in samples.
-    ax.axvspan(16, 30.5, color=C_STD, alpha=0.07, zorder=0)
-    ax.text(23.2, 3.05, "$\\geq$16 samples/image\nto resolve 0.3 dB",
+    ax.axvspan(24, 29.5, color=C_STD, alpha=0.07, zorder=0)
+    ax.text(21.6, 3.05, "28 blocks/image\nreach 0.3 dB",
             fontsize=6.0, color=C_STD, ha="center", va="center",
             linespacing=1.5)
 
@@ -140,7 +141,11 @@ def draw(out_dir, fmts):
     written = []
     for fmt in fmts:
         p = os.path.join(out_dir, f"fig2_sampling_noise.{fmt}")
-        fig.savefig(p, dpi=400 if fmt == "png" else None, bbox_inches="tight")
+        # pad_inches=0.01 (not the 0.1 default): with the default the tight
+        # bbox grew the PDF to 3.61 in wide, over the 3.5 in single-column
+        # limit, and the journal would have scaled the 6 pt labels down.
+        fig.savefig(p, dpi=400 if fmt == "png" else None,
+                    bbox_inches="tight", pad_inches=0.01)
         written.append(p)
     plt.close(fig)
     return written

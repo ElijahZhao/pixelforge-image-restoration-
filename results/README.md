@@ -130,7 +130,7 @@ Low-Light Enhancement (LOL validation, 15 images)
 
 Files: `protocol_matrix_fig1_long.csv` (105 per-checkpoint rows),
 `protocol_matrix_fig1_wide.csv` (21 seed-averaged rows), `model_vs_bicubic_gain.csv`
-(13 model-vs-baseline rows). Produced by `scripts/protocol_matrix.py`, which groups the
+(21 model-vs-baseline rows). Produced by `scripts/protocol_matrix.py`, which groups the
 eight protocols by `(degrade, sampling)` so each image needs only **three** full-image
 forwards instead of eight.
 
@@ -149,7 +149,7 @@ forwards instead of eight.
 
 | Protocol | Model | Bicubic | Gain |
 |---|---|---|---|
-| P1 best-of-60 | 44.958 ± 0.236 | 44.783 | +0.175 |
+| P1 best-of-60 | 44.958 ± 0.236 | 44.783 *(n=95)* | **−0.579** |
 | P2 centre 96² | 26.421 ± 0.036 | 25.808 | +0.614 |
 | **P3 full RGB** | **27.614 ± 0.035** | 26.832 | **+0.782** |
 | P4 full RGB+shave | 27.602 ± 0.035 | 26.819 | +0.784 |
@@ -162,7 +162,7 @@ forwards instead of eight.
 
 | Protocol | Model | Bicubic | Gain |
 |---|---|---|---|
-| P1 best-of-60 | 46.334 ± 0.558 | 48.107 | **−1.773** |
+| P1 best-of-60 | 46.334 ± 0.558 | 48.107 *(n=95)* | **−2.312** |
 | P2 centre 96² | 30.686 ± 0.069 | 30.042 | +0.644 |
 | **P3 full RGB** | **32.163 ± 0.067** | 31.300 | **+0.863** |
 | P4 full RGB+shave | 32.162 ± 0.067 | 31.295 | +0.868 |
@@ -213,13 +213,17 @@ forwards instead of eight.
    it. A paper that reports only one of these is reporting an artifact of its own
    resize call. That the flip reproduces on a second task, a second architecture and a
    second scale is the strongest evidence here — it is not a quirk of one model.
-2. **P1 flips too, and for a different reason.** On ×2 the model loses 1.773 dB to
-   bicubic under best-of-60. Nothing is wrong with the network: taking the maximum over
-   60 random crops lets bicubic find a near-flat patch where it is almost exact (five
-   images even score `inf`), and no model output beats a perfect reconstruction. The
-   protocol manufactures a baseline nobody can beat. On ×4 the same protocol gives
-   +0.175 instead, which is equally meaningless — it is measuring how lucky the crop
-   draw was.
+2. **P1 flips too, and for a reason that makes the whole protocol unusable.** P1's
+   baseline is averaged over **95 of 100 images**, because bicubic reconstructs a flat
+   patch *exactly* under best-of-60 — five images (`0839/0843/0846/0847/0868.png`)
+   score `inf` and are excluded from the aggregate (`n_inf=5`). Comparing that against a
+   100-image model mean mixes two samples, so both sides are re-averaged on the same 95
+   images (`scripts/align_p1_inf.py` → `results/p1_inf_alignment.csv`): the model then
+   reads **−0.579 dB (×4)** and **−2.312 dB (×2)**. Nothing is wrong with the networks:
+   on those five images the model gets 50–68 dB, which is excellent and still loses to a
+   perfect reconstruction. **The protocol manufactures a baseline nobody can beat** — and
+   the effect is not even signed consistently with model quality, which is why P1 is
+   drawn off-scale in Figure 1 and never used in a claim.
 3. **Protocol choice moves the number 18 dB.** For the same ×4 weight, the eight
    protocols span **25.16 → 44.96 dB**. Restricted to full-image protocols the span is
    still **3.889 dB** (P5 29.052 vs P6 25.163), against a model improvement of
@@ -243,7 +247,9 @@ The tables used to be assembled by hand from the kernel outputs, so a reader cou
 only check them by trusting us. They are now generated:
 
 ```bash
-# 6 raw matrix JSONs -> long (105 rows) / wide (21 rows) / gain (21 rows)
+# P1 only: re-average both sides on the 95 images where bicubic is finite
+python scripts/align_p1_inf.py --out results/p1_inf_alignment.csv
+# 6 raw matrix JSONs (+ the alignment table) -> long 105 / wide 21 / gain 21 rows
 python scripts/aggregate_matrix.py --runs-root results/matrix_runs --out results
 # the paper figure, straight from those CSVs
 python scripts/make_figure1.py --out paper/figures --fmt pdf,png
@@ -262,6 +268,16 @@ Two conventions the script pins down, because both have been silently wrong befo
   performs no upscaling, so its reference is the capture itself; the archived
   `identity_ll` JSON still calls that key `bicubic` because the string was hardcoded
   before the paired path existed.
+
+A third one was wrong until 2026-11-04 and is now pinned by `align_p1_inf.py`:
+
+- **a gain is only defined on a common image set.** `protocol_matrix.py` drops `inf`
+  PSNR from an aggregate and records `n_inf`, which is right for the baseline's own
+  mean but silently changes the sample. P1 is the only protocol affected (every other
+  baseline protocol has `n_inf = 0`, and so does the paired `identity` reference).
+  The gain CSV therefore carries `n_aligned` and `gain_naive_mixed`: when the two
+  differ, **`gain` is the like-for-like number** and `gain_naive_mixed` exists only so
+  the size of the correction stays auditable.
 
 ```bash
 # reproduce the matrix (needs the 15 seed weights)

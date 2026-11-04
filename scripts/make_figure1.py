@@ -230,7 +230,7 @@ def main() -> int:
                   show_ylabel=(j == 0), show_xlabel=False)
         # The low-light reference is the raw capture, not bicubic, so its
         # gains live on a 10x larger scale and must keep its own axis.
-        sr_ylim = (-2.50, 1.60) if task != "lowlight_unet" else None
+        sr_ylim = (-2.95, 1.60) if task != "lowlight_unet" else None
         panel_bottom(axes[1][j], task, gain, wide,
                      show_ylabel=(j == 0), show_xlabel=True, ylim=sr_ylim)
 

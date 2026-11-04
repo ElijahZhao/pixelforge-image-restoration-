@@ -1,0 +1,3 @@
+task,protocol,n_images_total,n_images_aligned,n_inf_baseline,inf_images,baseline_mean_aligned,model_mean_aligned,gain_aligned,model_mean_full,gain_naive_mixed,seeds
+generator_x4,P1,100,95,5,0839.png|0843.png|0846.png|0847.png|0868.png,44.7827,44.2034,-0.5793,44.9575,+0.1748,42 43 44 45 46
+srcnn_x2,P1,100,95,5,0839.png|0843.png|0846.png|0847.png|0868.png,48.1074,45.7951,-2.3123,46.3340,-1.7734,42 43 44 45 46

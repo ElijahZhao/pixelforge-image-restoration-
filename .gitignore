@@ -49,6 +49,13 @@ results/*.csv
 !results/protocol_matrix_fig1_wide.csv
 !results/model_vs_bicubic_gain.csv
 
+# Exception: the P1 infinity alignment. P1's bicubic baseline reconstructs five
+# flat patches exactly (PSNR = inf), so its aggregate covers 95 of 100 images
+# while the model's covers 100. This two-row table is the like-for-like gain that
+# the paper quotes; without it committed, nobody could check why P1 reads -0.58
+# instead of +0.17.
+!results/p1_inf_alignment.csv
+
 # Node / Next.js
 node_modules/
 web/.next/

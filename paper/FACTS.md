@@ -15,10 +15,13 @@
 # 8 协议 × 3 任务的均值/标准差/增益（源：results/matrix_runs/ 的 6 份原始 JSON）
 python scripts/aggregate_matrix.py --runs-root results/matrix_runs --out results
 
-# 三张表的结构核对
-wc -l results/protocol_matrix_fig1_long.csv   # 105 行（含表头）= 15 ckpt×8 + 15×5 + 15×... 见 §5
-wc -l results/protocol_matrix_fig1_wide.csv   # 21 行（含表头）= 8 + 8 + 5
-wc -l results/model_vs_bicubic_gain.csv       # 21 行（含表头）
+# 三张表的结构核对（数字是数据行，不含表头；wc -l 会多 1）
+wc -l results/protocol_matrix_fig1_long.csv   # 106 = 表头 + 105 行 = 5×8(×4) + 5×8(×2) + 5×5(低光)
+wc -l results/protocol_matrix_fig1_wide.csv   # 22  = 表头 + 21 行 = 8 + 8 + 5
+wc -l results/model_vs_bicubic_gain.csv       # 22  = 表头 + 21 行
+
+# P1 的 ∞ 对齐（只影响 P1；其余协议 n_inf=0）
+python scripts/align_p1_inf.py --out results/p1_inf_alignment.csv   # 3 行 = 表头 + 2
 
 # 参数量与结构（实测，非读文档）
 python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generator_scale4_best.pth',map_location='cpu',weights_only=True);print(sum(v.numel() for v in sd.values()))"
@@ -74,7 +77,8 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | 种子 | 42 / 43 / 44 / 45 / 46 | 同 | 同 |
 | 确定性 | 四路 seed + `cudnn.deterministic=True` + `benchmark=False` | 同 | 同 |
 
-> **必须写进 §4 的一条**：×4 模型带感知损失（`w_percep=0.006`，与像素项的比例约 1:8～1:17）。感知损失以牺牲 PSNR 换观感，方向与"提升 PSNR"相反。不写这一条，读者会以为 27.61 dB 是纯 PSNR 优化的结果。
+> **必须写进 §4 的一条**：×4 模型带感知损失（`w_pixel=1.0`、`w_percep=0.006`，见 `config_sr_generator_scale4.json` 的 `run.w_pixel`/`run.w_percep`/`run.objective`）。感知损失以牺牲 PSNR 换观感，方向与"提升 PSNR"相反。不写这一条，读者会以为 27.61 dB 是纯 PSNR 优化的结果。
+> **但"有效贡献约 1:8–1:17"是估算，不是实测**（日志只记 total loss，不记分量），见 §10-E18。正文只报权重，比例不写或标 "estimated"。
 
 ---
 
@@ -114,11 +118,15 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | P7 | 29.0433 ± 0.0359 | 33.8085 ± 0.0268 | — |
 | P8 | 27.6006 ± 0.0345 | 32.1415 ± 0.0656 | — |
 
+> **±σ 的读法（重要，写 §5.1 时不要笼统说"种子方差很小"）**：全图协议（P3–P8）的 σ 都在 **0.019–0.094 dB**，来自训练随机性。
+> 但 **P1/P2 是采样协议，σ 里混了块采样噪声**：低光 P1 = 0.4148、P2 = 0.5303；×4 P1 = 0.2364；×2 P1 = 0.5584。
+> 这两列**不能**用来论证"种子方差小"，只能用来论证"采样协议把噪声放大了 10 倍"——与 Fig. 2 同源。分开写，否则表内自相矛盾。
+
 ### 5.2 同协议基线（bicubic 或 identity）
 
 | 协议 | ×4 bicubic | ×2 bicubic | 低光 identity |
 |---|---|---|---|
-| P1 | 44.7827 | **48.1074** | 12.1740 |
+| P1 | 44.7827 **(n=95)** | **48.1074 (n=95)** | 12.1740 (n=15) |
 | P2 | 25.8076 | 30.0418 | 7.6319 |
 | P3 | 26.8323 | 31.3001 | **7.7733** |
 | P4 | 26.8189 | 31.2948 | 7.7714 |
@@ -127,11 +135,14 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | P7 | 28.2295 | 32.6720 | — |
 | P8 | 26.8253 | 31.2824 | — |
 
+> **P1 基线的 n 是 95，不是 100**：bicubic 上采样能在 5 张 DIV2K val 图（`0839/0843/0846/0847/0868.png`）里找到一块被**精确重建**的平坦块，PSNR = +∞；`protocol_matrix.py` 把 ∞ 从聚合中剔除并记 `n_inf=5`。×4 与 ×2 是同一批 5 张图。
+> 因此 P1 的"模型 vs 基线"**必须在同一批 95 张图上算**，见 §5.3 的注与 §10-E21。
+
 ### 5.3 增益（模型 − 同协议基线）
 
 | 协议 | ×4 | ×2 | 低光 |
 |---|---|---|---|
-| P1 | +0.1748 | **−1.7734** | +12.4027 |
+| P1 | **−0.5793**（naive +0.1748） | **−2.3123**（naive −1.7734） | +12.4027 |
 | P2 | +0.6138 | +0.6441 | +12.9368 |
 | P3 | **+0.7816** | **+0.8629** | +10.7361 |
 | P4 | +0.7835 | +0.8675 | +10.7481 |
@@ -139,6 +150,11 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | P6 | **−1.7531** | **−1.8889** | — |
 | P7 | +0.8138 | +1.1365 | — |
 | P8 | +0.7753 | +0.8591 | — |
+
+> **P1 的两个数（2026-11-04 修正，见 §10-E21）**：括号外的值是**两边都取 95 张**的对齐口径，括号里是修正前"基线 95 张 vs 模型 100 张"的混合口径。
+> 修正前 ×4 读作 **+0.17**、×2 读作 **−1.77**；修正后 ×4 是 **−0.58**、×2 是 **−2.31**。
+> **×4 的符号因此翻转**——而且翻转方向说明的是同一件事：**P1 不是模型能力的度量**。bicubic 在平坦块上能给出 ∞，任何网络都给不出；所以 best-of-60 本质上是"搜索一块让基线赢的块"，模型的增益必然为负。这条比"增益≈0、测的是抽签运气"更硬。
+> 复算：`python scripts/align_p1_inf.py` → `results/p1_inf_alignment.csv`。
 
 > **低光的增益与 SR 的增益不可直接比较**：基线不同（identity 是"什么都不做"，bicubic 是插值）。identity 之所以只有 7.77 dB，是因为真实暗图的像素值与正常光差距极大。表注必须写明。
 
@@ -228,8 +244,8 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | F3 细分：显式写出抗锯齿设置 | 1/44 | 2.3% | — |
 | F3 细分：只写 "bicubic" 不给实现 | 12/44 | 27.3% | — |
 | F3 细分：完全未提退化 | 25/44 | 56.8% | — |
-| F4 通道口径未说明 | **41/63** | 65.1% | — |
-| F4 明确用 Y 通道 | 21/63 | 33.3% | [22.9%, 45.6%] |
+| F4 通道口径未说明 | **41/63** | 65.1% | [52.8%, 75.7%] |
+| F4 明确用 Y 通道 | **22/63** | 34.9% | [24.3%, 47.2%] |
 | F7 提供代码仓库 | 35/63 | 55.6% | [43.3%, 67.2%] |
 
 **样本构成**：SR 44 篇 + LLIE 19 篇；年份 2019–2025。
@@ -281,13 +297,31 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | **E7** | `OUTLINE.md` §4.1 | 未提感知损失 | ×4 模型 **带感知损失**（`w_percep=0.006`） | **必须补**，否则 27.61 dB 会被误读为纯 PSNR 优化结果 |
 | **E8** | `OUTLINE.md` §4.2 | 只写验证集 | 训练集：DIV2K **800** / LOL **485 对** | 补训练集规模 |
 | **E9** | 查新报告 §二、§四 | 翻转 "+0.46 → −1.06"（3 图）、"−1.76/−2.36"（100 图） | 最终值 **+0.8179 → −1.7531**（×4）、**+1.1456 → −1.8889**（×2） | 旧数字作废，只引最终值。查新报告是历史文档，不回改 |
-| **E10** | 素材包索引 2.3 节 | "39 项测试" | 现为 **69 项** | 改 |
+| **E10** | 素材包索引 2.3 节 | "39 项测试" | 现为 **82 项收集 / 81 通过 + 1 跳过**（`train/tests` 69 + `tests/` 12） | 改 |
 | **E11** | 素材包索引 §五 | 待补测 #6 协议矩阵 / #7 种子矩阵 / #8 查新 | **三项均已完成** | 索引已过时，以本文件为准 |
 | **E12** | 查新报告 §三 维度⑥ | "训练日志 7.35 dB 波动 vs 0.46 dB 真实增益" | **无法用现有数据复现**。种子间 best 极差只有 0.09–0.17 dB（§9.1） | **禁止写入论文**。维度⑥不列为贡献，见 §11 |
 | **E13** | `OUTLINE.md` §5.1 | "协议间跨度 ×4 3.889" | 正确，但需注明 **P5→P6**；×2 的 3.1431 是 **P5→P2**，两者最低协议不同 | 补注 |
 | **E14** | 全仓文档 | 低光"scale 2" | 配对任务 **scale=1**，无上采样 | 全文统一为 "paired, no upscaling" |
 | **E15** | `OUTLINE.md` §7 | 低光落后 KinD 2.5 / Retinexformer 6.8 dB | 这两个数字来自**文献报告值**，不是同环境复跑 | 必须标注"as reported, not re-run" |
 | **E16** | 协议矩阵表 | 低光 n=15 | 对，但 15 张图的 95% CI 跨度很大（LOL audit 报告约 5.2 dB） | §7 Limitations 要写明绝对值的置信区间不窄 |
+| **E17** | `OUTLINE.md` §3.3、`MATERIALS.md` §3.3 | "分组实现……实测加速 66×" | **两个不同的量被并成一句**。①分组复用：8 协议 → **3 次全图前向**（按退化算子 aa/noaa/pil 分），约 2.7×；②**66× 是 T4 相对 CPU 的前向加速比**，它把矩阵总耗时从"拍脑袋 4.2 h"压到"实测 0.7 h（含四版重跑 0.86 h）" | **必须拆开写**。论文里若只保留一个数，保留"3 次前向 + 0.268 s/图/3.15 GB"；66× 要么注明口径，要么不写 |
+| **E18** | `FACTS` §3、`MATERIALS` §4.1 | 感知损失"与像素项比例约 1:8–1:17" | **是估算，不是实测**：源为归档 2.4 的推算；15 份训练日志只记 total loss，不记 `pix`/`per` 分量，无法从数据复算 | 正文只报**权重**（1.0 : 0.006，可查 config）；比例要么标 "estimated"，要么删 |
+| **E19** | `FACTS` §8（本次复核修正） | F4 明确用 Y 通道 **21/63（33.3%）** | **22/63（34.9%）**，CI [24.3%, 47.2%]。重算命令见下；41 + 22 = 63 闭合 | 已改。凡引 21/63 或 33.3% 的地方同步改 |
+| **E20** | `MATERIALS` §4.1/§4.3（本次复核修正） | SEAL "arXiv:2409.xxxx"；2503.13074 "Rethinking Image Evaluation…"；Retinexformer "Wei et al."；LOL "ICCV 2018" | 实测：SEAL = **arXiv:2309.03020（ICLR 2024 Spotlight, Zhang et al.）**；2503.13074 = **"Bridging the Perception Gap in Image SR Evaluation"（Su et al.）**；Retinexformer = **Cai et al., ICCV 2023**；LOL 数据集出自 **Wei et al., BMVC 2018**（与 RetinexNet 同一篇） | 已按 arXiv API 逐条改正 |
+| **E21** | `FACTS` §5.3、`MATERIALS` §5.3、Fig. 1 下排（2026-11-04 修正） | P1 增益 ×4 **+0.1748**、×2 **−1.7734** | **样本不齐**：基线聚合排除了 5 张 PSNR=∞ 的图（n=95），模型是 100 张。两边对齐到同一批 95 张后：×4 **−0.5793**、×2 **−2.3123**。`scripts/align_p1_inf.py` 产出 `results/p1_inf_alignment.csv`；`aggregate_matrix.py` 已优先读它，naive 值保留在 `gain_naive_mixed` 列 | **已改 FACTS/MATERIALS/CSV/Fig.1**。P1 的机制解释同步升级：不是"抽签运气"，是"bicubic 在平坦块上精确命中而网络不可能" |
+
+**E19 的重算命令**（`F4` 列取值计数，剔除示例行）：
+
+```bash
+python -c "
+import csv,collections
+r=[x for x in csv.DictReader(open('archive_private/05-论文规划/文献抽样编码表.csv',encoding='utf-8-sig'))
+   if x['编号'].strip()!='示例']
+c=collections.Counter(x['F4'].strip() for x in r)
+y=sum(v for k,v in c.items() if k.startswith('Y'))
+print('Y =',y,'/ 未说明 =',c['未说明'],'/ n =',len(r))   # Y = 22 / 未说明 = 41 / n = 63
+"
+```
 
 ---
 
@@ -301,6 +335,7 @@ python -c "import torch;sd=torch.load('models/seeds/generator_x4/s42/sr_generato
 | **+0.46 / −1.06**（3 图翻转） | 样本太小，已被 100 图全量取代（E9） |
 | **−1.76 / −2.36**（旧 100 图翻转） | 被规范化后的 +0.8179/−1.7531 取代（E9） |
 | **27.47 / 32.35 / 18.32** | 这是主仓部署权重的数字（`serve/models/`），**不是论文的 15 份种子权重**。两者混用会造成"论文数字复现不出来" |
+| **+0.1748 / −1.7734**（P1 的旧值） | 基线 95 张 vs 模型 100 张，样本不齐。正文用对齐后的 **−0.5793 / −2.3123**，见 E21。旧值只作为 `gain_naive_mixed` 留在 CSV 里供审计 |
 | **23.34 dB**（训内 val） | 与 27.38 差 4 dB 的机制未定论，属"待补测 #2"，禁止写入 |
 
 ---
