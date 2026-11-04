@@ -41,12 +41,13 @@ TABLES = os.path.join(REPO, "paper", "tables")
 #: is not visible in main.tex; this table records it explicitly rather
 #: than guessing from file names.
 TABLE_FILES = {
+    "tab:nearest-neighbours": "table1_neighbours.md",
     "tab:protocols": "table2_protocols.md",
+    "tab:setup": "table3_setup.md",
     "tab:span-vs-gain": "table4_task_ratios.md",
     "tab:sign-flip": "table5_sign_flip.md",
     "tab:reporting-rates": "table6_literature.md",
     "tab:checklist": "table7_checklist.md",
-    "tab:nearest-neighbours": "table1_neighbours.md",
 }
 
 #: Prose values that are deliberately not in the table they are discussed
@@ -69,18 +70,40 @@ KNOWN_EXCEPTIONS = {
 
 
 def table_numbers(path: str) -> set[float]:
-    """Every number that appears in a table's data cells."""
+    """Every number that appears in a table -- data cells *and* notes.
+
+    The notes matter as much as the cells. A table that reports "the paired
+    ablation gives 27.61 / off 27.60 dB" in a footnote has made a claim
+    about the numbers, and the prose next to it may legitimately quote that
+    claim. Scanning only the `|`-prefixed rows would report such a value
+    as unattested and force either a false exemption or an edit that makes
+    the prose worse.
+    """
     with open(path, encoding="utf-8") as handle:
         text = handle.read()
     values: set[float] = set()
     for line in text.split("\n"):
         if not line.startswith("|"):
             continue
-        for token in re.findall(r"-?\d+\.\d+|\d+", line):
+        for token in re.findall(r"-?\d[\d,]*\.?\d*", line):
+            raw = token.replace(",", "")
+            if raw in ("", "-", "."):
+                continue
             try:
-                values.add(round(float(token), 6))
+                values.add(round(float(raw), 6))
             except ValueError:
                 continue
+    # The numbered notes that follow the table.
+    for line in text.split("\n"):
+        if re.match(r"^\d+\.\s", line):
+            for token in re.findall(r"-?\d[\d,]*\.?\d*", line):
+                raw = token.replace(",", "")
+                if raw in ("", "-", "."):
+                    continue
+                try:
+                    values.add(round(float(raw), 6))
+                except ValueError:
+                    continue
     return values
 
 
@@ -145,15 +168,34 @@ def main() -> int:
         end = len(text) if end == -1 else end
         window = text[start:end]
 
-        for token in re.findall(r"-?\d+\.\d+", window):
+        # Strip citation keys before looking for numbers. A bib key can
+        # carry a year -- "he2016resnet" contributes the number 2016 --
+        # and that year is a bibliographic fact, not a claim about the
+        # experiment. It would otherwise be reported as a value that the
+        # table does not contain.
+        window = re.sub(r"\\cite[a-zA-Z]*\{[^}]*\}", " ", window)
+        window = re.sub(r"\\label\{[^}]*\}", " ", window)
+
+        # Both decimals and plain integers are checked. The integer form
+        # matters: parameter counts are written with a thousands separator
+        # ("1,224,204"), and those are exactly the values a reader would
+        # catch a drift in. An earlier version matched only `\d+\.\d+`,
+        # so every integer was invisible to the check -- and a test that
+        # cannot fail is not a test.
+        for token in re.findall(r"-?\d[\d,]*\.?\d*", window):
+            # A thousands separator is not part of the value; strip it
+            # before parsing, but keep the original token for the report.
+            raw = token.replace(",", "")
+            if raw in ("", "-", "."):
+                continue
             try:
-                value = float(token)
+                value = float(raw)
             except ValueError:
                 continue
             checked += 1
             if any(round(candidate, 3) == round(value, 3) for candidate in known):
                 continue
-            if token in KNOWN_EXCEPTIONS:
+            if token in KNOWN_EXCEPTIONS or raw in KNOWN_EXCEPTIONS:
                 continue
             problems.append(
                 f"{key}: prose value {token} does not appear in {filename}"

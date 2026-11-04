@@ -1,4 +1,4 @@
-**Protocol definitions (P1-P8).**
+**Protocol definitions (P1-P8). Each protocol differs from its neighbour in one dimension.**
 
 |  | Description | Degradation | Metric | Sampling | Aggregation |
 |---|---|---|---|---|---|

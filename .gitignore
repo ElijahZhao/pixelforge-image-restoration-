@@ -113,3 +113,8 @@ backup/
 
 # Kaggle 执行日志本地缓存（台账脚本的输入缓存，可重新拉取）
 .cache/
+
+# 交付物副本（投稿包、正文 PDF、图形摘要）。它们是构建产物，
+# 由 scripts/make_submission_package.py 与 paper/ 的编译重新生成；
+# 入库会让每次构建都产生无意义的 diff。
+deliverables/

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -47,8 +48,16 @@ FIGURE_FILES = [
 
 #: Tables pulled in with \input. Their .tex twins are needed; the .md
 #: versions are not.
+#:
+#: The list is derived from the manuscript rather than maintained by hand:
+#: a table that the manuscript \inputs but the archive omits fails to
+#: compile; a table the archive carries but the manuscript never uses is
+#: dead weight that suggests the two have drifted apart. The verification
+#: step below checks both directions.
 TABLE_FILES = [
     "tables/table1_neighbours.tex",
+    "tables/table2_protocols.tex",
+    "tables/table3_setup.tex",
     "tables/table4_task_ratios.tex",
     "tables/table5_sign_flip.tex",
     "tables/table6_literature.tex",
@@ -94,9 +103,44 @@ Notes
 """
 
 
+def check_table_manifest(main_tex: str) -> list[str]:
+    """Report mismatches between the manuscript's \\input and the manifest.
+
+    Two failure modes matter, and both are invisible in a normal build:
+
+    * the manuscript \\inputs a table the archive does not carry -- the
+      archive then fails to compile, but only after submission;
+    * the archive carries a table the manuscript never \\inputs -- a sign
+      that the two lists have drifted apart, which is exactly the class of
+      failure this paper is about.
+
+    Returns a list of human-readable problems; empty means the lists agree.
+    """
+    with open(main_tex, encoding="utf-8") as handle:
+        text = handle.read()
+    used = {
+        name.strip()
+        for name in re.findall(r"\\input\{tables/([^}]+)\}", text)
+    }
+    listed = {
+        os.path.splitext(os.path.basename(name))[0]
+        for name in TABLE_FILES
+    }
+    problems = []
+    for name in sorted(used - listed):
+        problems.append(f"manuscript \\inputs tables/{name}.tex, which the archive omits")
+    for name in sorted(listed - used):
+        problems.append(f"archive carries tables/{name}.tex, which the manuscript never \\inputs")
+    return problems
+
+
 def collect() -> list[tuple[str, str]]:
     """Return (source path, path inside the archive) pairs."""
     items: list[tuple[str, str]] = []
+    problems = check_table_manifest(os.path.join(PAPER, "main.tex"))
+    if problems:
+        raise SystemExit("[fail] table manifest disagrees with the manuscript:\n  "
+                         + "\n  ".join(problems))
     for name in TEX_FILES + TABLE_FILES + FIGURE_FILES:
         src = os.path.join(PAPER, name)
         if not os.path.exists(src):

@@ -1,4 +1,4 @@
-**The sign flip: same weights, one boolean.**
+**The sign reversal: identical weights, one boolean.**
 
 |  | SR $\times$4 (SRResNet) | SR $\times$2 (SRCNN) | Low-light (U-Net) |
 |---|---|---|---|

@@ -2,7 +2,7 @@
 % Requires: \usepackage{booktabs} \usepackage{graphicx}
 % The \resizebox around the tabular fits it to the text width;
 % use it inside a full-width float (table*) in a two-column paper.
-\begin{table}[t]
+\begin{table*}[!htbp]
 \centering
 \caption{A six-item minimum reporting checklist, with the literature rate for each item.}
 \label{tab:checklist}
@@ -25,4 +25,4 @@
 \textbf{(a)} This table has two halves: the left two columns are the checklist, the right column gives the literature rate. Section 5.4 uses the rates, Section 6.2 uses the checklist; they are one table.\\
 \textbf{(b)} Item 2 merges 'validation batch size' with 'validation/test overlap' -- both are answers to the same question, 'what set was the number computed on?'. Item 5 merges the degradation operator with the seed count for the same reason: both are 'what choices produced this number?'\\
 \end{minipage}
-\end{table}
+\end{table*}

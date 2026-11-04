@@ -2,9 +2,9 @@
 % Requires: \usepackage{booktabs} \usepackage{graphicx}
 % The \resizebox around the tabular fits it to the text width;
 % use it inside a full-width float (table*) in a two-column paper.
-\begin{table}[t]
+\begin{table*}[!htbp]
 \centering
-\caption{Protocol definitions (P1-P8).}
+\caption{Protocol definitions (P1-P8). Each protocol differs from its neighbour in one dimension.}
 \label{tab:protocols}
 \footnotesize
 \resizebox{\linewidth}{!}{%
@@ -25,7 +25,7 @@ P8 & Full image, RGB, PIL bicubic & PIL bicubic & RGB & full image & per-image m
 \vspace{2pt}
 \begin{minipage}{0.98\linewidth}\footnotesize\raggedright
 \textbf{(a)} P5 and P6 differ in exactly one boolean: the antialias flag of the downsampling operator. Every other cell is identical, and the two rows are the paper's sign-flip experiment.\\
-\textbf{(b)} The matrix covers four of the five dimensions (aggregation, sampling, metric/channel, degradation). It has no axis for validation batch size: after per-image aggregation the metric is structurally independent of the batch split, which `tests/test\_protocol.py` locks in.\\
+\textbf{(b)} The matrix covers four of the five dimensions (aggregation, sampling, metric/channel, degradation). It has no axis for validation batch size: after per-image aggregation the metric is structurally independent of the batch split, which \texttt{tests/test\_protocol.py} locks in.\\
 \textbf{(c)} Low-light supports P1-P5 only: it is a paired task with no synthetic downsampling, so the PIL/anti-alias rows P6-P8 do not apply.\\
 \end{minipage}
-\end{table}
+\end{table*}

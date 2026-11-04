@@ -382,7 +382,8 @@ def table_protocol_defs():
         "Low-light supports P1-P5 only: it is a paired task with no synthetic downsampling, so the "
         "PIL/anti-alias rows P6-P8 do not apply.",
     ]
-    return "Protocol definitions (P1-P8).", head, body, notes
+    return ("Protocol definitions (P1-P8). Each protocol differs from its "
+            "neighbour in one dimension.", head, body, notes)
 
 
 def table_setup():
@@ -494,7 +495,8 @@ def table_sign_flip(matrix, gain):
         "The $\\times$2 swing is larger than the $\\times$4 swing because the two sides move in opposite "
         "directions: on $\\times$2 the model loses 2.72 dB while the baseline gains 0.31 dB.",
     ]
-    return "The sign flip: same weights, one boolean.", head, body, notes
+    return ("The sign reversal: identical weights, one boolean.",
+            head, body, notes)
 
 
 def table_literature(counts):
@@ -670,16 +672,24 @@ S_MATRIX = "matrix"
 S_GAIN = "gain"
 S_COUNTS = "counts"
 
+#: Each entry: (output name, builder, sources it needs, label, wide).
+#:
+#: `wide` selects the float environment: True gives `table*` (spans both
+#: columns), False gives `table` (one column). The choice is explicit
+#: because the paper is set two-column and the wrong one is not a warning
+#: but a silent reflow: a wide table in a single column is scaled down
+#: until it is unreadable, or it becomes too tall to fit and LaTeX defers
+#: it several pages past the paragraph that refers to it.
 TABLES = [
-    ("table2_protocols", table_protocol_defs, (), "protocols"),
-    ("table3_setup", table_setup, (), "setup"),
-    ("table4_task_ratios", table_task_ratios, (S_MATRIX, S_GAIN), "span-vs-gain"),
-    ("table5_sign_flip", table_sign_flip, (S_MATRIX, S_GAIN), "sign-flip"),
-    ("table6_literature", table_literature, (S_COUNTS,), "reporting-rates"),
-    ("table7_checklist", table_checklist, (S_COUNTS,), "checklist"),
-    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,), "full-matrix"),
-    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN), "per-protocol-gains"),
-    ("tableA3_audit", table_appendix_audit, (S_COUNTS,), "f3-breakdown"),
+    ("table2_protocols", table_protocol_defs, (), "protocols", True),
+    ("table3_setup", table_setup, (), "setup", True),
+    ("table4_task_ratios", table_task_ratios, (S_MATRIX, S_GAIN), "span-vs-gain", False),
+    ("table5_sign_flip", table_sign_flip, (S_MATRIX, S_GAIN), "sign-flip", True),
+    ("table6_literature", table_literature, (S_COUNTS,), "reporting-rates", False),
+    ("table7_checklist", table_checklist, (S_COUNTS,), "checklist", True),
+    ("tableA1_matrix", table_appendix_matrix, (S_MATRIX,), "full-matrix", False),
+    ("tableA2_gains", table_appendix_gain, (S_MATRIX, S_GAIN), "per-protocol-gains", False),
+    ("tableA3_audit", table_appendix_audit, (S_COUNTS,), "f3-breakdown", False),
 ]
 
 
@@ -699,13 +709,22 @@ def latex_escape(text):
     # Markdown bold (`**text**`) has to become LaTeX bold, or the asterisks
     # end up printed verbatim. The markdown renderer keeps the `**` form.
     text = re.sub(r"\*\*(.+?)\*\*", r"\\textbf{\1}", text)
+    # Markdown inline code (`code`) has to become \texttt{code}. Left alone,
+    # the backtick is a LaTeX "open quote" command and the note renders with
+    # a stray curly quote at the front.
+    text = re.sub(r"`([^`]+)`", r"\\texttt{\1}", text)
+    # An ASCII arrow "->" is not a LaTeX symbol: pdflatex renders it as a
+    # hyphen followed by an inverted question mark. The tables use it in
+    # row labels ("Swing P5 -> P6"), so it has to become a real arrow.
+    # The markdown renderer keeps the plain "->".
+    text = text.replace("->", r"$\rightarrow$")
     return (text.replace("&", "\\&")
                 .replace("%", "\\%")
                 .replace("_", "\\_")
                 .replace("#", "\\#"))
 
 
-def render_latex(caption, head, body, notes, label):
+def render_latex(caption, head, body, notes, label, wide=False):
     lines = []
     ncol = len(head)
     cols = "l" + "c" * (ncol - 1)
@@ -713,7 +732,14 @@ def render_latex(caption, head, body, notes, label):
     lines.append("% Requires: \\usepackage{booktabs} \\usepackage{graphicx}")
     lines.append("% The \\resizebox around the tabular fits it to the text width;")
     lines.append("% use it inside a full-width float (table*) in a two-column paper.")
-    lines.append("\\begin{table}[t]")
+    # Wide tables (many columns, or a long prose column) go into a
+    # full-width float. A two-column `table` would either be scaled down
+    # to an unreadable size or be too tall to fit in a column, in which
+    # case LaTeX defers it to a later page and the reader has to hunt for
+    # it. The list is explicit so that changing a table's shape is a
+    # deliberate act.
+    float_env = "table*" if wide else "table"
+    lines.append(f"\\begin{{{float_env}}}[!htbp]")
     lines.append("\\centering")
     lines.append(f"\\caption{{{latex_escape(caption)}}}")
     lines.append(f"\\label{{tab:{label}}}")
@@ -769,7 +795,7 @@ def render_latex(caption, head, body, notes, label):
         for i, n in enumerate(notes, 1):
             lines.append(f"\\textbf{{({chr(96+i)})}} {latex_escape(n)}\\\\")
         lines.append("\\end{minipage}")
-    lines.append("\\end{table}")
+    lines.append(f"\\end{{{float_env}}}")
     return "\n".join(lines) + "\n"
 
 
@@ -812,11 +838,11 @@ def main():
     os.makedirs(args.out, exist_ok=True)
     fmts = [f.strip() for f in args.fmt.split(",") if f.strip()]
     available = {S_MATRIX: matrix, S_GAIN: gain, S_COUNTS: counts}
-    for name, fn, needs, label in TABLES:
+    for name, fn, needs, label, wide in TABLES:
         caption, head, body, notes = fn(*[available[k] for k in needs])
         if "latex" in fmts:
             with open(os.path.join(args.out, f"{name}.tex"), "w") as f:
-                f.write(render_latex(caption, head, body, notes, label))
+                f.write(render_latex(caption, head, body, notes, label, wide=wide))
         if "md" in fmts:
             with open(os.path.join(args.out, f"{name}.md"), "w") as f:
                 f.write(render_md(caption, head, body, notes))

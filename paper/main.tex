@@ -187,8 +187,6 @@ whether the numbers that distinguish models survive a change of measurement.
 
 \subsection{Protocols and reproducibility}
 
-\input{tables/table1_neighbours}
-
 Seven works are close neighbours to this paper, and Table~\ref{tab:nearest-neighbours}
 lists what each established and what it left open. The most directly
 comparable is \cite{keles2021psnr}, which shows that the PSNR of a set of
@@ -208,6 +206,8 @@ protocol. \cite{su2025bridging} audited perceptual quality metrics for
 super-resolution. \cite{cawley2010overfitting} gave the theory of selection
 bias: repeatedly selecting on a validation set inflates the reported
 performance of the selected model.
+
+\input{tables/table1_neighbours}
 
 \subsection{The methodology literature}
 
@@ -267,27 +267,7 @@ every setting---full image, $Y$ channel, 4-pixel shave---except the
 antialias flag of the downsampling operator. One boolean separates a
 positive from a negative verdict.
 
-\begin{table}[t]
-\centering
-\caption{Protocol definitions. Each protocol differs from its neighbour in
-one dimension.}
-\label{tab:protocols}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}llcccc@{}}
-\toprule
-& Description & Degradation & Metric & Sampling & Aggregation \\
-\midrule
-P1 & Random $96\times96$ crops, best-of-60 & torchvision bicubic, AA on & RGB & random crop & best-of-N \\
-P2 & Centre $96\times96$ crop (training val) & torchvision bicubic, AA on & RGB & centre crop & per-image mean \\
-P3 & Full image, RGB & torchvision bicubic, AA on & RGB & full image & per-image mean \\
-P4 & Full image, RGB + shave & torchvision bicubic, AA on & RGB + shave & full image & per-image mean \\
-P5 & Full image, Y + shave & torchvision bicubic, AA on & Y + shave & full image & per-image mean \\
-P6 & Full image, Y + shave, \textbf{no antialias} & torchvision bicubic, \textbf{AA off} & Y + shave & full image & per-image mean \\
-P7 & Full image, Y + shave, PIL bicubic & PIL bicubic & Y + shave & full image & per-image mean \\
-P8 & Full image, RGB, PIL bicubic & PIL bicubic & RGB & full image & per-image mean \\
-\bottomrule
-\end{tabular}}
-\end{table}
+\input{tables/table2_protocols}
 
 \subsection{Grouped implementation}
 
@@ -315,7 +295,8 @@ measured separately.
 \subsection{A reproducible testbed}
 
 We use three models: SRResNet-$\times$4 (1,224,204 trainable parameters),
-SRCNN-$\times$2 (69,251) and a low-light U-Net (564,692). The counts are
+SRCNN-$\times$2 (69,251) and a low-light U-Net (564,692); Table~\ref{tab:setup}
+collects the configuration of all three tasks in one place. The counts are
 measured trainable parameters; the state-dict element count is larger
 because it includes 2,064 batch-normalisation buffers. The $\times$4
 generator follows the residual design of \cite{he2016resnet}, and the
@@ -330,6 +311,8 @@ of $-0.01$\,dB, with a sharpness difference of 0.25\%. In this weight
 regime the term is inert. We do not claim that perceptual losses do not
 affect PSNR; SRGAN uses a $1{:}1$ ratio, and our conclusion is confined to
 the $1{:}0.006$ ratio we measured.
+
+\input{tables/table3_setup}
 
 The repository carries 81 tests (69 in \texttt{train/tests}, 12 in
 \texttt{tests}; the browser end-to-end module is skipped at collection time
@@ -377,27 +360,6 @@ $\times$2 and 0.4148\,dB for low-light on P1 and P2 respectively.
 
 \input{tables/table4_task_ratios}
 
-\begin{table}[t]
-\centering
-\caption{The sign reversal: identical weights, one boolean.}
-\label{tab:sign-flip}
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{@{}lccc@{}}
-\toprule
-& SR $\times$4 (SRResNet) & SR $\times$2 (SRCNN) & Low-light (U-Net) \\
-\midrule
-P5 model (dB) & 29.0523 & 33.8290 & 20.7590 \\
-P5 reference (dB) & 28.2344 & 32.6834 & 9.2787 \\
-P5 gain (dB) & 0.8179 & 1.1456 & 11.4803 \\
-P6 model (dB) & 25.1631 & 31.1048 & -- \\
-P6 reference (dB) & 26.9162 & 32.9937 & -- \\
-P6 gain (dB) & $-1.7531$ & $-1.8889$ & -- \\
-Swing P5 $\rightarrow$ P6 (dB) & 2.571 & 3.034 & -- \\
-P1 gain (best-of-60, dB) & $-0.5793$ & $-2.3123$ & 12.4027 \\
-\bottomrule
-\end{tabular}}
-\end{table}
-
 The protocol span is 3.889\,dB on $\times$4 (P5 to P6) and 19.794\,dB once
 P1 is included, against a training gain of 0.782\,dB: a ratio of 4.98, or
 25.33 when P1 is counted. On $\times$2 the span is 3.143\,dB (15.648 with
@@ -429,6 +391,8 @@ of the downsampling operator switched off---the model trails it by
 $-1.753$\,dB. The swing between the two protocols is 2.571\,dB, which is
 3.3 times the training gain the model is credited with. The $\times$2 task
 reproduces the pattern with a larger swing of 3.034\,dB.
+
+\input{tables/table5_sign_flip}
 
 The mechanism differs between the two tasks, and the difference is what
 produces the larger $\times$2 swing. On $\times$4 both sides fall when
@@ -653,7 +617,21 @@ This research received no external funding.
 The author declares no conflict of interest.
 
 % ===========================================================================
+% `plain` keeps the reference list in its own block. `unsrt` would number
+% the entries in citation order, but in a two-column layout it lets the
+% list interleave with the body text -- the reader sees "Funding" next
+% to a bibliography entry -- so the reference list is set smaller
+% instead to keep the paper within its page budget.
 \bibliographystyle{plain}
+
+% A compact reference list. The entries are set one size down and with
+% no extra vertical space between them; the result is the conventional
+% appearance for a two-column preprint and it saves the four entries
+% that were spilling onto a page of their own.
+{\small
+\setlength{\itemsep}{0pt}
+\setlength{\parskip}{0pt}
 \bibliography{refs}
+}
 
 \end{document}

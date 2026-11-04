@@ -121,6 +121,9 @@ jobs:
           sudo apt-get install -y -qq --no-install-recommends \
             texlive-latex-base texlive-latex-recommended texlive-latex-extra \
             texlive-fonts-recommended
+          # poppler-utils provides pdfinfo, pdftotext and pdftohtml, which
+          # the layout check uses to measure the PDF that was just built.
+          sudo apt-get install -y -qq --no-install-recommends poppler-utils
 
       # The paper's tables are generated from the result CSVs and checked
       # against FACTS.md. If a number in the source data changes without the
@@ -178,3 +181,11 @@ jobs:
       # it in isolation, with no access to the rest of the repository.
       - name: Build and verify the submission archive
         run: python3.11 scripts/make_submission_package.py
+
+      # A manuscript can be numerically perfect and still be unreadable:
+      # a table scaled to 4.6 pt, a float that lands before the sentence
+      # referring to it, a table file the archive carries but the
+      # manuscript never uses. None of these produce a LaTeX error, so
+      # they are checked by measuring the PDF.
+      - name: Check the manuscript's layout
+        run: python3.11 scripts/check_layout.py

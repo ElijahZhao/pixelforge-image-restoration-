@@ -2,7 +2,7 @@
 % Requires: \usepackage{booktabs} \usepackage{graphicx}
 % The \resizebox around the tabular fits it to the text width;
 % use it inside a full-width float (table*) in a two-column paper.
-\begin{table}[t]
+\begin{table*}[!htbp]
 \centering
 \caption{Setup: models, data and environments.}
 \label{tab:setup}
@@ -25,8 +25,8 @@ Environment & torch 2.11+cu128 / CUDA 12.8 & torch 2.11+cu128 / CUDA 12.8 & torc
 \end{tabular}}
 \vspace{2pt}
 \begin{minipage}{0.98\linewidth}\footnotesize\raggedright
-\textbf{(a)} Parameter counts are measured `parameters()` values, not state-dict element counts: the $\times$4 model has 2,064 additional BN buffers (1,226,268 total), which are not trainable weights.\\
+\textbf{(a)} Parameter counts are measured \texttt{parameters()} values, not state-dict element counts: the $\times$4 model has 2,064 additional BN buffers (1,226,268 total), which are not trainable weights.\\
 \textbf{(b)} The perceptual term is reported because it is in the configuration, and reported as inert because the paired ablation gives on 27.61 / off 27.60 dB ($-0.01$ dB, sharpness difference 0.25\%).\\
 \textbf{(c)} The two low-light-adjacent rows are two containers on one T4, not one: the low-light branch runs CUDA 13.0 while both SR branches run CUDA 12.8.\\
 \end{minipage}
-\end{table}
+\end{table*}
