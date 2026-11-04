@@ -238,7 +238,7 @@
 | 1 | ~~×2 基线~~ | — | ✅ **已完成**（本地 CPU 13.5 min，0 h 配额）。结果比 ×4 更强，见 §5.3 |
 | 2 | 阶段 6 已发表方法对照 | §5 无法做"同口径下我们 vs KinD" | **不做**：GPU 只剩 8.3 h，且论文不主张性能；改用"文献报告值 + 口径声明"的注释式对比，并在 Limitations 写明未复跑，且标注 `as reported, not re-run` |
 | 3 | ~~Fig. 2（采样数→噪声）~~ | — | ✅ **已完成**：`paper/figures/fig2_sampling_noise.pdf`，单栏 3.43 in，源数据 `paper/data/fig2_sampling_noise.csv` |
-| 4 | 排版 | — | LaTeX 工具链**已装好**（texlive + latexmk）。**格式已定（见第 5 项）**：Preprints.org 收 PDF，用通用 `article` 即可，**不必迁就 TMLR 模板**。~~原写"目标格式待定：TMLR 或 article"~~——与同表第 5 项"定 Preprints.org"矛盾 |
-| 5 | 预印本平台 | 决定页数/模板/图宽 | **定 Preprints.org**（MDPI）。它不收 LaTeX 源码而收 PDF，所以排版自由度更高，不必迁就 TMLR 模板 |
-| 6 | 作者署名与单位 | 阻塞一切对外动作 | **待用户提供** |
+| 4 | 排版 | — | LaTeX 工具链**已装好**（texlive + latexmk）。**格式已定（见第 5 项）**：Preprints.org **同时收 PDF 与 LaTeX 源码**（源码须打 zip，含 `.bib`），所以用通用 `article` 编译出 PDF 即可，**不必迁就 TMLR 模板**。~~原写"目标格式待定：TMLR 或 article"~~——与同表第 5 项"定 Preprints.org"矛盾 |
+| 5 | 预印本平台 | 决定页数/模板/图宽 | **定 Preprints.org**（MDPI）。⚠️ **原写"它不收 LaTeX 源码而收 PDF"是错的**（E73）——官方 Instructions for Authors 明写 "Files should be submitted in Microsoft Word or LaTeX format. For LaTeX files, ensure that all files necessary, including the .bib file, if applicable, to recreate the PDF are included in a zip or similar archive." 两种都收，排版自由度更高，不必迁就 TMLR 模板 |
+| 6 | 作者署名与单位 | 阻塞一切对外动作 | ✅ **已提供**（2026-11-04）：**Yulin Zhao**（又名 Elijah Zhao），ORCID `0009-0005-4623-8465`，邮箱 `20233407131@stu.huel.edu.cn`，机构 **Henan University of Economics and Law**（河南财经政法大学，缩写 HUEL，郑州）。**学院不填**（用户决定）。已写入 `CITATION.cff` 并通过 CFF 1.2.0 官方校验器；投稿元数据见 `paper/PREPRINT_SUBMISSION.md` |
 | 7 | ~~参考文献 bib~~ | — | ✅ **已完成**：`paper/refs.bib` **27 条**，`scripts/build_refs_bib.py` 从 arXiv API 生成、标题不符即中止 |

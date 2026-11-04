@@ -1,0 +1,119 @@
+# Preprints.org 投稿元数据（2026-11-04）
+
+> 本文件是**投稿表单的填写稿**，不是论文正文。字段全部经外部核实，来源逐条列在文末。
+> 阻塞状态：**已解除**（此前 `FACTS` §12 / `MATERIALS` §5 第 1 项 / `OUTLINE` §6 第 6 项都记为"等用户"）。
+
+---
+
+## 1. 署名与身份
+
+| 字段 | 填写值 | 核实依据 |
+|---|---|---|
+| 姓名 | **Yulin Zhao** | ORCID 记录的姓名（given-names = Yulin, family-names = Zhao） |
+| 别名 | Elijah Zhao（"also known as"） | ORCID 记录的 "Also known as" 条目；SciProfiles 页显示为 "Mr. Elijah Zhao" |
+| ORCID | `https://orcid.org/0009-0005-4623-8465` | 实查：该 ORCID 页面上方即显示此姓名与别名 |
+| 通讯邮箱 | `20233407131@stu.huel.edu.cn` | 官方 Instructions 明写"应尽可能使用机构邮箱"；该邮箱是学生邮箱（`stu.huel.edu.cn`），而 ORCID 记录的 **verified email domain 正是 `huel.edu.cn`**——机构归属闭环 |
+| 机构 | **Henan University of Economics and Law**（河南财经政法大学，缩写 HUEL），中国郑州 | 学校章程第一条明文："英文名称为 'Henan University of Economics and Law'，英文缩写 'HUEL'" |
+| 学院 | **不填** | 用户决定（2026-11-04）。Preprints.org 要求 affiliations，但学校层面已满足 |
+| 稿件类型 | **Article** | 官方列出的适合类型；本文是原创研究，非 review / conference paper |
+
+⚠️ **一个必须避开的坑**：ORCID 记录里机构写成 **"Henan University of Economic and Law"**（少一个 s）。那是 ORCID 上的笔误，**与学校章程不符**。投稿一律用章程里的 **Economics and Law**。已同步写入 `CITATION.cff` 的注释。
+
+### 1.1 已写入仓库的位置
+
+`CITATION.cff` 已更新并通过 **CFF 1.2.0 官方校验器**（`cffconvert`）验证：
+
+```bash
+python3 -c "
+from cffconvert import Citation
+c = Citation(open('CITATION.cff').read()); c.validate(); print('PASS')
+print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
+```
+
+写入的字段：`given-names: Yulin` / `alias: Elijah Zhao` / `orcid` / `email` / `affiliation`（CFF 1.2.0 的 `person` 实体支持这五项，已核对 schema）。
+
+---
+
+## 2. Preprints.org 官方要求（逐条核实，2026-11-04）
+
+来源：<https://www.preprints.org/instructions-for-authors>（`Instructions for Authors` 页原文）
+
+### 2.1 首屏必须包含（原文）
+
+> The first page of your manuscript must contain the title, author list, abstract, keywords, corresponding author contact details, and affiliations for all authors.
+
+→ 对应 LaTeX 首屏六项：**标题 / 作者列表 / 摘要 / 关键词 / 通讯作者联系方式 / 全部作者单位**。
+
+### 2.2 提交文件格式（原文 —— 与本文档旧记载相反，见 §3）
+
+> Files should be submitted in Microsoft Word or LaTeX format. For LaTeX files, ensure that all files necessary, including the .bib file, if applicable, to recreate the PDF are included in a zip or similar archive.
+
+→ **PDF 与 LaTeX 源码都收**。若走 LaTeX 路线，`.tex` + `refs.bib` + 图 + 全部 `.cls/.sty` 一起打包成 zip。
+→ **本文的投稿包应包含 `paper/refs.bib`**（27 条，`scripts/build_refs_bib.py` 生成）。
+
+### 2.3 图形摘要（推荐，非强制）
+
+> we recommend producing a graphical abstract ... The graphic should be provided as a JPG or PNG file. Please note that a screenshot of the textual abstract does not qualify as a graphical abstract. Files submitted as graphical abstracts that do not meet the required criteria will be removed prior to the manuscript's posting.
+
+→ **候选现成件**：`paper/figures/fig1_protocol_matrix.png`（1749×1144 px @ 300 dpi）。
+→ ⚠️ **不能直接交 Fig. 1**：它是论文里的六面板矩阵图，不是为"一页读懂"设计的图形摘要；"文本摘要的截图"明确不算。**提交前需另做一张**——这是**待办**，不是已解决项。
+
+### 2.4 数据可得性（原文，硬性）
+
+> Preprints.org requires that authors make all data associated with their submission available where there are no legal or confidentiality constraints in doing so.
+
+> Make sure research data are available.
+
+→ **现状核查（2026-11-04，本地实测）**：
+  - ✅ `results/` 已在公开仓库（git 已跟踪 61 个文件，含 `protocol_matrix_fig1_wide.csv`、`aggregation_gap.csv`、`p1_inf_alignment.csv`、`seeds/` 下 37 个种子聚合文件）。
+  - ✅ `paper/data/fig2_sampling_noise.csv`、`paper/figures/`、`paper/refs.bib` 均已公开。
+  - ⚠️ **逐图指标 CSV 未公开**：`archive_private/` 被 `.gitignore:95` 排除，GitHub API 查该目录返回 **404**，本地 `git ls-files` 计 **0** 个 `per_image` 文件。
+  - 📊 但**公开成本极低**：逐图 CSV 共 **186 个文件、合计仅 0.3 MB**，每文件是 `image,psnr,ssim` 三列的纯文本。
+  - → **结论**：把这 186 个逐图 CSV 放进公开仓库，即可满足数据可得性要求并让 §7.4.1 的逐图分布（Spearman ρ = −0.9247）可被外部复核。**这是本文最有价值的一步公开化**，因为逐图分布正是全文最反直觉、也最依赖原始数据的结论。
+
+### 2.5 其余硬性条款（原文要点）
+
+| 条款 | 原文要点 | 对本文的含义 |
+|---|---|---|
+| 许可 | 通过后按 **CC BY 4.0** 上线，**作者保留版权** | 无需额外授权谈判 |
+| DOI | 每个版本各发一个 DOI（`10.20944/preprints<YYYYMM>.<NNNN>.v1`） | 已实测该前缀属 **MDPI AG**；改稿要发新版本，不能"改掉旧的" |
+| 筛选 | 编辑团队 24 小时内完成（多数情况） | 时间可控 |
+| 账号 | 需要 **MDPI 账号**登录后提交 | 投稿前必须先注册 |
+| 数据链接 | 可在提交时填外链数据地址；**提交后要补链接需联系编辑** | → **数据链接要在提交时一次填对** |
+| 撤稿 | 预印本上线后**无法完全删除**，只能撤下 | 发前须确认 |
+| 合作者 | 所有作者须知晓并同意 OA 发布 | 单作者论文，需本人确认即可 |
+| 期刊政策 | 若后续投期刊，需确认该刊接受预印本 | 已在 `OUTLINE` §6 记录平台选择时同步考虑 |
+
+### 2.6 学科分类
+
+主类 **Computer Science and Mathematics**；二级类 **Artificial Intelligence and Machine Learning**
+（该二级类 URL：`preprints.org/computer-science-and-mathematics/artificial-intelligence-and-machine-learning`）
+→ **分类与已有 4 篇 preprint 一致**（既有作品的 `group-title` 字段实测为 "Computer Science and Mathematics"）。
+
+---
+
+## 3. 本文档对旧记载的更正（E73）
+
+| 位置 | 旧写法 | 实测 | 处置 |
+|---|---|---|---|
+| `OUTLINE` §6 第 5 项 | "它不收 LaTeX 源码而收 PDF，所以排版自由度更高" | 官方 Instructions 明写 **Word 或 LaTeX 都收**，源码须连 `.bib` 一起打包 | 已改为"两种都收"（E73） |
+| `OUTLINE` §6 第 4 项 | "Preprints.org 收 PDF，用通用 `article` 即可" | 结论仍成立（用 `article` 即可），但理由错了——不是"只能收 PDF" | 已补上准确理由（E73） |
+
+**教训**：平台要求属于**外部事实**，不能凭印象写。本条的原始错误源于早期规划文档的一句顺口推断，未经核验就写进了两份文档——与 E52（"没读文献就写用途"）同类。**平台规则必须查官方 Instructions 原文。**
+
+---
+
+## 4. 投稿前的待办（按阻塞顺序）
+
+| # | 事项 | 成本 | 状态 |
+|---|---|---|---|
+| 1 | 写正文（8–10 页，双栏） | 主成本 | ⬜ 未开始 |
+| 2 | 补一张**图形摘要**（JPG/PNG，非文本摘要截图） | 中 | ⬜ 待做；Fig. 1 不能直接用（§2.3） |
+| 3 | 把 186 个逐图 CSV（0.3 MB）公开化 | 小 | ⬜ 待做；满足 §2.4 数据可得性 + 支撑 §7.4.1 |
+| 4 | 注册 MDPI 账号 | 小 | ⬜ 待办 |
+| 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ⬜ 待做（正文完成后） |
+| 6 | 填投稿表单：标题 / 摘要 / 关键词 / 学科分类 / ORCID / 通讯邮箱 | 小 | ⬜ 待做（元数据本文档已备齐） |
+| 7 | 提交时填数据链接（仓库地址） | 小 | ⬜ 待做，**提交后无法自补**（§2.5） |
+| 8 | 定标题（三候选 A/B/C，`OUTLINE` §0 倾向 A） | 小 | ⬜ 待定 |
+
+**投稿前最后确认**：所有作者知晓并同意 OA 发布；确认后续目标期刊接受预印本；确认工作不侵犯任何第三方权利（本文引用了 Clean-FID、KinD 等他人成果并做对比——**只报文献值、不复跑，且标注 `as reported, not re-run`**，不复制其图表数据）。
