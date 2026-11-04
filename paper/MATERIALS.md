@@ -192,8 +192,11 @@
 | Wang et al. SSIM, IEEE TIP 2004 | 指标 |
 | Johnson et al. Perceptual Losses, ECCV 2016；Simonyan & Zisserman VGG, ICLR 2015 | 感知损失 |
 | Blau & Michaeli. *The Perception-Distortion Tradeoff.* CVPR 2018 | 感知-失真权衡的经典出处。⚠️ **不能用来解释本文的 PSNR**——本文 `w_percep=0.006` 实测只值 −0.01 dB（`FACTS` §7.9），权衡在这一档没有发生。引它只能是 §2.1 的背景 |
+| **Kingma & Ba. Adam, ICLR 2015**（arXiv:1412.6980） | **优化器出处**——§4.2 明写三个任务都用 `torch.optim.Adam` 默认超参，必须引。此前 bib 有、本表漏登 |
+| **He et al. Deep Residual Learning, CVPR 2016**（arXiv:1512.03385） | **残差结构出处**——×4 模型的 8 个 `res_blocks` 是 ResNet 式残差块，§2.1 谱系与 §4.1 结构描述都要用到。此前 bib 有、本表漏登 |
+| **Lai et al. LapSRN, TPAMI 2019**（arXiv:1710.01992，期刊版） | **金字塔式上采样谱系**——与本文的亚像素上采样（`upsample`）是同一问题的两种解法，§2.1 谱系一句带过。⚠️ **venue 已修正**：arXiv 这版是 TPAMI 2019 的期刊版（标题含 "Fast"），CVPR 2017 那篇叫 "Deep LapSRN"（`10.1109/cvpr.2017.618`），别混（`FACTS` §10-E38） |
 
-> **已完成**：§4.1/§4.2/§4.3 共 **27 条**全部核完并生成 `paper/refs.bib`（`scripts/build_refs_bib.py` 从 arXiv API 抓取，标题不符即中止）。剩余可选：Keleş 的 PCS 页码、各条 DOI。
+> **已完成**：§4.1 七条 + §4.2 五条 + §4.3 十五条 = **27 条**，与 `paper/refs.bib` 的 27 个 key 一一对应（2026-11-04 补登 Adam / ResNet / LapSRN 三条——bib 里一直有，本表漏登，导致"27 条"这个数在表里数不出来）（`scripts/build_refs_bib.py` 从 arXiv API 抓取，标题不符即中止）。剩余可选：Keleş 的 PCS 页码、各条 DOI。
 > **NTIRE 官方协议页不再是缺口**——见 §5 第 5 项（原设想用官方文档支撑"Y+shave 惯例"，但 shave 无人写，官方文档也证明不了）。
 >
 > **编号纪律**：本次复核中，凭记忆写出的 KinD `1909.01917` 与 RetinexNet `1808.10082` **都指向了完全无关的论文**（前者是差分隐私 SQL，后者是隐私保护检测）。正确值是 **1905.04161 / 1808.04560**，按标题检索得到。`refs.bib` 里每个 arXiv 编号都必须过一遍 `id_list=` 校验，`<title>` 与预期不符就退回重查。
