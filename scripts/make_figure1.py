@@ -14,10 +14,11 @@ One figure, two claims:
 Top row: absolute PSNR, model against its same-protocol reference.
 Bottom row: the difference, which is what a paper would actually report.
 
-P1 (best-of-60 random crops) is drawn off-scale on purpose: it sits 15-19 dB
-above every other protocol, and letting it set the y-range would squash the
-0.8 dB effect the figure exists to show. Its value is printed above the axis
-so nothing is hidden.
+P1 (best-of-60 random crops) is drawn off-scale on purpose: it sits far above
+every other protocol (x4: 15.9-19.8 dB, x2: 12.5-15.6, low-light: 3.8-6.1 --
+task-dependent, do not quote a single range), and letting it set the y-range
+would squash the 0.8 dB effect the figure exists to show. Its value is printed
+above the axis so nothing is hidden.
 
 Usage
 -----
@@ -90,9 +91,9 @@ def panel_top(ax, task, title, ref_name, wide, gain, show_ylabel, show_xlabel):
     protos = [r["protocol"] for r in rows]
     xs = list(range(len(protos)))
     model = [float(r["psnr_mean"]) for r in rows]
-    # Seed spread. At n=5 this is 0.02-0.04 dB -- far thinner than the marker,
-    # so it is drawn but deliberately not allowed to suggest precision the
-    # design does not have.
+    # Seed spread. At n=5 this is 0.019-0.094 dB across tasks (x4 up to 0.036,
+    # x2 up to 0.094) -- mostly thinner than the marker, so it is drawn but
+    # deliberately not allowed to suggest precision the design does not have.
     mstd = [float(r["psnr_std"]) if r["psnr_std"] else 0.0 for r in rows]
     base = []
     for p in protos:
@@ -240,7 +241,7 @@ def main() -> int:
                mew=0.9, label="same-protocol baseline"),
         # P1 needs its own legend entry: it is drawn as a bare triangle at the
         # top edge, and a reader who does not know that will read it as a stray
-        # marker rather than as a protocol 15-19 dB off the scale.
+        # marker rather than as a protocol 4-20 dB off the scale (task-dependent).
         Line2D([], [], color=C_MODEL, marker="^", ms=4.0, lw=0,
                label="P1 (off-scale)"),
     ]
