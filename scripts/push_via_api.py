@@ -86,12 +86,29 @@ def main() -> int:
     print(f"local tree : {tree}")
     print(f"remote ref : {remote_sha}")
 
-    if remote_sha != parent:
-        print(f"\nREFUSING: remote is not the parent of HEAD "
-              f"({remote_sha[:7]} != {parent[:7]}). A fast-forward push needs "
-              f"them to match; rebase onto the remote first.")
+    # Fast-forward check.
+    #
+    # The remote sha is often NOT the local HEAD~1: when a previous push went
+    # through this same API, the commit object was rebuilt server-side and got
+    # a different sha even though the tree is byte-identical. Comparing shas
+    # would then refuse an update that changes nothing.
+    #
+    # So the check is on the *tree*: if the remote commit's tree equals the
+    # local HEAD~1's tree, the two commits describe the same content and the
+    # update is a genuine fast-forward. If the trees differ, the remote has
+    # commits this branch does not have, and the script refuses.
+    st, remote_commit = api(f"/git/commits/{remote_sha}")
+    remote_tree = remote_commit["tree"]["sha"]
+    parent_tree = git("rev-parse", "HEAD~1^{tree}")
+    print(f"remote tree: {remote_tree[:7]}")
+    print(f"parent tree: {parent_tree[:7]}")
+
+    if remote_tree != parent_tree:
+        print(f"\nREFUSING: the remote tree ({remote_tree[:7]}) differs from "
+              f"HEAD~1's tree ({parent_tree[:7]}). The remote has commits this "
+              f"branch does not contain; rebase onto it before pushing.")
         return 1
-    print("\nfast-forward check passed (remote == HEAD~1)")
+    print("\nfast-forward check passed (remote content == HEAD~1 content)")
     if args.dry_run:
         print("\n--dry-run: stopping before upload")
         return 0
@@ -181,7 +198,12 @@ def main() -> int:
     st, commit = api("/git/commits", {
         "message": msg,
         "tree": new_tree,
-        "parents": [parent],
+        # The parent must be the commit the remote actually has. After an
+        # earlier API push the remote sha differs from the local HEAD~1 sha
+        # (the object was rebuilt server-side), so the remote's own sha is
+        # used here -- otherwise the new commit would reference an object
+        # the remote has never seen.
+        "parents": [remote_sha],
         "author": {"name": name, "email": mail, "date": when},
     }, method="POST")
     print(f"commit created: {commit['sha'][:7]}")

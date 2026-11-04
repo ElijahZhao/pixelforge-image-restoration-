@@ -348,6 +348,38 @@ def main():
     # =====================================================================
     print()
     print("=" * 74)
+    print("I3. The five images where the bicubic baseline is exactly infinite")
+    print("=" * 74)
+    # Under best-of-60 the bicubic reference reconstructs a flat patch
+    # exactly, so its PSNR is +inf on five images. The manuscript says the
+    # model reaches "54.9 to 63.4 dB (x4)" and "50.4 to 68.7 dB (x2)" on
+    # exactly those five -- the point being that no network output can beat
+    # an exact reconstruction. Both ranges are the min/max over all 25
+    # (5 images x 5 seeds) model values, so they are asserted here.
+    INF_IMAGES = ["0839.png", "0843.png", "0846.png", "0847.png", "0868.png"]
+    for task, pat, exp_lo, exp_hi in (
+        ("x4", "generator_x4_x4__sr_generator_scale4_best__s*__P1.csv", 54.9, 63.3),
+        ("x2", "srcnn_x2_x2__sr_srcnn_scale2_best__s*__P1.csv", 50.4, 68.7),
+    ):
+        vals = []
+        for f in model_files(task, "P1"):
+            d = load(f)
+            vals.extend(d[i] for i in INF_IMAGES)
+        print(f"  -- {task}: {len(vals)} model values on the 5 infinite-baseline "
+              f"images -> {min(vals):.2f} .. {max(vals):.2f} dB")
+        check(f"{task} model PSNR on the infinite-baseline images (min)",
+              min(vals), exp_lo, 5e-2, " dB")
+        check(f"{task} model PSNR on the infinite-baseline images (max)",
+              max(vals), exp_hi, 5e-2, " dB")
+        # And the baseline really is infinite on exactly those five.
+        bf = base_file(task, "P1")
+        base = load(bf)
+        n_inf = sum(1 for v in base.values() if not math.isfinite(v))
+        check_eq(f"{task} infinite-baseline image count", n_inf, 5)
+
+    # =====================================================================
+    print()
+    print("=" * 74)
     print("J. Literature coding counts")
     print("=" * 74)
     import collections

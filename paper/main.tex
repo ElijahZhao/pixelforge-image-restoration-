@@ -81,7 +81,9 @@ claim is conditional rather than universal: on low-light enhancement the
 protocol span is only 0.21 times the training gain, because that task has
 far more headroom. Finally, a coding of 63 recent papers shows that only one
 states its aggregation method, none states its validation batch size, and
-none states whether its validation and test sets coincide. We close with six
+of the 15 papers whose validation and test sets can be judged from the
+text, none states whether those sets coincide (the other 48 were not
+coded, since deciding it needs the code or the appendix). We close with six
 reporting requirements that would remove the ambiguity.
 \end{abstract}
 
@@ -142,9 +144,11 @@ Our contributions are:
 \item \textbf{A coding of reporting practice.} We coded 63 papers
   (44 super-resolution, 19 low-light enhancement; 2019--2025) against seven
   reporting dimensions. One paper states its aggregation method, none states
-  its validation batch size, and none states whether its validation and test
-  sets coincide. From these rates we derive six reporting requirements that
-  a reader could check without rerunning anything.
+  its validation batch size, and of the 15 papers whose validation and test
+  sets can be judged from the text, none states whether those sets
+  coincide; the remaining 48 were not coded. From these rates we derive six
+  reporting requirements that a reader could check without rerunning
+  anything.
 \end{enumerate}
 
 Figure~\ref{fig:protocol-matrix} shows the matrix. The protocol effect is
@@ -421,7 +425,7 @@ $\times$2, computed on the same 95 images on both sides. This is a
 definitional effect rather than a weak model. Under best-of-60 the bicubic
 reference reconstructs flat patches exactly: PSNR is $+\infty$ on five of
 the 100 images, and on those five images the model reaches at best 54.9 to
-63.4\,dB ($\times$4) and 50.4 to 68.7\,dB ($\times$2). The gap is not a
+63.3\,dB ($\times$4) and 50.4 to 68.7\,dB ($\times$2). The gap is not a
 few decibels; it is a difference in kind, because an exact reconstruction
 has zero mean squared error and no network output can improve on it. The
 protocol manufactures a baseline that cannot be beaten. On low-light the
@@ -457,6 +461,17 @@ appendix, and 48 of the 63 papers were never coded for it; of the 15 that
 can be judged, none states it. We report this as 0 of 15 judged, not as 0 of
 63, and we emphasise that a zero reporting rate is not a zero occurrence.
 That inference is precisely the one this paper argues against.
+
+The channel is the one dimension on which the literature is not silent but
+unanimous, and the unanimity is itself the finding: 41 of the 63 papers do
+not state a channel, while all 22 that do state one use $Y$ and not one
+states RGB. The practice is therefore consistent in the sense that nobody
+reports doing otherwise, and unstated in the sense that two thirds of the
+sample say nothing at all. We read this as the strongest available
+illustration of our thesis: the default is shared, so no paper looks
+non-conforming, and yet the default silently selects the channel that
+discards chroma---worth $+1.45$ to $+2.24$\,dB on our own tasks. A reader
+comparing two numbers has no way to tell whether the chroma was scored.
 
 The sample is drawn from arXiv and therefore over-represents open-source
 work; the true rate in the journal literature can only be lower. The
