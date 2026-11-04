@@ -236,7 +236,7 @@ cd web && pnpm install && pnpm test
 cd web && pnpm exec tsc --noEmit
 ```
 
-Expected: `39 passed, 1 skipped` (27 training unit tests + 9 API smoke tests + 3 real-weight
+Expected: `81 passed, 1 skipped` (69 training unit tests + 9 API smoke tests + 3 real-weight
 integration tests; the skip is the E2E script). The integration tests load the real weights
 under `serve/models/` through the full inference path, confirming the ML engine actually serves
 rather than silently degrading to the classical baseline.
@@ -375,6 +375,8 @@ The engineering is complete and live; the remaining items are optional extension
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
+- **1.11.2** — Streamlit demo adds a collapsible "About this project" section (bilingual) summarising what the project does, the key idea, and its significance for non-expert visitors; also clarifies training-provenance wording and adds a privacy note.
+- **1.11.1** — Fixed a stale Chinese README claim about SR ×4 sharpness; restored zh/en parity.
 - **1.11.0** — Author set to Independent Researcher; manuscript submitted to Preprints.org; added a Paper & Preprint section; process docs moved to the internal library.
 - **1.10.0** — Full external audit of all 27 references (83 checks), Preprints.org compliance (COPE AI-use declaration), preprint files archived in `preprint/`.
 - **1.9.0** — Seed-variance matrix completed at n=5 for all three tasks.

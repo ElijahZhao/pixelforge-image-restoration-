@@ -70,9 +70,9 @@ TEXTS = {
         "task_sr": "Super-Resolution (SR)",
         "task_lowlight": "Low-Light Enhancement",
         "scale_label": "SR scale",
-        "scale_help": "×2 and ×4 both run self-trained models (best-of selection across three training runs)",
+        "scale_help": "×2 and ×4 both run self-trained models (best-of-N epoch selection)",
         "trained_caption": (
-            "**Three training runs** · best-of selection per slot<br>"
+            "**Trained from scratch** · best-of-N epoch selection<br>"
             "Full-image validation PSNR:<br>"
             "· SR×4 — **27.47**<br>"
             "· SR×2 — **32.35**<br>"
@@ -114,6 +114,7 @@ TEXTS = {
             "Code &amp; preprint: "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
+        "privacy_note": "🔒 Your image is processed in memory on the server and is not saved.",
         "upload_label": "Upload an image",
         "resized_note": "Image is {w}×{h} — larger than the {limit_mpx:.1f} Mpx memory budget on Streamlit Community Cloud's free tier (~1 GB RAM). Auto-downscaled to {nw}×{nh} before inference to keep the app from being OOM-killed.",
         "bomb_error": "🚫 This image is too large to process safely on the free tier (~1 GB RAM) and was rejected to avoid crashing the app. Please upload an image under ~50 Mpx (e.g. downscale it first).",
@@ -196,9 +197,9 @@ TEXTS = {
         "task_sr": "超分辨率 (SR)",
         "task_lowlight": "低光增强 (Low-Light)",
         "scale_label": "SR 放大倍数",
-        "scale_help": "×2 / ×4 均使用自训模型（三次训练按槽位择优）",
+        "scale_help": "×2 / ×4 均使用自训模型（按 epoch 择优的 best-of-N）",
         "trained_caption": (
-            "**三次训练对照** · 按槽位择优<br>"
+            "**从零自训** · 按 epoch 择优（best-of-N）<br>"
             "全图验证 PSNR：<br>"
             "· SR×4 — **27.47**<br>"
             "· SR×2 — **32.35**<br>"
@@ -229,6 +230,7 @@ TEXTS = {
             "论文：已投稿 Preprints.org（独立研究者）。代码与预印本见 "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
+        "privacy_note": "🔒 图片在服务器内存中处理，不会被保存。",
         "upload_label": "上传图片",
         "resized_note": "图片为 {w}×{h}，超过 Streamlit Community Cloud 免费档（约 1GB 内存）的 {limit_mpx:.1f} Mpx 内存预算；已在推理前自动等比缩小到 {nw}×{nh}，避免应用被 OOM 杀掉（表现为反复崩溃 / \"Oh no.\" 空白页）。",
         "bomb_error": "🚫 这张图太大，免费档（约 1GB 内存）无法安全处理，已拒绝以免应用崩溃。请上传约 50 Mpx 以下的图片（或先缩图再传）。",
@@ -869,6 +871,7 @@ with st.sidebar:
 st.markdown(f'<p class="pf-section-title">{T["sec_upload"]}</p>',
             unsafe_allow_html=True)
 uploaded = st.file_uploader(T["upload_label"], type=["png", "jpg", "jpeg", "bmp", "webp"])
+st.caption(T["privacy_note"])
 
 # --- render-time engine probe (files only; no torch.jit.load) ---------------
 sr2_ready = _sr_weight_path(2) is not None
