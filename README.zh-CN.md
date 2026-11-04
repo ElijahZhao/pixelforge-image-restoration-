@@ -177,6 +177,19 @@ flowchart LR
 - **前后对比**：Streamlit Demo 并列展示；Next.js 前端用可拖动滑块对比。
 - **三个训练权重随仓库分发**，位于 `serve/models/`（Demo 用副本在 `deploy/streamlit/models/`）；权重缺失时经典方法自动兜底。
 
+## 📄 论文与预印本
+
+本仓库的方法写成了一篇送审预印本：
+
+- **标题**：*The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
+- **作者**：Yulin Zhao（又名 Elijah Zhao）—— **独立研究者（Independent Researcher）**
+- **投稿平台**：[Preprints.org](https://www.preprints.org/)，稿件类型 **Article**（许可 **CC BY 4.0**；学科分类：Computer Science and Mathematics → Artificial Intelligence and Machine Learning）
+- **状态**：已提交，等待平台初审（上传已完成）
+- **文件**：投稿 PDF、LaTeX 源码 zip、图形摘要位于 [`preprint/`](preprint/)；LaTeX 正文位于 [`paper/`](paper/)。
+- **引用**：见 [CITATION.cff](CITATION.cff)。
+
+论文的核心论点——**你点名哪套评测协议（以及如何测量），能让"胜过基线 / 没胜过基线"的判定相差好几 dB**——正是本仓库在代码层面强制贯彻的纪律：同一批 100 张 DIV2K 验证图、PIL bicubic 下采样、全图 RGB PSNR，这也正是挑选部署权重所用的一套协议。
+
 ## 🧪 本地测试
 
 ```bash
@@ -327,9 +340,9 @@ pixelforge-image-restoration/
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)。近期：
 
-- **1.2.2** — 加固公开 Demo 的上传守卫（解码前拒绝压缩炸弹）、移除未使用的 Gradio 依赖、固化 CI 覆盖率门禁。
-- **1.2.1** — 新增 Demo 展示素材，并修复大图上传导致的 Demo 内存崩溃。
-- **1.2.0** — 首个 ×2 超分权重上线，低光权重更新。
+- **1.11.0** — 作者改为独立研究者；论文提交 Preprints.org；新增「论文与预印本」章节；过程文档迁移至内部资料库。
+- **1.10.0** — 全部 27 条参考文献外部全量核验（83 项检查）、Preprints.org 合规（COPE 要求的 AI 使用声明）、预印本文件归档至 `preprint/`。
+- **1.9.0** — 三个任务的种子方差矩阵补齐到 n=5。
 
 ## 📄 许可与引用
 

@@ -5,6 +5,22 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.11.0] - 2026-11-04
+
+**作者改为独立研究者 + 论文提交 Preprints.org + 仓库整理收尾**。
+
+### Changed
+- 作者归属由「河南财经政法大学」改为 **Independent Researcher（独立研究者，无机构归属）**：`paper/main.tex` 作者块、`CITATION.cff`、`preprint/README.md`、`paper/PREPRINT_SUBMISSION.md` 及追踪文档同步。`ElijahZhao` 为别名，姓名以 ORCID 记录（Yulin Zhao）为准。
+- 论文已上传提交至 Preprints.org（稿件类型 Article，CC BY 4.0，学科分类 Computer Science and Mathematics → Artificial Intelligence and Machine Learning），等待平台初审。
+
+### Removed
+- 三个纯过程文档 `paper/OUTLINE.md`、`paper/MATERIALS.md`、`paper/PREPRINT_SUBMISSION.md` 从仓库移除，已存入系统内置资料库归档（构建/CI 依赖的 `paper/FACTS.md` 保留）。
+- 删除未跟踪缓存与构建产物：`.cache/`、`.pytest_cache/`、`.playwright-cli/`、`.coverage`、`dist/`。
+
+### Changed (docs)
+- `README.md` / `README.zh-CN.md`：新增「论文与预印本」章节，反映独立研究者身份与预印本投稿状态；变更记录同步到最新版本号。
+- `CITATION.cff`：版本对齐至 1.11.0。
+
 ## [1.10.0] - 2026-11-04
 
 **参考文献有效性全量外部核验 + Preprints.org 合规补漏 + 预印本文件归档**。

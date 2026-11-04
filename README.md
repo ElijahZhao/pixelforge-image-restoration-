@@ -209,6 +209,19 @@ classical baseline. `GET /api/health` reports which engine each slot is using. F
 - **Before/after**: side-by-side in the Streamlit demo; draggable slider in the Next.js frontend.
 - **Three trained weights ship** in `serve/models/` (and a copy in `deploy/streamlit/models/` for the demo); classical baselines remain as automatic fallback if a weight is ever missing.
 
+## 📄 Paper & Preprint
+
+The methods behind this repo are written up as a peer-review preprint:
+
+- **Title**: *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
+- **Author**: Yulin Zhao (also known as Elijah Zhao) — **Independent Researcher**
+- **Venue**: submitted to [Preprints.org](https://www.preprints.org/) as an **Article** (license **CC BY 4.0**; subject area: Computer Science and Mathematics → Artificial Intelligence and Machine Learning)
+- **Status**: submitted, awaiting screening (upload completed)
+- **Files**: the submitted PDF, the LaTeX source zip, and the graphical abstract live in [`preprint/`](preprint/); the LaTeX manuscript lives in [`paper/`](paper/).
+- **Cite**: see [CITATION.cff](CITATION.cff).
+
+The paper's thesis — that *which* evaluation protocol you name (and how you measure it) can flip a "beats baseline / doesn't" verdict by several dB — is exactly the discipline this repo enforces in code: the same 100-image DIV2K validation set, PIL bicubic downsampling, full-image RGB PSNR, as used to pick the shipped weights.
+
 ## 🧪 Tests
 
 ```bash
@@ -362,9 +375,9 @@ The engineering is complete and live; the remaining items are optional extension
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
-- **1.2.2** — Hardened the public-demo upload guard (reject decompression bombs before decode), dropped the unused Gradio dependency, and locked the CI coverage gate.
-- **1.2.1** — New demo showcase assets and a fix for the demo's out-of-memory crash on large uploads.
-- **1.2.0** — Shipped the first ×2 super-resolution weight and refreshed the low-light weight.
+- **1.11.0** — Author set to Independent Researcher; manuscript submitted to Preprints.org; added a Paper & Preprint section; process docs moved to the internal library.
+- **1.10.0** — Full external audit of all 27 references (83 checks), Preprints.org compliance (COPE AI-use declaration), preprint files archived in `preprint/`.
+- **1.9.0** — Seed-variance matrix completed at n=5 for all three tasks.
 
 ## 📄 License & citation
 
