@@ -121,6 +121,14 @@ Low-Light Enhancement (LOL validation, 15 images)
 >   8×256² patches; more when image difficulty is mixed). Logs written before 1.3.0 and
 >   logs written after it are therefore **not directly subtractable** — compare across
 >   protocols only through `eval_baseline.py`, which is the same code path for both.
+>   The 1.16 dB quoted here is a **deployed-weights** measurement on 8×256² patches. On
+>   the 15 seed checkpoints the paper reports, the same Jensen gap is **1.90 / 2.20 /
+>   1.51 dB** at full image and **3.14 / 3.47 / 2.77 dB** on a single 96² crop
+>   (`results/aggregation_gap.csv`, from `scripts/aggregation_gap.py`). It is not a
+>   constant: it tracks how spread out the per-image scores are, so it shrinks as the
+>   window grows. That the 15 seed logs match the protocol matrix to 1e-3 (P2 for SR,
+>   P3 for low-light) is itself proof those logs already use the per-image convention —
+>   a batch-MSE log would sit 3.1 dB lower, not 0.0006.
 
 ## Protocol matrix (Figure 1 source; added 2026-11-04)
 

@@ -15,7 +15,7 @@
 
 **不写的是**：
 - 不主张性能。三个模型都不是 SOTA，低光落后 KinD 约 2.5 dB（文献报告值，未复跑）。
-- 不主张系统。81 项测试（+1 skip）、CI、跨环境逐字节一致是**证据可信的前提**，放 §4.1，不单列为贡献。
+- 不主张系统。81 项测试（+1 skip）、CI、跨环境数值一致（**≤1e-5 dB，不是 bitwise**）是**证据可信的前提**，放 §4.1，不单列为贡献。
 - 不主张"首次发现协议影响指标"。Keleş 2021（聚合，SISR 实测 2.07 dB）、LOL audit 2026（低光标签与测试时设置）、Clean-FID 2022（GAN 侧 resize）都在这条线上。我们主张的是**首个跨任务、跨五维度的统一审计 + 符号翻转这一具体机制**。
 
 **三条贡献（按可防御性排序）**：
@@ -74,7 +74,7 @@
 |---|---|---|---|
 | 4.1 三个模型 | 1.226M / 0.069M / 0.565M（实测） | `FACTS` §1 | ✅ |
 | **×4 带感知损失** | 硬事实（config 实测）：`w_pixel=1.0`、`w_percep=0.006`、`objective = 1.0*charbonnier + 0.006*vgg_perceptual`；**"有效贡献 1:8–1:17" 是估算，不是实测**（日志只记 total loss，未记分量） | `FACTS` §3 + §10-E18 | ✅ **必写**，但比例只能当估算说 |
-| 4.1 可复现性 | **81 项通过 + 1 跳过**（`train/tests` 69 + `tests/` 12：API 冒烟 9、推理集成 3）；CI 三门禁（pytest+覆盖率 75%、pip-audit、tsc+next build）；跨环境逐字节 | `FACTS` §9.2 + §10-E10 | ✅ |
+| 4.1 可复现性 | **81 项通过 + 1 跳过**（`train/tests` 69 + `tests/` 12：API 冒烟 9、推理集成 3）；CI 三门禁（pytest+覆盖率 75%、pip-audit、tsc+next build）；跨环境数值一致 **≤1e-5 dB（实测 1e-6），不是 bitwise** | `FACTS` §9.2 + §10-E10 | ✅ |
 | 4.2 数据 | DIV2K 800/100；LOL 485/15；低光**配对无上采样** | `FACTS` §2 | ✅ |
 | 4.2 种子与轮数 | 42–46；200/100/200 轮 | `FACTS` §3 | ✅ |
 | 4.3 环境 | T4 训练、本地 CPU 跑 ×2 基线、跨环境 <1e-6 dB | `FACTS` §9.2 | ✅ |
@@ -88,8 +88,9 @@
 | 5.1 **采样协议的种子 std 不可混入上一条** | 低光 P1 = **0.4148**、P2 = **0.5303**；×4 P1 = 0.2364、×2 P1 = 0.5584 —— 这些不是"训练随机性"，是**块采样噪声被 best-of-60 放大**（Fig. 2 的同一现象） | `FACTS` §5.1 | ✅ 写 §5.1 时必须分开说，否则表里 0.53 会打自己的脸 |
 | 5.1 跨度 | 3.889（×4）/ 3.143（×2）/ 2.250（低光）；比值 4.98× / 3.64× | `FACTS` §6 | ✅ |
 | 5.1 最低协议不同 | ×4 最低 P6，×2 最低 P2 | `FACTS` §6 注 | ✅ |
+| **5.1/7 绝对值的不确定度** | 低光 n=15：每图 PSNR **12.49–23.72**（极差 11.23），均值 18.509 的 95% CI 半宽 **±2.04 dB**；SR n=100 是 **±0.87** | `FACTS` §7.7 | ✅ **低光只报方向不报幅度** |
 | 5.2 符号翻转 | 完整 21 行增益表 | `FACTS` §5.3 | ✅ |
-| 5.2 机制数字 | 模型侧 −3.89/−2.72，基线侧 −1.32/−0.31 | `FACTS` §7.2 | ✅ |
+| 5.2 机制数字 | 模型侧 **−3.89/−2.72**，基线侧 **−1.32 / +0.31**（×2 是**涨**的）；剪刀差 2.57 / 3.03 | `FACTS` §7.2 | ✅ 2026-11-04 修正：×2 基线符号原写反 |
 | 5.3 跨任务 | ×2 复现且更大（3.03 dB 摆幅） | `FACTS` §5.3 | ✅ |
 | 5.3 **P1 不是"另一个翻转"，是"P1 根本不可比"** | ×4 **−0.5793**、×2 **−2.3123**（两边同取 95 张）。5 张 DIV2K 图（`0839/0843/0846/0847/0868`）被 bicubic 在 best-of-60 里**精确重建**，PSNR=∞，故基线 n=95；模型侧对应 5 张是 50–68 dB。**任何网络都不可能赢** | `FACTS` §5.3 + §10-E21 + `results/p1_inf_alignment.csv` | ✅ 2026-11-04 修正 |
 | 5.4 文献报告 | **F1 聚合 1/63 [0.3, 8.5]%；F2 验证 batch 0/63 [0.0, 5.7]%；F3 退化可复现 5/44 [5.0, 24.0]%；F4 明说 Y 通道 22/63 [24.3, 47.2]%；F7 给代码 35/63 [43.3, 67.2]%** | `FACTS` §8 | ✅ 五个比例全带 Wilson CI |
@@ -99,7 +100,8 @@
 
 | 要写 | 用什么 | 出处 | 状态 |
 |---|---|---|---|
-| 6.1 机制 | 四个维度逐条解释 | `FACTS` §7.1–7.5 | ✅ |
+| 6.1 机制 | 五个维度逐条解释 | `FACTS` §7.1–7.5 | ✅ |
+| **6.1 聚合的量化** | 逐图平均比平均 MSE 高 **1.90/2.20/1.51 dB**（全图），单块放大到 **3.14/3.47/2.77**；面积加权只贡献 0.04–0.07，98% 是 Jensen。**顺带复现 Keleş 2021 的 2.07 dB** | `FACTS` §7.6 + `results/aggregation_gap.csv` | ✅ **原稿引的 1.156 dB 口径不对，已换** |
 | 6.1 挡质疑的对照 | 换库 0.01–0.02 dB vs 换 antialias 2.7–3.9 dB，差 200 倍 | `FACTS` §7.3 | ✅ |
 | 6.2 最小报告清单 | **六条**：聚合 / 验证 batch / 采样窗口 / 通道与 shave / 退化算子（含 `antialias`）/ 种子与 best-of-N。**摘要里压成四条**（合并「通道+shave」与「采样+batch」），正文保持六条 | `FACTS` §8 的五个比例可直接当每条的证据 | ⬜ 待写 |
 | 6.3 对审稿流程 | "不要求重跑，只要求一行字" + 可复制模板 | 需自己写 | ⬜ 待写 |
@@ -111,7 +113,7 @@
 | 非 SOTA | 低光落后 KinD ~2.5 dB、Retinexformer ~6.8 dB（**as reported, not re-run**） | `FACTS` §10-E15 |
 | 仅 2 任务 3 模型 | — | — |
 | 无真实退化 | 全部合成 bicubic | — |
-| 验证集小 | DIV2K 100 张、LOL 15 对；15 张的 95% CI 跨度约 5 dB | `FACTS` §10-E16 |
+| 验证集小 | DIV2K 100 张、LOL 15 对。**低光均值 95% CI 半宽 ±2.04 dB**（SR 是 ±0.87）→ 低光侧 <2 dB 的方法间差异不可分辨 | `FACTS` §7.7 |
 | ×2 基线晚补 | 同一代码路径、同一数据 | `FACTS` §0 |
 | 文献抽样只覆盖 arXiv | 43/63 venue 待核 → 开源倾向偏差 | `FACTS` §8 |
 | 单卡单框架 | 跨环境只验过 CPU/GPU + torch 2.10/2.11 | `FACTS` §9.2 |
@@ -154,8 +156,8 @@
 
 | # | 条目 | 用途 | 核验 |
 |---|---|---|---|
-| 1 | Keleş, Yılmaz, Tekalp. *On the Computation of PSNR for a Set of Images or Video.* PCS 2021. arXiv:2104.14868（2021-04-30） | 唯一正对"聚合方式"，SISR 实测 2.07 dB、理论上界 2.507 dB | ✅ arXiv API 已核（标题/三位作者/日期全对）；页码待排版时补 |
-| 2 | Thirumani Srinivasan. *What Does LOL Measure? Hidden Label Shifts in Low-Light Enhancement Benchmarks.* arXiv:2610.38121（2026-10-28） | 低光侧标签偏移/测试时设置，luma vs RGB 差 1.9–3.7 dB；15 图 95% CI 跨 5.2 dB | ✅ arXiv API 已核（**单作者**，原表"待核作者"已补） |
+| 1 | Keleş, Yılmaz, Tekalp, **Korkmaz, Dogan**. *On the Computation of PSNR for a Set of Images or Video.* PCS 2021. arXiv:2104.14868（2021-04-30） | 唯一正对"聚合方式"，SISR 实测 2.07 dB、理论上界 2.507 dB | ✅ arXiv API 已核：**是 5 位作者，不是 3 位**（原表漏了 Korkmaz 与 Dogan）；`<arxiv:comment>` 写明 "accepted for publication in PCS 2021" |
+| 2 | Thirumani Srinivasan. *What Does LOL Measure? Hidden Label Shifts in Low-Light Enhancement Benchmarks.* arXiv:2610.38121（2026-10-28） | 低光侧标签偏移：LOLv1 测试标签渲染不同（同一批图在 LOLv2 中饱和度低 1.48×）、LOLv2-Real 测试集是 690–789 连续块且比训练标签暗 14%、test-time 设置足以改变排名 | ✅ arXiv API 已核（**单作者**）。⚠️ **原表"15 图 95% CI 跨 5.2 dB"不可核，已弃用**（摘要无此数，见 `FACTS` §10-E24）；只引上面三条 |
 | 3 | Parmar, Zhang, Zhu. *On Aliased Resizing and Surprising Subtleties in GAN Evaluation*（Clean-FID）. CVPR 2022 | 抗锯齿 resize 的叙事先例（GAN 侧） | ✅ 标题/作者/会议确 |
 | 4 | Shah, Duarte. *HyperBench: Standardizing and Scaling Synthetic Evaluation for Hyperspectral Super-Resolution.* arXiv:2605.21671（2026-05-20） | 高光谱 Wald 协议实现差异导致排名不保留 | ✅ arXiv API 已核（原表只有编号；**标题是全名，勿简写**） |
 | 5 | Zhang, Li, Chen, Qiao, Wu, Dong. **SEAL: *A Framework for Systematic Evaluation of Real-World Super-Resolution.* arXiv:2309.03020（ICLR 2024 Spotlight）** | 随机采样评测不可靠、排名互换 | ✅ **原表 "2409.xxxx 编号不全" 已补全**：是 **2309**.03020，2023-09 挂出、ICLR 2024 Spotlight、XPixelGroup |
@@ -184,12 +186,15 @@
 | **Cai** et al. Retinexformer, ICCV 2023（arXiv:2303.06705） | §2.1 + Limitations 的对比值 |
 | Zhang et al. KinD, ACM MM 2019 | §2.1 + Limitations 的对比值 |
 | **Wei, Wang, Yang, Liu. *Deep Retinex Decomposition for Low-Light Enhancement.* BMVC 2018** | **一条顶两条**：既提出 RetinexNet，又发布 LOL 数据集（原表把它拆成 "RetinexNet, BMVC 2018" + "LOL dataset, **ICCV** 2018" 两行，后者年份/会议是错的） |
-| Agustsson & Timofte. NTIRE 2017 Challenge / DIV2K | 数据集 + **"文献惯例 = Y + shave"的官方出处** |
+| Agustsson & Timofte. NTIRE 2017 Challenge / DIV2K | 数据集（**只引数据集**）。⚠️ **不要再写"文献惯例 = Y + shave"**：Y 有 22/22 支持（`FACTS` §8），**shave 是 0/63 说明**，没有可引出处。见 `FACTS` §10-E29 |
 | Wang et al. SSIM, IEEE TIP 2004 | 指标 |
 | Johnson et al. Perceptual Losses, ECCV 2016；Simonyan & Zisserman VGG, ICLR 2015 | 感知损失 |
 | Blau & Michaeli. *The Perception-Distortion Tradeoff.* CVPR 2018 | **解释为什么带感知损失的模型 PSNR 偏低**——`FACTS` §3 那条必须写的设置，理论上靠这篇 |
 
-> **待办**：§4.3 的 10 条仍需核 DOI/页码/作者全名（§4.1/§4.2 已核完）。之后统一生成 `paper/refs.bib`。NTIRE 官方协议页需抓存档（查新报告提到但未存链接）。
+> **已完成**：§4.1/§4.2/§4.3 共 **27 条**全部核完并生成 `paper/refs.bib`（`scripts/build_refs_bib.py` 从 arXiv API 抓取，标题不符即中止）。剩余可选：Keleş 的 PCS 页码、各条 DOI。
+> **NTIRE 官方协议页不再是缺口**——见 §5 第 5 项（原设想用官方文档支撑"Y+shave 惯例"，但 shave 无人写，官方文档也证明不了）。
+>
+> **编号纪律**：本次复核中，凭记忆写出的 KinD `1909.01917` 与 RetinexNet `1808.10082` **都指向了完全无关的论文**（前者是差分隐私 SQL，后者是隐私保护检测）。正确值是 **1905.04161 / 1808.04560**，按标题检索得到。`refs.bib` 里每个 arXiv 编号都必须过一遍 `id_list=` 校验，`<title>` 与预期不符就退回重查。
 
 ---
 
@@ -198,17 +203,17 @@
 | # | 缺口 | 阻塞什么 | 成本 | 状态 |
 |---|---|---|---|---|
 | **1** | **作者署名、单位、通讯邮箱** | **一切对外动作**（预印本注册、模板页眉、署名顺序） | 等用户 | ⬜ |
-| **2** | `refs.bib`（25 条） | §2 无法定稿 | **2 小时**——出处已全部核完（§4），只剩转 BibTeX + 补 DOI | ⬜ **成本已降** |
+| ~~2~~ | ~~`refs.bib`~~ | — | **已生成 `paper/refs.bib`：27 条**（21 inproceedings + 4 misc + 2 article），由 `scripts/build_refs_bib.py` 从 arXiv API 抓取并**逐条校验标题**，手改无效 | ✅ **2026-11-04 完成** |
 | **3** | Table 1（七篇对比） | §2 | 从查新报告改写；7 篇出处已核 | ⬜ **出处已清** |
 | **4** | §2.3 的 ML 评测谱系五篇 | 论文的学术定位高度 | 读五篇摘要 | ⬜ **出处已核** |
-| **5** | NTIRE 官方协议原文 | §2、§6 的"文献惯例"出处 | 需抓网页存档 | ⬜ |
+| ~~5~~ | ~~NTIRE 官方协议原文~~ | **降级为可选**：原想用它支撑"文献惯例 = Y + shave"，但 shave 部分是 **0/63 说明**（`FACTS` §8-F5），**任何官方文档都不能把"没人写的东西"变成惯例**。改用抽样数据自证，见 §10-E29 | 0 | ✅ **关闭** |
 | **6** | 六条最小报告清单的措辞 | §6.2 | 写作时提炼 | ⬜ |
 | 7 | Table 2–6 排版 | §3–§6 | 素材齐，纯排版 | ⬜ |
 | 8 | 页数/模板确定 | 排版 | 等 Preprints.org 格式 + 署名 | ⬜ |
 | **9** | ~~Fig. 2 压到 3.4 in 以内~~ | — | 已由 `pad_inches=0.01` 解决，成品 3.43 in | ✅ **已解决 2026-11-04** |
 | **10** | 感知损失"有效贡献 1:8–1:17"是估算 | 只在正文引比例时 | 重跑 s42 并记 loss 分量，或正文只报权重不报比例 | ⬜ **新增** |
 
-**不阻塞的**：所有数字、两张图的源数据、三张表的源数据、25 条文献的出处。
+**不阻塞的**：所有数字、两张图的源数据、三张表的源数据、**27 条参考文献（已成 bib）**。
 
 ---
 
