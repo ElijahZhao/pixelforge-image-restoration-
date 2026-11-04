@@ -10,8 +10,8 @@ MSEs with **equal weight**, which is the common way people re-aggregate a table
 of per-image PSNR.  A textbook "global MSE" would instead weight each image by
 its pixel count (total error / total pixels).  DIV2K val is not a fixed size --
 long edge 2040, short edge 816 to 2040, a 2.5x spread in area -- so the two are
-not identical, but they differ by only 0.02-0.05 dB: large images are not
-systematically the hard ones.  We keep the equal-weight version because LOL has
+not identical, but they differ by only -0.04 to +0.07 dB (full-image protocols:
++0.04 to +0.07): large images are not systematically the hard ones.  We keep the equal-weight version because LOL has
 no local copy to measure, and because 0.05 dB is two orders of magnitude below
 the effect being reported.
 
@@ -89,6 +89,7 @@ def main() -> None:
         for proto in protos:
             per_seed_mean, per_seed_global, gaps = [], [], []
             per_seed_area = []
+            per_seed_area_psnr = []
             n_inf = 0
             for s in SEEDS:
                 f = os.path.join(pdir, f"{prefix}__s{s}__{proto}.csv")
@@ -115,6 +116,10 @@ def main() -> None:
                     wa = -10.0 * math.log10(
                         sum(areas[k] / total_area * 10.0 ** (-d[k] / 10.0) for k in covered))
                     per_seed_area.append(m - wa)
+                    # keep the level too, not just the gap: the claim "pixel
+                    # weighting moves PSNR itself by ~0.05 dB" is only
+                    # checkable if both levels are in the file.
+                    per_seed_area_psnr.append(wa)
             if not gaps:
                 continue
             rows.append({
@@ -130,6 +135,15 @@ def main() -> None:
                 "jensen_gap_std": f"{st.stdev(gaps):.4f}" if len(gaps) > 1 else "",
                 "jensen_gap_areaweighted": (
                     f"{st.mean(per_seed_area):+.4f}" if per_seed_area else ""),
+                "mean_psnr_areaweighted": (
+                    f"{st.mean(per_seed_area_psnr):.4f}" if per_seed_area_psnr else ""),
+                "areaweight_shift": (
+                    # Same aggregation (PSNR of mean MSE), only the weights change:
+                    # pixel-count vs equal.  This is the "-0.04..+0.07 dB" in
+                    # FACTS section 7.6.  Do NOT subtract `mean_psnr` here -- that
+                    # would fold the Jensen gap into the number and give ~-2 dB.
+                    f"{st.mean(per_seed_area_psnr) - st.mean(per_seed_global):+.4f}"
+                    if per_seed_area_psnr else ""),
             })
 
     rows.sort(key=lambda r: (list(TASKS).index(r["task"]), int(r["protocol"][1:])))

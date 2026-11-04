@@ -49,8 +49,10 @@ ENTRIES = [
      "European Conference on Computer Vision (ECCV)", "2014"),
     ("ledig2017srgan", "1609.04802", "photo-realistic single image super-resolution",
      "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)", "2017"),
+    # arXiv comment: "To appear in CVPR 2017 workshop. Best paper award of the
+    # NTIRE2017 workshop" -- so CVPRW, NOT the main conference.
     ("lim2017edsr", "1707.02921", "enhanced deep residual networks",
-     "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)", "2017"),
+     "IEEE Conference on Computer Vision and Pattern Recognition Workshops (CVPRW)", "2017"),
     ("zhang2018rcan", "1807.02758", "very deep residual channel attention",
      "European Conference on Computer Vision (ECCV)", "2018"),
     ("cai2023retinexformer", "2303.06705", "retinexformer",
@@ -65,8 +67,12 @@ ENTRIES = [
      "International Conference on Learning Representations (ICLR)", "2015"),
     ("blau2018perception", "1711.06077", "the perception-distortion tradeoff",
      "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)", "2018"),
-    ("lai2018lapsrn", "1710.01992", "deep laplacian pyramid networks",
-     "IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)", "2018"),
+    # Crossref: the title containing "Fast" is the TPAMI 2019 extended version
+    # (10.1109/tpami.2018.2865304); the CVPR 2017 paper is titled "Deep
+    # Laplacian Pyramid Networks ..." (10.1109/cvpr.2017.618). arXiv 1710.01992
+    # carries the TPAMI title, so cite it as the journal article, not CVPR.
+    ("lai2019lapsrn", "1710.01992", "laplacian pyramid networks",
+     "IEEE Transactions on Pattern Analysis and Machine Intelligence (TPAMI)", "2019"),
     ("kingma2015adam", "1412.6980", "adam: a method for stochastic optimization",
      "International Conference on Learning Representations (ICLR)", "2015"),
     ("he2016resnet", "1512.03385", "deep residual learning for image recognition",
@@ -173,6 +179,19 @@ def main() -> None:
                      f"  archivePrefix= {{arXiv}},\n"
                      f"  primaryClass = {{cs.CV}},\n"
                      f"  note         = {{arXiv preprint}},\n"
+                     f"}}")
+        elif "Transactions" in venue or "Journal" in venue:
+            # Journal version: @article + journal, not @inproceedings.
+            # Some arXiv entries carry the extended-journal title -- LapSRN
+            # 1710.01992 is "Fast and Accurate ..." (TPAMI 2019), while the
+            # CVPR 2017 paper is "Deep Laplacian Pyramid Networks ...".
+            entry = (f"@article{{{key},\n"
+                     f"  author       = {{{bib_author(authors)}}},\n"
+                     f"  title        = {brace_title(title)},\n"
+                     f"  journal      = {{{venue}}},\n"
+                     f"  year         = {{{year}}},\n"
+                     f"  eprint       = {{{aid}}},\n"
+                     f"  archivePrefix= {{arXiv}},\n"
                      f"}}")
         else:
             entry = (f"@inproceedings{{{key},\n"
