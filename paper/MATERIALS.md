@@ -48,13 +48,13 @@
 
 > 开场不要写"图像修复很重要"。写那个学生——他没做错任何事，只是没说清三行默认参数。
 
-### §2 Related Work（1 页）
+### §2 Related Work（**1.2 页**：2.1 0.2 / 2.2 0.7 / 2.3 0.3）
 
 | 要写 | 用什么 | 出处 | 状态 |
 |---|---|---|---|
 | 2.1 轻量 SR / LLIE 一条线 | SRCNN→SRResNet→EDSR→RCAN；RetinexNet→KinD→Retinexformer | `paper/refs.bib`（已生成） | ✅ bib 已建 |
 | 2.2 协议审计七篇 | 七篇"它做了什么 / 我们补什么" | `archive_private/05-论文规划/查新报告.md` §二 + 本文件 §4.1 | ✅ 表已成，**出处已核完** |
-| **2.3 ML 评测批判谱系** | **查新报告缺这条线**，见下 | 本文件 §4.2（五篇出处已核） | ⬜ 待写（素材齐） |
+| **2.3 ML 评测批判谱系** | **查新报告缺这条线**，见下。**写法已定**：五篇一句话 + 一句与本文的分界（`OUTLINE` §2.3 有整段与表格），落点是"**五篇讲的是训练侧方差，本文补评测侧**" | 本文件 §4.2（**五篇摘要已读**，用途逐条改写） | ✅ **素材与写法均齐**（2026-11-04） |
 | Table 1 | 最近邻对比 | 查新报告改写 | ⬜ |
 
 > **本节最大的增值点**：查新报告的七篇全是"图像修复领域内"的占位。补上"ML 评测方差"这条线（Lucic 2018 / Musgrave 2020 / Dodge 2019 / Bouthillier 2021 / Picard 2021），论文就从"一个领域的经验观察"升级为"接入 ML 评测批判的既有谱系"。**0 实验成本，只多读五篇。**
@@ -64,7 +64,7 @@
 | 要写 | 用什么 | 出处 | 状态 |
 |---|---|---|---|
 | 3.1 五类维度 | ①聚合 ②验证 batch ③采样位置与窗口 ④通道与边界 ⑤退化算子。**注意：8 个协议只覆盖 ①③④⑤ 四类，第 ② 类没有对应轴**——见 §7.10，这不是漏测，是逐图聚合把它消除了 | `FACTS` §4 + §7 + **§7.10** | ✅ |
-| 每维"为什么原则上会改变数字" | 一句机制，不展开（展开在 §6.1）。② 类要给旧口径下的实测：**batch 划分能移动 11.65 dB**（32 个 96² 块、主仓权重，`FACTS` §7.10） | `FACTS` §7.1–7.5 + §7.10 | ✅ |
+| 每维"为什么原则上会改变数字" | 一句机制，不展开（展开在 §6.1）。**③ 采样维现在有逐图证据**：`grad_ratio` 与 `P2−P3` 的 **Spearman ρ = −0.9247**、两个 69 张集合**重合 64 张**（`FACTS` §7.4.1）。② 类要给旧口径下的实测：**batch 划分能移动 11.65 dB**（32 个 96² 块、主仓权重，`FACTS` §7.10） | `FACTS` §7.1–7.5 + **§7.4.1** + §7.10 | ✅ |
 | 3.2 八个协议 | Table 2，逐列 `degrade/metric/sampling/agg` | `FACTS` §4 表 | ✅ 定义齐 |
 | **P5 与 P6 只差一个布尔值** | 同库同函数同尺寸 | `FACTS` §4 注 | ✅ 全文最关键一行 |
 | 3.3 分组实现 | 分组键是 **`(degrade, sampling)`**，共 **5 组**：3 次全图（P3/P4/P5 共用 1 次、P6 1 次、P7/P8 共用 1 次）+ P2 的 1 次 96² + **P1 的 60 次 96²**。**P1 的块是独立前向，不是从全图输出上裁**。T4/2040×1356：全图前向 ×4 **0.2683 s / 3.15 GB**、×2 **0.6624 s / 8.37 GB**；96² 单块 0.0034 s。**加速 ×4 = 1.80×**（1.8173→1.0124 s） | 探针 `kag-probe/probe_v1.json` + `FACTS` §4.1 | ✅ **2026-11-04 修正：原写"3 组/3 次前向/2.7×"三处都不准** |
@@ -76,7 +76,7 @@
 |---|---|---|---|
 | 4.1 三个模型 | **1.224 M / 0.069 M / 0.565 M**（可训练参数，实测；不是 1.226 —— 那个含 BN buffer，见 `FACTS` §10-E43） | `FACTS` §1 | ✅ |
 | **×4 带感知损失** | 配置事实（config）：`w_pixel=1.0`、`w_percep=0.006`、`objective = 1.0*charbonnier + 0.006*vgg_perceptual`。**实测是惰性的**：成对消融 on 27.61 / off 27.60，**Δ −0.01 dB**，SSIM Δ 0.0001，锐度差 0.26%，参数收敛到同一处。**"1:8–1:17"是估算**（日志只记 total loss）。**禁写"以牺牲 PSNR 换观感"**——本项目没发生 | `FACTS` §3 + §7.9 + §10-E18/E32 | ✅ **必写，但写"设了没生效"** |
-| 4.1 可复现性 | **81 项通过 + 1 跳过**（`train/tests` 69 + `tests/` 12：API 冒烟 9、推理集成 3）；CI 三门禁（pytest+覆盖率 75%、pip-audit、tsc+next build）；跨环境数值一致 **≤1e-5 dB（实测 1e-6），不是 bitwise** | `FACTS` §9.2 + §10-E10 | ✅ |
+| 4.1 可复现性 | **82 项收集：81 通过 + 1 跳过**（`train/tests` 69 + `tests/` 12：API 冒烟 9、推理集成 3）；CI 三门禁（pytest+覆盖率 75%、pip-audit、tsc+next build）；跨环境数值一致 **≤1e-5 dB（实测 1e-6），不是 bitwise** | `FACTS` §9.2 + §10-E10 | ✅ |
 | 4.2 数据 | DIV2K 800/100；LOL 485/15；低光**配对无上采样** | `FACTS` §2 | ✅ |
 | 4.2 种子与轮数 | 42–46；200/100/200 轮；**Adam + cosine 退火（T_max=总轮数）** | `FACTS` §3 | ✅ 2026-11-04 补：原漏了 LR 调度 |
 | 4.3 环境 | T4 训练、本地 CPU 跑 ×2 基线；跨环境**四项统计量差 0.0（到 1e-6 精度）**，验收判据 ≤1e-5，**禁写 bitwise** | `FACTS` §9.2 | ✅ |
@@ -115,7 +115,7 @@
 | 非 SOTA | 按 **RGB 口径**：KinD **20.87**（as reported, not re-run）vs 我们 P3 **18.51**，差 **2.36 dB**。**不写 Retinexformer 6.8 dB**——那是 Y 减 RGB。**口径锚点**：我们的 identity **7.7733** = 文献 "Input Image" **7.77**（差 0.003），证明口径对齐 | `FACTS` §9.3 + §10-E15 |
 | 仅 2 任务 3 模型 | — | — |
 | 无真实退化 | 全部合成 bicubic | — |
-| 验证集小 | DIV2K 100 张、LOL 15 对。**低光均值 95% CI 半宽 ±2.04 dB**（SR 是 ±0.87）→ 低光侧 <2 dB 的方法间差异不可分辨 | `FACTS` §7.7 |
+| 验证集小 | DIV2K 100 张、LOL 15 对。**低光均值 95% CI 半宽 ±2.04 dB**（SR ×4 ±0.87、×2 ±0.93）→ 低光侧 <2 dB 的方法间差异不可分辨 | `FACTS` §7.7 |
 | ×2 基线晚补 | 同一代码路径、同一数据 | `FACTS` §0 |
 | 文献抽样只覆盖 arXiv | 43/63 venue 待核 → 开源倾向偏差 | `FACTS` §8 |
 | 单卡单框架 | 跨环境只验过 CPU/GPU + torch 2.10/2.11 | `FACTS` §9.2 |
@@ -146,8 +146,8 @@
 **Fig. 2** 必须交代：
 1. 数据来自**单张 444×680 真实图**的 28 个不相交 96² 块的 bootstrap（5000 次），不是数据集级置信区间。
 2. 噪声按 1/√n 下降（灰线只过 n=1 一点，不做最小二乘，否则会掩盖系统性偏离）。
-3. 单块采样带 **1.597 dB** 噪声，是文献常见 +0.3 dB 声称的 **5.3 倍**。
-4. 要把噪声压到 0.3 dB 以下，**每图需要 28 块**（n=16 时还有 0.395 dB，n=28 才是 0.293 dB）——"每图 1 块 + 多图平均"与"每图多块"在同等预算下不等价。
+3. 单块采样带 **1.597 dB** 噪声，是文献常见 +0.3 dB 声称的 **约 5 倍**（1.597/0.3 = **5.32**，`FACTS` §7.4.2）。⚠️ **"+0.3 dB"是泛指量级、不是某篇的具体数字**，所以只能写"约 5 倍"并带"若某篇声称 +0.3 dB"这个前提；**别写成"文献都只涨 0.3 dB"**——那是把泛指当统计。
+4. 要把噪声压到 0.3 dB 以下，**每图需要 28 次抽样**（n=16 时还有 0.395 dB，n=28 才是 0.293 dB）——"每图 1 块 + 多图平均"与"每图多块"在同等预算下不等价。⚠️ **n 是"每图抽样次数"，不是"用了多少块"**：这是**有放回** bootstrap（`σ_pop/√n`），28 次仍有 0.293 dB；而 28 恰等于该图的全部块数，**极易被读成"取全部就精确了"**（`FACTS` §7.4.2 限定 1）。
 5. **不要从这个数外推"100 张就没事"**：1.60 dB 是**同一张图内** 28 块之间的 σ。若每图各取一块、取 100 张的均值，噪声按 1/√100 约降到 0.16 dB，但那是**图内 σ 的下界估计**，没算图间差异（DIV2K 逐图 PSNR 极差 23.10 dB，`FACTS` §7.7）。本文用全图评测，**根本不做抽样**，所以不受这条曲线约束——这才是真正的论据，不是"图多了就没事"。
 
 ---
@@ -170,13 +170,15 @@
 
 ### 4.2 建议补充（**查新报告未覆盖，但 §2.3 需要**）
 
-| 条目 | 为什么必须引 | 核验 |
+> **2026-11-04 第三次核：这次读的是摘要，不是元数据。** 上一轮只核了标题/作者/venue，五条都标"✅ 已核"，但**"引它来支撑什么"从来没对过摘要**。读完发现自己写的用途有两条是错的（Dodge、Bouthillier），一条过强（Musgrave），见 `FACTS` §10-E51。下表"摘要实际说了什么"一列**只能从 `<summary>` 里取**，不要按标题想象。
+
+| 条目 | 摘要实际说了什么（据 arXiv `<summary>`） | 本文怎么用（含禁区） |
 |---|---|---|
-| Lucic, Kurach, Michalski, Gelly, Bousquet. *Are GANs Created Equal? A Large-Scale Study.* NeurIPS 2018（arXiv:1711.10337） | "同等调参预算下，改进消失"——本文符号翻转的最近亲 | ✅ 已核 |
-| Musgrave, Belongie, Lim. *A Metric Learning Reality Check.* ECCV 2020（arXiv:2003.08505） | 公平基线后，多年"改进"归零。**最能给本文定位的一篇** | ✅ 已核：Crossref `10.1007/978-3-030-58595-2_41`（LNCS，2020），全文页 **681–699**；DBLP key `conf/eccv/MusgraveBL20` |
-| Dodge, Gururangan, Card, Schwartz, Smith. *Show Your Work: Improved Reporting of Experimental Results.* EMNLP-IJCNLP 2019（arXiv:1909.03004） | 报告规范（报分布而非单点）——直接支撑 §6.2 清单 | ✅ 已核：Crossref `10.18653/v1/d19-1224`，container 全称含 "**and the 9th International Joint Conference on Natural Language Processing**"，故正式写法是 **EMNLP-IJCNLP 2019**（bib 里简写 EMNLP 不算错） |
-| Bouthillier, Delaunay, Bronzi, Trofimov, Nichyporuk et al. *Accounting for Variance in Machine Learning Benchmarks.* MLSys 2021（arXiv:2103.03098） | 方差来源分解的方法论 | ✅ 已核：**MLSys 2021 官方 proceedings（Proceedings of Machine Learning and Systems 3）确认收录**。⚠️ **作者数两个版本不同**：proceedings **16 位**、arXiv **17 位**（多 Dmitriy Serdyuk）。`refs.bib` 已改用 proceedings 的 16 位（`AUTHOR_OVERRIDE`），正文若写 "Bouthillier et al." 不受影响 |
-| Picard. *torch.manual_seed(3407) is all you need: On the influence of random seeds in deep learning architectures for computer vision.* arXiv:2109.08203（2021-09-16） | 种子敏感性——本文种子 std 0.02–0.09 dB 的对照 | ✅ 已核：**纯预印本，无正式发表**（arXiv 无 `<journal_ref>`/`<doi>`，comment 只有 "fixed typos"），引用时按 arXiv 写是对的。标题是全名，**勿简写**；arXiv 的 `<title>` 把首字母自动大写成 "Torch."，原题小写 |
+| Lucic, Kurach, Michalski, Gelly, Bousquet. *Are GANs Created Equal? A Large-Scale Study.* NeurIPS 2018（arXiv:1711.10337） | "most models can reach similar scores with enough hyperparameter optimization and random restarts… improvements can arise from a higher computational budget and tuning more than fundamental algorithmic changes"；结论还有更硬的一句："**we did not find evidence that any of the tested algorithms consistently outperforms the non-saturating GAN**" | §2.3 的"同等预算下改进消失"。**可用**：它是"预算→改进"这条线的源头。**禁区**：它动的是**训练预算**（超参+重启），我们动的是**评测**，不要写成"我们也证明了 GAN 那件事"。那句话里的"非饱和 GAN 都没被稳定超过"可以引，比"改进消失"更狠 |
+| Musgrave, Belongie, Lim. *A Metric Learning Reality Check.* ECCV 2020（arXiv:2003.08505） | "papers from the past four years have consistently claimed great advances… often more than doubling"；复查后发现"flaws in the experimental methodology"，实际改进"**marginal at best**" | §2.3。⚠️ **"归零"过头了**——原文是 "marginal at best"（**至多是边际的**），不是零。写"归零"会被读过原文的审稿人抓。正确措辞："**多年报告的翻倍级改进，在统一实验方法后收缩到边际水平**"。核验：Crossref `10.1007/978-3-030-58595-2_41`（LNCS 2020），页 **681–699**，DBLP `conf/eccv/MusgraveBL20` |
+| Dodge, Gururangan, Card, Schwartz, Smith. *Show Your Work: Improved Reporting of Experimental Results.* EMNLP-IJCNLP 2019（arXiv:1909.03004） | "test-set performance scores alone are insufficient for drawing accurate conclusions about which model performs best"；提出"**expected validation performance of the best-found model as a function of computation budget**"；并发现"multiple recent model comparisons where authors would have reached a different conclusion if they had used more (or less) computation" | §2.3 + §6.2。⚠️ **上一版写的"报分布而非单点"是错配**——它讲的不是"报分布"，是"**报预算**"：你那个 best 是用多少搜索预算换来的，必须一起报。这条**直接支撑我们的 best-of-N**：§7.8 的 1.74 dB 就是"没报 N 的 best"；清单里"写明 N"那一项由此而来。核验：Crossref `10.18653/v1/d19-1224`，正式写法 **EMNLP-IJCNLP 2019**（container 含 "and the 9th IJCNLP"） |
+| Bouthillier, Delaunay, Bronzi, Trofimov, Nichyporuk et al. *Accounting for Variance in Machine Learning Benchmarks.* MLSys 2021（arXiv:2103.03098） | 建模整个 benchmark 过程，"variance due to **data sampling, parameter initialization and hyperparameter choice** impact markedly the results"；反直觉结论："adding more sources of variation to an imperfect estimator approaches better the ideal estimator at a **51 times reduction in compute cost**"；并研究"the error rate of detecting improvements" | §2.3。⚠️ **必须写清分界**：他们分解的是**训练侧**方差（数据采样/初始化/超参），我们量化的是**评测协议**方差（权重固定、种子固定）。**两者正交**，合起来才是完整图景——这句分界正是本文的位置所在。**禁区**：不要写"我们也做了方差分解"（会让人以为重复劳动）。作者数：proceedings **16 位** vs arXiv **17 位**，`refs.bib` 用 proceedings 版（`AUTHOR_OVERRIDE`） |
+| Picard. *torch.manual_seed(3407) is all you need: On the influence of random seeds in deep learning architectures for computer vision.* arXiv:2109.08203（2021-09-16） | "even if the variance is not very large, it is **surprisingly easy to find an outlier** that performs much better or much worse than the average"；扫了 CIFAR-10 上多达 10⁴ 个种子 | §2.3 + §7.8。**这条比上一版写的更有用**：它说的正是"方差不大，但极值好找"——与我们 best-of-60 抬 1.74 dB 同一机制（我们 σ 只有 0.019–0.094 dB）。⚠️ 它是**分类 accuracy**，我们是 PSNR，类比要注明。**纯预印本、无正式发表**；标题是全名（"Torch." 的首字母大写是 arXiv 自动加的，原题小写），引用勿简写 |
 
 ### 4.3 模型与数据
 
@@ -210,7 +212,7 @@
 | **1** | **作者署名、单位、通讯邮箱** | **一切对外动作**（预印本注册、模板页眉、署名顺序） | 等用户 | ⬜ |
 | ~~2~~ | ~~`refs.bib`~~ | — | **已生成 `paper/refs.bib`：27 条**（20 inproceedings + 4 misc + 3 article），由 `scripts/build_refs_bib.py` 从 arXiv API 抓取并**逐条校验标题**，手改无效 | ✅ **2026-11-04 完成** |
 | **3** | Table 1（七篇对比） | §2 | 从查新报告改写；7 篇出处已核 | ⬜ **出处已清** |
-| **4** | §2.3 的 ML 评测谱系五篇 | 论文的学术定位高度 | 读五篇摘要 | ⬜ **出处已核** |
+| ~~4~~ | ~~§2.3 的 ML 评测谱系五篇~~ | — | **五篇摘要已读**（2026-11-04）：用途改了两条（Dodge 是"报预算"不是"报分布"、Bouthillier 要写"训练方差 vs 评测方差"的分界），Musgrave 的"归零"改为"marginal at best"。`OUTLINE` 已补 §2.3 | ✅ **完成**，见 `FACTS` §10-E51 |
 | ~~5~~ | ~~NTIRE 官方协议原文~~ | **降级为可选**：原想用它支撑"文献惯例 = Y + shave"，但 shave 部分是 **SR 子集 0/44 说明**（`FACTS` §8-F5），**任何官方文档都不能把"没人写的东西"变成惯例**。改用抽样数据自证，见 §10-E29 | 0 | ✅ **关闭** |
 | **6** | 六条最小报告清单的措辞 | §6.2 | 写作时提炼 | ⬜ |
 | 7 | Table 2–6 排版 | §3–§6 | 素材齐，纯排版 | ⬜ |
@@ -232,7 +234,7 @@
 | §6 Discussion | 大部分可写 | 机制段齐；6.2/6.3 需提炼措辞 |
 | §7 Limitations | 可立即写 | 八条全部有数据支撑 |
 | §8 Conclusion | 依赖 §1 | — |
-| §2 Related Work | **可写** | bib 已生成（27 条），七篇对比表出处已核，只差把表改写成论文表 |
+| §2 Related Work | **可写** | bib 已生成（27 条），七篇对比表出处已核（只差改写成论文表）；**2.3 五篇的写法已定**（`OUTLINE` §2.3），摘要已读、用途已改 |
 | §1 + Abstract | **最后写** | 需先知道全文说了什么 |
 
 > 按此顺序：**§3 → §5 → §4 → §6/§7 → §2（等 bib）→ §1/Abstract**。
