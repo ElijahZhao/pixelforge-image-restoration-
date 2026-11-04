@@ -189,3 +189,19 @@ jobs:
       # they are checked by measuring the PDF.
       - name: Check the manuscript's layout
         run: python3.11 scripts/check_layout.py
+
+      # A second, independent derivation of the headline numbers.
+      #
+      # Every other gate checks that the manuscript agrees with FACTS.md and
+      # with the generated tables. That is a consistency check: if FACTS.md
+      # and the tables both drift together, every gate still passes. These two
+      # scripts re-derive the numbers from the raw protocol_matrix.json and
+      # from the released per-image CSVs, importing nothing from scripts/, so
+      # they can contradict the project's own pipeline. They found two real
+      # defects that the consistency gates could not see (E86: a table label
+      # whose sign was the opposite of its number; E87: three P1 seed sigmas
+      # described as "P1 and P2 respectively").
+      - name: Independent re-derivation of the headline numbers
+        run: |
+          python3.11 scripts/audit_independent.py
+          python3.11 scripts/audit_per_image.py

@@ -355,8 +355,12 @@ protocols, the spread across random seeds within a protocol, and the gain the
 trained model achieves over its reference under a standard full-image RGB
 protocol (P3). The seed spread must be read per task and only over the
 full-image protocols P3--P8, because P1 and P2 sample and therefore have a
-different kind of variation: 0.2364\,dB for $\times$4, 0.5584\,dB for
-$\times$2 and 0.4148\,dB for low-light on P1 and P2 respectively.
+different kind of variation. On P1 the seed standard deviation is
+0.2364\,dB for $\times$4, 0.5584\,dB for $\times$2 and 0.4148\,dB for
+low-light; on P2 it is 0.0363\,dB, 0.0685\,dB and 0.5303\,dB respectively.
+The two protocols are therefore not interchangeable either: P2 is a single
+fixed crop and behaves like the full-image protocols, while P1 draws 60
+crops per image and does not.
 
 The complete matrix behind every number in this section---all 21 protocol
 cells, with the mean over the five seeds, their standard deviation, and the
@@ -514,7 +518,7 @@ The degradation operator is the third case, and antialiasing is the
 sharpest illustration of the point. Switching the interpolation library
 (from torchvision to PIL, both with antialiasing) moves the metric by only
 0.0090--0.0215\,dB, while switching the antialias flag alone moves it by
-2.7242--3.8892\,dB. Paired within columns, that is a factor of 127 to 432.
+2.7242--3.8892\,dB. Paired within columns, that is a factor of 127 to 429.
 The smaller effect is the one that would invite a complaint about library
 choice; the larger one is a boolean that papers routinely leave unstated.
 

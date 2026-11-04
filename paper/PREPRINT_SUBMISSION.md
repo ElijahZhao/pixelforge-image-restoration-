@@ -130,11 +130,11 @@ print(c.as_bibtex('bibtex'))"    # -> author = {Zhao, Yulin}
 
 | # | 事项 | 成本 | 状态 |
 |---|---|---|---|
-| 1 | 写正文（8–10 页，双栏） | 主成本 | ✅ **已完成**（2026-11-04）：`paper/main.tex`，**正文 9 页 + 附录 2 页 = 共 11 页双栏**，实测 pdflatex **0 错误 / 0 Overfull / 0 undefined reference**，**27 条参考文献全部被引**；正文 Table 1–7 与 `paper/tables/table1_`–`table7_` **编号一一对应**（E82）；**附录 Table A1–A3 已纳入稿件**（`tab:full-matrix` / `tab:per-protocol-gains` / `tab:f3-breakdown`），编号与文件名自洽（E85） |
+| 1 | 写正文（8–10 页，双栏） | 主成本 | ✅ **已完成**（2026-11-04）：`paper/main.tex`，**正文 8 页 + 附录 2 页 + 参考文献 2 页 = 共 12 页双栏**，实测 pdflatex **0 错误 / 0 Overfull / 0 undefined reference**，**27 条参考文献全部被引**；正文 Table 1–7 与 `paper/tables/table1_`–`table7_` **编号一一对应**（E82）；**附录 Table A1–A3 已纳入稿件**（`tab:full-matrix` / `tab:per-protocol-gains` / `tab:f3-breakdown`），编号与文件名自洽（E85） |
 | 2 | 补一张**图形摘要**（JPG/PNG，非文本摘要截图） | 中 | ✅ **已完成**（2026-11-04）：`paper/figures/ga_protocol_audit.{png,jpg,pdf}`，2889×1470 px @ 300 dpi，三面板（协议跨度对比 / 符号翻转 / 报告率），与 Fig. 1 / Fig. 2 均非同一图 |
 | 3 | 把逐图 CSV 公开化 | 小 | ✅ **已完成**（2026-11-04）：**126 个文件、286 KiB** → `results/per_image/`，含 README；已验证可复现全部 cell 与 21 行种子级统计（§2.4.1） |
 | 4 | 注册 MDPI 账号 | 小 | ⬜ 待办 |
-| 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ✅ **已完成**（2026-11-04）：`scripts/make_submission_package.py` → `dist/preprints_submission.zip`（**15 个条目、58 KiB**：`main.tex` / `refs.bib` / **10 张表（正文 7 + 附录 3）** / 2 张图 / `README.md`）；**隔离目录从零编译验证通过**（11 页），且双向校验「正文 `\input` ↔ 包内清单」 |
+| 5 | 打包 LaTeX 投稿 zip（`.tex` + `refs.bib` + 图 + 样式文件） | 小 | ✅ **已完成**（2026-11-04）：`scripts/make_submission_package.py` → `dist/preprints_submission.zip`（**15 个条目、58 KiB**：`main.tex` / `refs.bib` / **10 张表（正文 7 + 附录 3）** / 2 张图 / `README.md`）；**隔离目录从零编译验证通过**（12 页），且双向校验「正文 `\input` ↔ 包内清单」 |
 | 6 | 填投稿表单：标题 / 摘要 / 关键词 / 学科分类 / ORCID / 通讯邮箱 | 小 | ⬜ 待做（元数据本文档已备齐；标题取候选 A） |
 | 7 | 提交时填数据链接（仓库地址） | 小 | ⬜ 待做，**提交后无法自补**（§2.5） |
 | 8 | 定标题 | 小 | ✅ **已定**：**候选 A** —— *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration* |

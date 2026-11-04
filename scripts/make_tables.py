@@ -330,6 +330,7 @@ def check_against_facts(matrix, gain, counts):
     # Literature audit
     for key, want in (("f1", (1, 63)), ("f2", (0, 63)), ("f3_total", (5, 44)),
                       ("f3_named", (4, 44)), ("f4_unspec", (41, 63)),
+                      ("f4_y", (22, 63)),
                       ("f7_yes", (35, 63))):
         got = counts[key]
         if key == "f7_yes":
@@ -346,7 +347,8 @@ def check_against_facts(matrix, gain, counts):
     # direction that flatters the paper, so it must be checked, not trusted.
     for k, n, want in ((0, 44, (0.0, 8.0)), (0, 63, (0.0, 5.7)),
                         (1, 63, (0.3, 8.5)), (5, 44, (5.0, 24.0)),
-                        (41, 63, (52.8, 75.7)), (35, 63, (43.3, 67.2))):
+                        (41, 63, (52.8, 75.7)), (22, 63, (24.3, 47.2)),
+                        (35, 63, (43.3, 67.2))):
         lo, hi = wilson(k, n)
         got = (round(100 * lo, 1), round(100 * hi, 1))
         if got != want:
@@ -426,6 +428,11 @@ def table_task_ratios(matrix, gain):
         ("Span / training gain", "ratio", 2),
         ("Span incl. P1 / training gain", "ratio_with_p1", 2),
         ("Seed sigma, full-image protocols (dB)", "sigma", None),
+        # P1 and P2 sample, so their seed sigma is a different quantity and
+        # cannot be pooled with the full-image rows. They are listed
+        # separately so the prose can quote them from the same table.
+        ("Seed sigma, P1 best-of-60 (dB)", "sigma_p1", None),
+        ("Seed sigma, P2 centre crop (dB)", "sigma_p2", None),
     ]
     body = []
     for label, key, nd in rows_spec:
@@ -434,6 +441,10 @@ def table_task_ratios(matrix, gain):
             for t in TASKS:
                 lo, hi = seed_sigma_range(matrix, t)
                 cells.append(f"{fmt(lo, 4)}-{fmt(hi, 4)}")
+        elif key in ("sigma_p1", "sigma_p2"):
+            proto = "P1" if key == "sigma_p1" else "P2"
+            cells = [fmt(float(matrix[(t, proto)]["psnr_std"]), 4)
+                     for t in TASKS]
         else:
             cells = [fmt(r[t][key], nd) for t in TASKS]
         body.append([label] + cells)
@@ -443,8 +454,9 @@ def table_task_ratios(matrix, gain):
         "The low-light training gain (10.74 dB) is 4.8x its protocol span, so on that task the protocol does "
         "not dominate the conclusion. The claim is conditional: when headroom and protocol effect are of "
         "the same order, the protocol decides the conclusion.",
-        "Seed sigma covers only the full-image protocols; P1 and P2 sample, so their sigma (0.2364 / 0.5584 / "
-        "0.4148) is a different quantity and is listed separately in Appendix Table A1.",
+        "Seed sigma covers only the full-image protocols. P1 and P2 sample, so their sigma is a different "
+        "quantity and is listed in its own two rows: P1 draws 60 crops per image and carries the largest "
+        "spread, while P2 is a single fixed crop and behaves like the full-image protocols on the SR tasks.",
     ]
     return "Protocol span versus training gain, per task.", head, body, notes
 
@@ -508,7 +520,13 @@ def table_literature(counts):
         ("Aggregation method", "f1", ""),
         ("Validation batch size", "f2", ""),
         ("SR degradation operator reproducible", "f3_total", ""),
-        ("Channel selection", "f4_unspec", "unspecified"),
+        # The label states what the count IS. 41/63 is the number of papers
+        # that do NOT state their channel (F4 = 未说明); only 22/63 state one
+        # (and all 22 use Y). Labelling 41/63 as "Channel selection" would
+        # invert the meaning -- the exact kind of reporting ambiguity this
+        # paper is about.
+        ("Channel NOT stated", "f4_unspec", "unspecified"),
+        ("Channel stated (all Y)", "f4_y", "specified"),
     ]:
         k, d = counts[key]
         lo, hi = wilson(k, d)
@@ -542,6 +560,9 @@ def table_literature(counts):
         "The degradation-operator count is 5/44 for the bicubic protocol (4 named MATLAB implementations plus "
         "1 explicit antialias setting). Two further papers name a Gaussian/blur kernel with parameters: named "
         "degradations, but not the bicubic protocol, so they are excluded here (7/44 under the looser rule).",
+        f"The two channel rows are complementary: {counts['f4_unspec'][0]}/{n} do not state a channel and "
+        f"{counts['f4_y'][0]}/{n} do, and every paper in the latter group uses Y (no paper states RGB). "
+        "The rows are labelled by what was reported so that neither can be read with the opposite sign.",
         "Known bias: the sample is drawn from arXiv, so it over-represents open-source work. The true rate in "
         "the journal literature can only be lower.",
     ]
