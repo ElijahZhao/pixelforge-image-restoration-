@@ -45,7 +45,15 @@ def token():
 TOK = token()
 
 
-def api(path, payload=None, method=None):
+def api(path, payload=None, method=None, allow_status=()):
+    """Call the GitHub API.
+
+    `allow_status` lists the HTTP codes that are a normal answer rather than
+    a failure. A 404 on a content probe means "the remote does not have this
+    path", which is exactly what a probe of a *new* file returns -- treating
+    it as fatal would abort the push before anything is uploaded. The blob
+    and tree endpoints still fail loudly on any error.
+    """
     url = path if path.startswith("http") else API + path
     data = None
     if payload is not None:
@@ -61,6 +69,8 @@ def api(path, payload=None, method=None):
             body = resp.read().decode()
             return resp.status, (json.loads(body) if body else None)
     except urllib.error.HTTPError as e:
+        if e.code in allow_status:
+            return e.code, None
         detail = e.read().decode()[:600]
         raise SystemExit(f"HTTP {e.code} on {method or 'GET'} {path}:\n{detail}")
 
@@ -142,20 +152,25 @@ def main() -> int:
 
     blob_shas = []
     for path in paths:
-        st, entry = api(f"/contents/{urllib.parse.quote(path)}?ref={remote_sha}")
-        if st != 200:
-            continue
-        # Only a changed blob needs uploading; if the remote file already has
-        # the blob we are about to push, there is nothing to do for it.
+        st, entry = api(f"/contents/{urllib.parse.quote(path)}?ref={remote_sha}",
+                        allow_status=(404,))
         want = subprocess.run(["git", "rev-parse", f"{local_head}:{path}"],
                                capture_output=True, text=True)
         if want.returncode != 0:
+            # The path no longer exists in the local commit (a deletion).
+            # Nothing to upload; the tree built below simply omits it.
             continue
         want_sha = want.stdout.strip()
-        if entry.get("sha") == want_sha:
-            continue
-        if entry.get("type") != "file":
-            continue
+        if st == 200:
+            # The remote already has the path. If it holds the very blob we
+            # are about to push, there is nothing to do for it.
+            if entry.get("sha") == want_sha:
+                continue
+            if entry.get("type") != "file":
+                continue
+        # st == 404 means the remote does not have this path at all -- a new
+        # or a renamed file. That is the case that *needs* the blob
+        # uploaded, so it must not be skipped.
         blob_shas.append(want_sha)
 
     def blob_exists(sha):
