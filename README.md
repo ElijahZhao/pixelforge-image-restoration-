@@ -116,7 +116,7 @@ low-light gain is relative to a no-op baseline, not to other published methods.
 the ledger is written down rather than remembered: **34 kernel runs, 29.05 h of wall-clock
 machine time** (21.72 h on GPU, 7.33 h on CPU — the reconciliation kernels deliberately run on
 CPU so they cost no GPU quota), of which **6.84 h went into 11 runs that failed or were voided**
-and had to be redone. **1 700 training epochs** across **15 runs (3 tasks × 5 seeds)** are
+and had to be redone. **2 500 training epochs** across **15 runs (3 tasks × 5 seeds)** are
 behind the seed-variance figures. The per-run breakdown, including why each run failed, is in
 [`results/compute_ledger.md`](results/compute_ledger.md) and can be regenerated with
 `scripts/kernel_ledger.py`.
