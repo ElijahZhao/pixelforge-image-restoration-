@@ -61,10 +61,11 @@ you have to babysit.
 ## The one deployment that's actually live
 
 I'll be blunt about this, because it's a real constraint, not a half-finished feature. The only
-thing running in public is the Streamlit demo. I'm a student. I'm not paying for a server with a GPU
-to run inference, and I'm certainly not paying for one that could survive real traffic if this ever
-got popular. So the FastAPI service and the Next.js frontend are built, tested, and documented —
-they run fine if you self-host them — but they're not deployed anywhere.
+thing running in public is the Streamlit demo. I work on this alone, without institutional compute.
+I'm not paying for a server with a GPU to run inference, and I'm certainly not paying for one that
+could survive real traffic if this ever got popular. So the FastAPI service and the Next.js frontend
+are built, tested, and documented — they run fine if you self-host them — but they're not deployed
+anywhere.
 
 The Streamlit app runs on CPU on a free tier, which is plenty for one person uploading a photo at a
 time. That's a deliberate scope choice given the budget, and it's why the project is "done" with
@@ -81,8 +82,10 @@ pip install -r deploy/streamlit/requirements.txt
 streamlit run deploy/streamlit/streamlit_app.py
 ```
 
-Retraining needs a GPU — I trained the shipped weights on a rented RTX 4090 for a few days. The test
-suite is 39 passing tests and runs on CPU, so you don't need a GPU to confirm the code works.
+Retraining needs a GPU — I retrained all three slots on a rented RTX 4090 (200 epochs, batch 16,
+one run per slot, then kept whichever weight had the higher full-image number) and ran the 15-seed
+evaluation matrix on a free Kaggle T4. The test suite is 81 tests plus one browser E2E that only runs
+on request, and everything runs on CPU, so you don't need a GPU to confirm the code works.
 
 ## What I'd do with more time
 

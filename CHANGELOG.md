@@ -14,11 +14,15 @@
 - 新增 `preprint/published/preprints202611.0550.v1.pdf`——平台排版后的正式发布版（15 页 A4，每页页脚带 DOI 与 "NOT PEER-REVIEWED"）。`preprint/submission/` 仍保留我们提交的原始版（12 页），二者正文一致，差异仅来自平台排版。
 
 ### Changed
+- 两份 README 全文重写：顺序改为「一句话定位 → 核心亮点 → 效果预览 → 评测结果 → 快速开始 → 项目结构 → 技术栈 → 测试 → 常见问题 → 论文与引用 → 更新日志」，首屏收为横幅 + 徽章 + 三行摘要；展示图由六张并排改为「两张分栏 + 一张实况 + 三张折叠」；目录树补上 `models/`（训练检查点目录，原树漏列）；删除 Roadmap 段（内容为内部计划口吻）。
 - 两份 README 的「论文与预印本」章节：状态改为**已发布**，加入 DOI 徽章、DOI 链接与 BibTeX 引用格式；文件路径区分 `published/`（正式版）与 `submission/`（投稿版）。
 - Streamlit 侧边栏「论文」区块（中英双语）：把"已投稿"改为"已于 2026-11-05 发布"，并直接给出 **DOI 链接**（此前只能链到 GitHub）。
 - `CITATION.cff`：版本升至 1.12.0；新增 `preferred-citation` 指向该论文（含 DOI、期刊名 `Preprints`、年份月份），学术引用可直接取用。
 
 ### Fixed
+- **三处文档仍写「39 项测试」**：`REPORT.md`、`CONTRIBUTING.md`、`requirements.txt` 的注释与正文均停留在旧计数，与实测 **81 passed + 1 skipped**（1 个浏览器 E2E 模块按需运行）不符，已统一。
+- **`REPORT.md` 的算力描述漏了一套设备**：原文只写"租用 RTX 4090 数天"，漏掉 Kaggle 免费 T4 上的 15 次种子训练与 105 次评估；已按实测补为「4090 上三个槽位各重训一次（200 epoch / batch 16），逐槽位比全图数字择优；T4 上跑种子矩阵」。
+- **`REPORT.md` 的身份自述与论文不一致**：原文自称 "I'm a student"，与论文作者栏的 `Independent Researcher` 口径冲突，改为 `I work on this alone, without institutional compute`。
 - **算力台账的训练量与实际不符**：`results/compute_ledger.md` 头部写"1 700 个 epoch / 13.5 h 净训练"，但同一文件的分批表（A 5×100、B 3×200、C 2×200、D 5×200）与 15 份 `train_log_*.csv` 的末轮 epoch 都指向 **2 500 个 epoch**，净时长按分批表相加为 **15.36 h**（A 4.46 + B 5.65 + C 3.65 + D 1.60）。头部数字与自己的表、与训练日志三方不一致（少算了部分批次），已按后两者订正；两份 README 中引用的同一数字同步改为 2 500。
 
 ## [1.11.3] - 2026-11-04
