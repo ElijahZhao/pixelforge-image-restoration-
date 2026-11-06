@@ -5,22 +5,23 @@
 <p align="center">
   <a href="https://pixelforge-image-restoration.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-Try%20it-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
   <a href="https://doi.org/10.20944/preprints202611.0550.v1"><img src="https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-1f6feb?style=flat-square" alt="DOI"></a>
+  <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
-  <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/ElijahZhao/pixelforge-image-restoration-?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
-  <b>PixelForge</b>: an end-to-end image restoration pipeline<br/>
-  Self-trained PyTorch models for single-image super-resolution and low-light enhancement,
-  built end to end from data to training, evaluation and deployment.
+  <b>PixelForge</b> — an end-to-end image-restoration pipeline you can clone and run.<br/>
+  Three self-trained PyTorch models for ×2/×4 super-resolution and low-light enhancement,
+  built from data to training, evaluation and deployment. No external inference API.
 </p>
 
 <p align="center">
   <a href="https://pixelforge-image-restoration.streamlit.app/"><b>Live demo</b></a> &nbsp;·&nbsp;
   <a href="#-quick-start">Quick start</a> &nbsp;·&nbsp;
   <a href="#-results">Results</a> &nbsp;·&nbsp;
+  <a href="#-paper--citation">Paper</a> &nbsp;·&nbsp;
   <a href="README.zh-CN.md">中文</a>
 </p>
 
@@ -28,120 +29,110 @@
 
 ## 🎯 What it is
 
-PixelForge is a **complete, reproducible** vision pipeline built from scratch:
+A complete, reproducible vision pipeline written from scratch:
 
 ```
-data → training → evaluation → export (TorchScript) → backend inference → frontend
+data → training → evaluation → export (TorchScript) → FastAPI service → web UI
 ```
 
-Every stage is written from scratch and runnable. **Three** self-trained weights
-(`sr_generator_scale4.pt`, `sr_generator_scale2.pt`, `lowlight.pt`) ship with the repo, so a
-clone runs out of the box — no GPU needed for the demo or the tests.
+The three inference weights ship in `serve/models/` (4.9 + 3.2 + 2.3 MB), so a clone runs out of
+the box on CPU — the demo, the API and the whole test suite need no GPU. Every number below is
+measured on the same validation set with the same metric implementation, under a protocol that is
+named rather than implied.
 
 ## ✨ Highlights
 
-- **Real modelling**: SRCNN, an SRResNet generator with PixelShuffle + residual blocks, and a low-light U-Net with skip connections, all written from scratch.
-- **Full training loop**: data loading, Adam + cosine annealing + AMP mixed precision + optional VGG perceptual loss, PSNR/SSIM evaluation, TorchScript export.
-- **Three shipped weights**: SR ×4 (PSNR 27.47), SR ×2 (PSNR 32.35) and low-light (PSNR 18.32) — each beats its classical baseline; classical methods remain as automatic fallback if a weight is ever missing.
-- **Quantitative comparison**: classical baselines vs. self-trained models on the same validation set; scripts and per-epoch logs are committed and recomputable.
-- Engineering: CI runs the tests behind a coverage gate, audits dependencies, and builds the frontend; the Docker image runs as a non-root user; the API enforces per-IP rate limiting and ships documentation.
+- **Three models, written from scratch.** SRCNN (0.069 M, used for the seed-variance study), an SRResNet generator (1.22 M at ×4, 0.78 M at ×2) and a low-light U-Net (0.565 M). The only pretrained component is the VGG16 used for the perceptual term during training — it is not part of inference.
+- **Every task beats its classical baseline.** +0.77 dB (×4) and +1.31 dB (×2) over bicubic, +10.55 dB over a no-op baseline on low light — with the very weights shipped in this repo.
+- **Reproducible by construction.** 126 per-image PSNR/SSIM CSVs back the 126 reported protocol cells; `scripts/verify_public_release.py` re-averages them and checks every cell against the matrix.
+- **Ships as a product.** FastAPI with per-IP rate limiting and upload guards, a bilingual Streamlit demo, a Next.js frontend, and a non-root Docker image.
+- **Guarded by CI.** 81 tests behind a 75% coverage gate, a dependency audit, a frontend type-check and build, and a paper job that regenerates every table and re-checks the manuscript.
 
 ## 🖼️ Showcase
 
-> Outputs below are produced on CPU with the repo's real weights. The first two are side-by-side comparisons (left: low-quality input / classical baseline, right: PixelForge self-trained model); the last three are screenshots of the public demo running live, one per task.
+| Super-resolution ×4 | Low-light enhancement |
+|:---:|:---:|
+| ![SR ×4: bicubic vs PixelForge](assets/compare_sr_4x.png) | ![Low light: adaptive gamma vs PixelForge](assets/compare_lowlight.png) |
+| Bicubic 26.69 dB / 0.754 → **27.47 / 0.780** | No-op 7.77 / 0.192 → **18.32 / 0.746** |
 
-**Super-resolution ×4: Bicubic baseline vs. self-trained SRResNet**
+Both panels are produced on CPU by `scripts/make_compare.py` from the shipped weights.
 
-![SR 4x comparison](assets/compare_sr_4x.png)
+**Running live** — the public demo, three-panel view (your upload, the model input, the output).
+The same page carries a dark/light theme toggle and a Chinese/English switch.
 
-> The self-trained SRResNet scores higher PSNR/SSIM than bicubic (+0.77 dB). It is **not** softer than bicubic: measured output gradient mean (luma, mean absolute difference) is **1.92 vs. 1.45**, i.e. the model is sharper, and it is sharper on all 9 measured images. An earlier revision of this note claimed the opposite ("looks softer / greyer, 1.39 vs. 1.45") and attributed that to the perceptual loss; both halves of that claim are wrong — see the ablation note in the FAQ below. The PSNR advantage is not bought by the perceptual loss either.
+![Live demo, low-light three-panel view](assets/demo_live_lowlight_1.png)
 
-**Low-light enhancement: dark input → adaptive-gamma baseline vs. self-trained U-Net**
-
-![LowLight comparison](assets/compare_lowlight.png)
-
-> The self-trained U-Net gains +10.55 dB PSNR and +0.553 SSIM on the same caliber, clearly ahead of the gamma baseline in both brightness recovery and structure retention.
-
-> Comparison figures are generated by `scripts/make_demo.py` + `scripts/make_compare.py` from the repo's real weights; run them to reproduce.
-
-**Running live** — the public demo, low-light task on real photos. Left to right: your input, the classical adaptive-gamma baseline, the self-trained U-Net. The service picked the ML engine and ran the real weights on CPU. Shown in the demo's dark theme.
-
-![Live demo, low-light three-panel view (1/2)](assets/demo_live_lowlight_1.png)
-
-![Live demo, low-light three-panel view (2/2)](assets/demo_live_lowlight_2.png)
-
-> The demo is at <https://pixelforge-image-restoration.streamlit.app/>. It ships a bilingual UI, a dark/light theme toggle, and the three-panel view above so the low-res input the model actually sees is visible, not hidden.
-
-**Running live, super-resolution ×4** — same demo, light theme. Left to right: your upload, the model input (LR 111×170, upscaled for display), and the true ×4 output from the self-trained SRResNet. The sidebar keeps the training provenance on display.
+<details>
+<summary>More screenshots (super-resolution ×4 and ×2, dark and light theme)</summary>
 
 ![Live demo, SR ×4 three-panel view](assets/demo_live_sr4.png)
 
-**Running live, super-resolution ×2** — the ×2 slot runs its own self-trained SRResNet generator (PSNR 32.35 vs. bicubic 31.04 on the same caliber). Demo view, then the full ×2 case as three separate downloads the demo exposes: the original upload, the model input (LR 223×341), and the ×2 output (446×682).
-
 ![Live demo, SR ×2 three-panel view](assets/demo_live_sr2.png)
 
-| Original upload (446×683) | Model input (LR 223×341) | PixelForge ×2 output (446×682) |
+| Original upload (446×683) | Model input (223×341) | PixelForge ×2 output (446×682) |
 |:---:|:---:|:---:|
 | ![SR ×2 original](assets/demo_sr2_original.png) | ![SR ×2 model input](assets/demo_sr2_model_input.png) | ![SR ×2 output](assets/demo_sr2_output.png) |
 
+</details>
+
 ## 📊 Results
 
-> Numbers are measured by [`scripts/eval_baseline.py`](scripts/eval_baseline.py) on the same validation set with the same PSNR/SSIM implementation, so the only variable is the method. Per-epoch logs are under [`results/`](results/).
->
-> **Reproduced, with the protocol spelled out.** Those two SR numbers were re-measured by [`scripts/protocol_matrix.py`](scripts/protocol_matrix.py) under an explicitly named protocol — **P8: full image, RGB, per-image mean, DIV2K val 100 images, LR = PIL bicubic** — giving **27.4977 dB** (published 27.47) and **32.4243 dB** (published 32.35).
->
-> Naming the protocol is necessary but not sufficient, because the *name* does not pin the measurement. Same ×4 weights, same 100 images, three effects at very different scales:
->
-> | Change | Δ PSNR |
-> |---|---|
-> | PIL bicubic → torchvision bicubic + antialias, both in float | **0.012 dB** (27.4977 → 27.5098) |
-> | `antialias` on → off, same torchvision call | **3.7 dB** (28.95 → 25.21) |
-> | same operator, but the LR image round-tripped through 8-bit | **1.96 dB** (27.51 → 25.55) |
->
-> The third row is not hypothetical: it is what an earlier kernel of ours recorded under the label "torchvision bicubic + antialias". `TF.to_pil_image` clamps to [0,1], and bicubic downscaling overshoots, so the ringing that carries the edge energy was being truncated. "Bicubic" identifies neither the operator nor the number format, so a PSNR without both labels does not identify a measurement.
-
-| Task | Baseline | Ours | Gain |
+| Task | Classical baseline | PixelForge | Gain |
 |---|---|---|---|
-| **Super-resolution ×4** | Bicubic: PSNR 26.69 / SSIM 0.754 | **PSNR 27.47 / SSIM 0.780** | **+0.77 dB / +0.026** |
-| **Super-resolution ×2** | Bicubic: PSNR 31.04 / SSIM 0.894 | **PSNR 32.35 / SSIM 0.917** | **+1.31 dB / +0.023** |
-| **Low-light enhancement** | No-op: PSNR 7.77 / SSIM 0.192 | **PSNR 18.32 / SSIM 0.746** | **+10.55 dB / +0.553** |
+| **Super-resolution ×4** | Bicubic 26.69 dB / 0.754 | **27.47 / 0.780** | **+0.77 dB / +0.026** |
+| **Super-resolution ×2** | Bicubic 31.04 / 0.894 | **32.35 / 0.917** | **+1.31 dB / +0.023** |
+| **Low-light** | No-op 7.77 / 0.192 | **18.32 / 0.746** | **+10.55 dB / +0.553** |
 
-**Note on methodology**: all three rows are measured on the full-image validation set under the same protocol, which is also the protocol used to select the deployed weights. The per-epoch training logs under `results/` use a different (random-crop) protocol and are **not** directly comparable — see [`results/README.md`](results/README.md) for the full explanation and the exact commands to reproduce every number.
+All rows: full-image validation (DIV2K val 100 images, LOL 15 pairs), RGB PSNR/SSIM, per-image
+mean, LR produced by PIL bicubic downsampling — the same protocol used to pick the shipped weights.
+The two super-resolution rows read **27.4977 / 32.4243 dB** when re-measured by
+`scripts/protocol_matrix.py` under protocol **P8** (full image, RGB, per-image mean).
 
-What this does **not** claim: SOTA. SR ×4 at 27.47 dB beats the bicubic baseline but is below
-large-dataset academic SOTA (30+ dB) — the training set and model capacity are small. The
-low-light gain is relative to a no-op baseline, not to other published methods.
+Naming the protocol is necessary but not sufficient, because a name does not pin the measurement.
+Same weights, same 100 images:
 
-**What it cost to measure.** Every number above came from free-tier Kaggle T4 kernels, and
-the ledger is written down rather than remembered: **34 kernel runs, 29.05 h of wall-clock
-machine time** (21.72 h on GPU, 7.33 h on CPU — the reconciliation kernels deliberately run on
-CPU so they cost no GPU quota), of which **6.84 h went into 11 runs that failed or were voided**
-and had to be redone. **2 500 training epochs** across **15 runs (3 tasks × 5 seeds)** are
-behind the seed-variance figures. The per-run breakdown, including why each run failed, is in
-[`results/compute_ledger.md`](results/compute_ledger.md) and can be regenerated with
-`scripts/kernel_ledger.py`.
+| Change | Δ PSNR |
+|---|---|
+| PIL bicubic → torchvision bicubic + antialias, both in float | **0.012 dB** (27.4977 → 27.5098) |
+| `antialias` on → off, same torchvision call | **3.73 dB** (28.95 → 25.21) |
+| Same operator, but the LR image round-tripped through 8-bit | **1.96 dB** (27.51 → 25.55) |
 
-**Seed variance, measured over 5 independent runs per task.** Training-internal validation
-protocol (random crop, per-image mean) — *not* comparable with the full-image numbers above:
+The third row is not hypothetical: it is what one of our own kernels recorded under the label
+"torchvision bicubic + antialias". `to_pil_image` clamps to [0, 1] and bicubic downscaling
+overshoots, so the ringing that carries edge energy was being truncated.
 
-| Task | final-epoch PSNR (mean ± std, n=5) | 95% CI | best-of-N |
-|---|---|---|---|
-| SR ×2 (SRCNN, 100 ep) | 30.686 ± 0.069 | [30.601, 30.771] | 30.686 (same) |
-| SR ×4 (SRResNet, 200 ep) | 26.422 ± 0.036 | [26.378, 26.466] | 26.422 (same) |
-| Low-light ×2 (U-Net, 200 ep) | 18.032 ± 0.104 | [17.903, 18.161] | 18.510 (upper bound only) |
+<details>
+<summary>Seed variance, compute ledger, and what is <em>not</em> claimed</summary>
 
-Seeds move the result by 0.04–0.10 dB. Toggling `antialias` alone moves it by 3.7 dB — a
-factor of ~40 more. **Seed choice is not what determines the number; the protocol label is.**
-Per-epoch logs: [`results/seeds/`](results/seeds/); method notes: [`results/seeds/README.md`](results/seeds/README.md).
+**Seed variance** — training-internal protocol (random crop, per-image mean), *not* comparable to
+the full-image table above. Five independent runs per task:
+
+| Task | final-epoch PSNR (mean ± std, n=5) | 95% CI |
+|---|---|---|
+| SR ×2 (SRCNN, 100 ep) | 30.686 ± 0.069 | [30.601, 30.771] |
+| SR ×4 (SRResNet, 200 ep) | 26.422 ± 0.036 | [26.378, 26.466] |
+| Low-light (U-Net, 200 ep) | 18.032 ± 0.104 | [17.903, 18.161] |
+
+Seeds move the result by 0.04–0.10 dB; toggling `antialias` moves it by 3.73 dB. **Seed choice is
+not what determines the number — the protocol label is.** Logs: [`results/seeds/`](results/seeds/).
+
+**What it cost to measure.** Every number came from free-tier Kaggle T4 kernels, logged per run:
+34 kernel runs, 29.05 h of wall-clock machine time (21.72 h GPU, 7.33 h CPU), of which 6.84 h went
+into 11 runs that failed or were voided. 2 500 training epochs across 15 runs (3 tasks × 5 seeds).
+Details: [`results/compute_ledger.md`](results/compute_ledger.md).
+
+**Not claimed.** No SOTA: SR ×4 at 27.47 dB beats bicubic but sits below large-dataset academic
+results (30+ dB); the training set and the networks are deliberately small. The low-light gain is
+relative to a no-op baseline, not to published methods.
+
+</details>
 
 ## 🚀 Quick start
 
-> The public demo needs no install. Locally, everything runs on CPU — classical baselines work out of the box, and the shipped weights switch the demo to the ML engine automatically.
+**A. Public demo — nothing to install**
 
-**A. Public demo (no install)**
-
-Open <https://pixelforge-image-restoration.streamlit.app/>. The free tier sleeps, so the first
-visit may need a few seconds to wake up.
+<https://pixelforge-image-restoration.streamlit.app/> — the free tier sleeps when idle, so the
+first visit may take a few seconds to wake up.
 
 **B. Run the same demo locally**
 
@@ -150,275 +141,147 @@ pip install -r deploy/streamlit/requirements.txt   # CPU-only torch, pinned for 
 streamlit run deploy/streamlit/streamlit_app.py
 ```
 
-**C. Self-host the FastAPI backend + Next.js frontend**
+**C. Self-host the API and the frontend**
 
 ```bash
-# Backend
-pip install -r requirements.txt          # torch is NOT pinned here — install it separately:
-pip install torch torchvision            # CPU build for dev; use the CUDA build on a GPU box
+# Backend — torch is not pinned in requirements.txt, install a build that fits your machine
+pip install -r requirements.txt
+pip install torch torchvision                      # CPU build for dev; CUDA build on a GPU box
 uvicorn serve.app:app --reload --port 8000
 
-# Frontend (separate terminal)
+# Frontend (second terminal)
 cd web
-cp .env.local.example .env.local         # points to http://localhost:8000 by default
+cp .env.local.example .env.local                   # defaults to http://localhost:8000
 pnpm install
-pnpm dev
+pnpm dev                                           # http://localhost:3000
 ```
 
-Open http://localhost:3000, upload an image, pick a task, hit **Enhance**, drag the slider.
-
-**Docker** (backend only)
+**D. Docker (backend only)**
 
 ```bash
 docker build -t pixelforge-serve .
 docker run -p 8000:8000 pixelforge-serve
 ```
 
-The image bundles the trained weights and starts in ML mode. The frontend is a separate build
-target and is not part of this image.
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart LR
-    A[User uploads image] --> B{Entry}
-    B -->|Public live demo| C[Streamlit<br/>deploy/streamlit/]
-    B -->|Self-host| D[Next.js frontend web/]
-    C --> E[Self-trained weights + classical baselines<br/>CPU, on Community Cloud]
-    D -->|POST /api/predict| F(FastAPI service serve/app.py)
-    F --> G{serve/models/<br/>weight present?}
-    G -->|yes| H[PyTorch model<br/>SRResNet / SRCNN / U-Net]
-    G -->|no| I[Classical<br/>Bicubic / adaptive gamma]
-    E --> J[Restored image]
-    H --> J
-    I --> J
-    J --> A
-```
-
-The public demo is the Streamlit app (`deploy/streamlit/streamlit_app.py`) running on Community
-Cloud — that is the live, deployed artifact. The FastAPI backend (`serve/app.py`) and the Next.js
-frontend (`web/`) are part of the same codebase and can be self-hosted; `web/` posts to
-`serve/app.py`, which picks the ML engine for a task/scale when a weight is loaded, otherwise a
-classical baseline. `GET /api/health` reports which engine each slot is using. Full interface in
-[`docs/API.md`](docs/API.md).
-
-## 🧩 Features
-
-- **SR ×4**: self-trained SRResNet generator with perceptual loss. PSNR 27.47 / SSIM 0.780 vs. bicubic.
-- **SR ×2**: self-trained SRResNet generator, PSNR 32.35 / SSIM 0.917 vs. bicubic — no longer a classical fallback.
-- **Low-light enhancement**: self-trained low-light U-Net (PSNR 18.32 / SSIM 0.746), plus an adaptive-gamma classical fallback and an exposure gate for inputs that are dark but not underexposed photos.
-- **Before/after**: side-by-side in the Streamlit demo; draggable slider in the Next.js frontend.
-- **Three trained weights ship** in `serve/models/` (and a copy in `deploy/streamlit/models/` for the demo); classical baselines remain as automatic fallback if a weight is ever missing.
-
-## 📄 Paper & Preprint
-
-**Published preprint — DOI: [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)**
-
-[![DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-blue)](https://doi.org/10.20944/preprints202611.0550.v1)
-
-The methods behind this repo are written up as a preprint:
-
-- **Title**: *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
-- **Author**: Yulin Zhao (also known as Elijah Zhao) — **Independent Researcher**
-- **Venue**: [Preprints.org](https://www.preprints.org/), **Article**, posted **5 November 2026** (not peer-reviewed; license **CC BY 4.0**; subject area: Computer Science and Mathematics → Artificial Intelligence and Machine Learning)
-- **DOI**: [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
-- **Files**: the published version (platform typeset, with DOI on every page) is at [`preprint/published/`](preprint/published/); the submitted PDF, LaTeX source zip and graphical abstract are at [`preprint/submission/`](preprint/submission/); the LaTeX manuscript lives in [`paper/`](paper/).
-- **Cite**: see [CITATION.cff](CITATION.cff).
-
-If you use this work, please cite:
-
-```bibtex
-@article{zhao2026protocol,
-  title  = {The Protocol Is the Result: How Evaluation Choices Flip the Verdict
-            on Lightweight Image Restoration},
-  author = {Zhao, Yulin},
-  journal = {Preprints},
-  year   = {2026},
-  doi    = {10.20944/preprints202611.0550.v1},
-  note   = {Preprint, not peer-reviewed}
-}
-```
-
-The paper's thesis — that *which* evaluation protocol you name (and how you measure it) can flip a "beats baseline / doesn't" verdict by several dB — is exactly the discipline this repo enforces in code: the same 100-image DIV2K validation set, PIL bicubic downsampling, full-image RGB PSNR, as used to pick the shipped weights.
-
-## 🧪 Tests
-
-```bash
-# unit + API smoke + real-weight integration tests (CPU-friendly)
-python -m pytest
-
-# with coverage (gate 75%, configured in pyproject.toml)
-python -m pytest --cov --cov-report=term-missing
-
-# frontend unit tests + type-check
-cd web && pnpm install && pnpm test
-cd web && pnpm exec tsc --noEmit
-```
-
-Expected: `81 passed, 1 skipped` (69 training unit tests + 9 API smoke tests + 3 real-weight
-integration tests; the skip is the E2E script). The integration tests load the real weights
-under `serve/models/` through the full inference path, confirming the ML engine actually serves
-rather than silently degrading to the classical baseline.
-
-The E2E browser test (`tests/e2e/test_e2e.py`) drives a real Chromium through the full upload
-flow. It boots two servers and a browser, so it is skipped under pytest by default; run it
-directly, or set `PIXELFORGE_RUN_E2E=1`.
-
-CI (`.github/workflows/ci.yml`) runs four jobs: pytest with a coverage gate, `pip-audit` over
-the lock file, the frontend type-check + tests + build, and a paper job that regenerates every
-table from the result CSVs and checks them against `FACTS.md`, rebuilds and compiles the LaTeX
-manuscript, runs the layout check, and audits the bibliography (24 arXiv records + 2 DOIs) for validity.
-
-## 🧰 Training
-
-Requires a GPU. Prepare data first (builds directories and prints download URLs; does not fetch
-the multi-GB datasets):
-
-```bash
-bash scripts/download_data.sh
-
-# Super-resolution (4×, with perceptual loss)
-python train/train.py --task sr --model generator --scale 4 \
-    --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
-
-# Super-resolution (2×, SRResNet generator)
-python train/train.py --task sr --model generator --scale 2 \
-    --data_root data --epochs 200 --batch_size 8 --lr 1e-4
-
-# Low-light (U-Net)
-python train/train.py --task lowlight --data_root data \
-    --epochs 200 --batch_size 8 --lr 2e-4
-
-# Export to TorchScript for the service / demo
-python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
-    --out serve/models/sr_generator_scale4.pt --task sr --scale 4
-python train/export.py --checkpoint models/sr_generator_scale2_best.pth \
-    --out serve/models/sr_generator_scale2.pt --task sr --scale 2
-python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
-    --out serve/models/lowlight.pt --task lowlight --scale 2
-```
-
-Drop the exported `.pt` files into `serve/models/` (and `deploy/streamlit/models/` for the demo)
-and the service picks them up on restart.
-
-## 🔬 Method
-
-- **Super-resolution**
-  - `SRCNN`: classic three-conv SR network, simple and interpretable as a baseline.
-  - `SRResNet` (generator): deeper residual network with PixelShuffle upsampling and residual learning, optional VGG perceptual loss.
-  - LR is synthesised from HR by bicubic downscaling during training, matching the inference downsampling.
-- **Low-light enhancement**
-  - `U-Net`: encoder-decoder with skip connections and residual learning, mapping low-light to normal-light (trained on LOL).
-  - Classical baseline uses adaptive gamma: dark images brighten, already-lit images stay put.
-- **Evaluation**: PSNR and SSIM on the Y channel (or RGB), with a Gaussian-window SSIM to reduce boundary bias.
-
-A longer write-up of the architectures, training details and related work lives at `web/app/method/page.tsx` and renders at `/method` on the site.
+The image bundles the weights and starts in ML mode as a non-root user (uid 10001). The frontend
+is a separate build target and is not part of this image.
 
 ## 📁 Structure
 
 ```
 pixelforge-image-restoration/
-├── assets/            # banner, real demo comparison figures
-├── data/              # datasets (download notes; data itself not committed)
-├── results/           # training logs + quantitative comparison
-├── train/             # training-side core code
-│   ├── models.py      # SRCNN / SRResNet / low-light U-Net
-│   ├── datasets.py    # DIV2K / LOL loaders
-│   ├── metrics.py     # PSNR / SSIM
-│   ├── train.py       # training script
-│   ├── export.py      # TorchScript export
-│   └── tests/         # unit tests (CPU-friendly)
-├── serve/             # inference side (FastAPI)
-│   ├── app.py         # FastAPI service (rate limiting + resource guards)
-│   ├── classical.py   # classical fallbacks
-│   ├── model_loader.py# weight loading + U-Net size adaptation
-│   └── models/        # self-trained TorchScript weights (committed)
-├── deploy/            # streamlit/ (live demo)
-├── web/               # frontend (Next.js + Tailwind)
-├── paper/             # the preprint manuscript (LaTeX), FACTS.md, refs.bib
-├── preprint/          # Preprints.org submission files (manuscript, source zip, graphical abstract)
-├── scripts/           # helpers (demo figures, evaluation, data setup, paper gates)
-├── tests/             # API smoke + real-weight integration + E2E
-├── docs/              # API.md (interface reference)
-├── Dockerfile         # inference service image
-├── DEPLOY.md          # deployment guide
-├── CHANGELOG.md       # version history
-├── CONTRIBUTING.md    # contribution guide
-├── CITATION.cff       # citation metadata
-└── README.zh-CN.md    # 中文 README
+├── assets/              # banner and real comparison / demo figures
+├── data/                # dataset notes (data itself is not committed)
+├── models/              # training checkpoints (best of each run)
+├── results/             # protocol matrix, per-image CSVs, seed logs, compute ledger
+├── train/               # models.py, datasets.py, metrics.py, train.py, export.py, tests/
+├── serve/               # FastAPI app, classical fallbacks, model loader, models/*.pt
+├── deploy/streamlit/    # the public demo (self-contained, CPU-only)
+├── web/                 # Next.js 14 + Tailwind frontend
+├── paper/               # LaTeX manuscript, FACTS.md, refs.bib, tables/
+├── preprint/            # published and submitted PDFs, source zip, graphical abstract
+├── scripts/             # evaluation, protocol matrix, figure and paper gates
+├── tests/               # API smoke, real-weight integration, E2E browser flow
+├── docs/API.md          # HTTP interface reference
+├── Dockerfile           # inference service image
+└── DEPLOY.md            # deployment guide
 ```
 
 ## 🛠️ Stack
 
 | Layer | Tech |
 |---|---|
-| Deep learning | PyTorch 2.x, TorchVision, TorchScript |
-| Training | Adam, CosineAnnealingLR, AMP mixed precision, optional VGG perceptual loss |
-| Metrics | PSNR, SSIM (Gaussian-window implementation) |
+| Modelling | PyTorch 2.x, TorchVision, TorchScript |
+| Training | Adam, cosine annealing, AMP, Charbonnier loss, optional VGG perceptual term |
+| Metrics | PSNR, SSIM (11×11 Gaussian window, σ = 1.5) |
 | Backend | FastAPI / Uvicorn, Pillow |
-| Frontend | Next.js 14, React 18, Tailwind CSS, TypeScript |
-| Deploy | Streamlit Community Cloud (public demo), Docker, Vercel (optional) |
+| Frontend | Next.js 14, React 18, TypeScript, Tailwind CSS |
+| Deploy | Streamlit Community Cloud, Docker, Vercel (optional) |
+
+## 🧪 Tests
+
+```bash
+python -m pytest                                    # 81 passed, 1 skipped (the E2E module)
+python -m pytest --cov --cov-report=term-missing    # coverage gate: 75%
+cd web && pnpm test && pnpm exec tsc --noEmit
+```
+
+The skip is `tests/e2e/test_e2e.py`, which drives a real Chromium through the upload flow; run it
+directly or set `PIXELFORGE_RUN_E2E=1`. CI runs four jobs — tests with the coverage gate,
+`pip-audit` over the lock file, the frontend type-check + tests + build, and a paper job that
+regenerates every table, rebuilds the manuscript, checks its layout, re-derives the headline
+numbers independently and audits 27 references (83 checks).
 
 ## ❓ FAQ
 
 **Do I need a GPU?**
-No. The public demo, the local demo, and the whole test suite run on CPU. Only (re)training needs a GPU.
+No. The public demo, the local demo, the API and the full test suite run on CPU. Only training
+needs a GPU.
 
 **Which tasks have a trained weight?**
-All three: SR ×4 (27.47 dB), SR ×2 (32.35 dB) and low-light (18.32 dB). Each beats its classical baseline. The classical methods stay as an automatic fallback if a weight file is ever missing.
+All three: SR ×4, SR ×2 and low light. If a weight file is ever missing, the service falls back to
+the classical method for that slot instead of failing — `GET /api/health` reports which engine each
+slot is using.
 
-**The SR ×4 result is reported to look softer than bicubic — is it broken?**
-No, and it is not softer either. An earlier note here claimed it looked softer with a gradient mean of 1.39 vs. 1.45; re-measured on 9 images under four gradient definitions, the model is **sharper** than bicubic in 9 of 9 cases (luma gradient mean 1.92 vs. 1.45). The same ablation also removes the perceptual loss as the explanation for the PSNR score: trained with `--perceptual` it scores **27.61 / 0.7835**, trained without it **27.60 / 0.7836** (DIV2K valid 100, 200 epochs, same seed, same data order) — the difference is 0.01 dB, i.e. noise. At this repo's weights (`w_pixel=1.0`, `w_percep=0.006`) the VGG term is effectively inert; the PSNR gain comes from the architecture and the charbonnier objective, not from the perceptual term. What the perceptual term *does* affect is fragility: two earlier implementation bugs in it (missing ImageNet normalisation, and a `0.01` factor that erased the pixel term) left SR ×4 at 17.20 dB — below bicubic — until both were fixed.
+**The SR ×4 output was once described as "softer than bicubic" — is that true?**
+No, and it is not softer. Re-measured on 9 images under four gradient definitions, the model is
+sharper than bicubic in **9 of 9** cases (luma gradient mean **1.92 vs 1.45**). The perceptual term
+is also not what buys the PSNR: trained with `--perceptual` the model scores 27.61 / 0.7835, without
+it 27.60 / 0.7836 — a 0.01 dB difference. An earlier revision of this README carried the opposite
+claim (1.39 vs 1.45); it was wrong on both halves and was withdrawn.
 
-**The public demo is slow or shows a wake-up screen.**
-The free Streamlit tier sleeps when idle; the first visit after a pause takes a few seconds to spin up. Inference itself runs on CPU and is normally quick for typical photos.
+**Why is the demo slow on first visit?**
+The free Streamlit tier sleeps when idle. Inference itself is CPU-side and quick for typical photos.
 
-**Can I run it behind a restricted network?**
-Yes — see [DEPLOY.md](DEPLOY.md) for pushing the image via a mirror when GitHub is not directly reachable.
+**Can it run behind a restricted network?**
+Yes — see [DEPLOY.md](DEPLOY.md) for pushing the image through a mirror when GitHub is unreachable.
 
-## ☁️ Deployment
+## 📄 Paper & citation
 
-**Public demo (live)**: Streamlit Community Cloud deploys straight from the repo, entry
-`deploy/streamlit/streamlit_app.py` (self-contained). Steps in
-[`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md).
+The evaluation discipline this repo enforces in code is written up as a preprint:
 
-**Self-host**: the backend `serve/app.py` runs on a VPS; the frontend `web/` deploys to Vercel with
-`NEXT_PUBLIC_API_URL` pointing at your backend. See [DEPLOY.md](DEPLOY.md).
+- **Title**: *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
+- **Author**: Yulin Zhao (Elijah Zhao) — Independent Researcher
+- **Venue**: Preprints.org, Article, posted 5 November 2026 (not peer-reviewed, CC BY 4.0)
+- **DOI**: [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
+- **Files**: published 15-page version in [`preprint/published/`](preprint/published/), submitted
+  version and source in [`preprint/submission/`](preprint/submission/), LaTeX in [`paper/`](paper/)
 
-## 🗺️ Roadmap
+<details>
+<summary>BibTeX</summary>
 
-The engineering is complete and live; the remaining items are optional extensions:
+```bibtex
+@article{zhao2026protocol,
+  title   = {The Protocol Is the Result: How Evaluation Choices Flip the Verdict
+             on Lightweight Image Restoration},
+  author  = {Zhao, Yulin},
+  journal = {Preprints},
+  year    = {2026},
+  doi     = {10.20944/preprints202611.0550.v1},
+  note    = {Preprint, not peer-reviewed}
+}
+```
 
-- Extended materials: English project report ([REPORT.md](REPORT.md)); slides remain optional.
-- (The ×2 SRResNet slot is already trained and shipped — no further work needed there.)
+</details>
 
 ## 📝 Changelog
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
-- **1.12.0** — The preprint is published: DOI [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1). Added the platform-typeset version under `preprint/published/`, linked the DOI from both READMEs and the Streamlit sidebar, and added a `preferred-citation` to `CITATION.cff`.
-- **1.11.3** — Fixed stale cost figures in both READMEs (now 34 kernel runs / 29.05 h, matching `results/compute_ledger.md`); corrected the seed-variance table's low-light label from "SRCNN" to "U-Net" (the architecture is a U-Net, confirmed from the checkpoint); and updated the CI description to four jobs (added the paper job).
-- **1.11.2** — Streamlit demo adds a collapsible "About this project" section (bilingual) summarising what the project does, the key idea, and its significance for non-expert visitors; also clarifies training-provenance wording and adds a privacy note.
-- **1.11.1** — Fixed a stale Chinese README claim about SR ×4 sharpness; restored zh/en parity.
-- **1.11.0** — Author set to Independent Researcher; manuscript submitted to Preprints.org; added a Paper & Preprint section; process docs moved to the internal library.
-- **1.10.0** — Full external audit of all 27 references (83 checks), Preprints.org compliance (COPE AI-use declaration), preprint files archived in `preprint/`.
-- **1.9.0** — Seed-variance matrix completed at n=5 for all three tasks.
+- **1.12.0** — Preprint published; DOI added to both READMEs, the Streamlit sidebar and `CITATION.cff`.
+- **1.11.3** — Corrected the compute figures to match the ledger (34 kernel runs / 29.05 h), the seed table's low-light label (U-Net, not SRCNN) and the CI description (four jobs).
+- **1.11.0** — Author set to Independent Researcher; paper section added; process notes moved out of the public tree.
 
-## 📄 License & citation
+## ⚖️ License
 
-MIT — see [LICENSE](LICENSE). Contribution guide in [CONTRIBUTING.md](CONTRIBUTING.md),
-version history in [CHANGELOG.md](CHANGELOG.md), citation info in [CITATION.cff](CITATION.cff).
-
-## 🙏 Acknowledgements
-
-- [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) — super-resolution dataset
-- [LOL Dataset](https://github.com/weichen582/RetinexNet) — low-light dataset (Retinex-Net repo)
-- Dong et al., *Image Super-Resolution Using Deep Convolutional Networks* (SRCNN)
-- Ledig et al., *Photo-Realistic Single Image Super-Resolution Using a GAN* (SRResNet / SRGAN)
-- Ronneberger et al., *U-Net: Convolutional Networks for Biomedical Image Segmentation*
+MIT — see [LICENSE](LICENSE). Interface reference in [`docs/API.md`](docs/API.md), deployment notes
+in [DEPLOY.md](DEPLOY.md), contribution guide in [CONTRIBUTING.md](CONTRIBUTING.md), citation
+metadata in [CITATION.cff](CITATION.cff). Datasets ([DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/),
+[LOL](https://github.com/weichen582/RetinexNet)) are not redistributed here; they are available from
+their original sources.
 
 ---
 
 <p align="center">
-  <sub>PixelForge · end-to-end image restoration pipeline &nbsp;·&nbsp; <a href="https://pixelforge-image-restoration.streamlit.app/">Live Demo</a></sub>
+  <sub>PixelForge · end-to-end image restoration &nbsp;·&nbsp; <a href="https://pixelforge-image-restoration.streamlit.app/">Live Demo</a></sub>
 </p>

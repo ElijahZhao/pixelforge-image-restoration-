@@ -5,21 +5,22 @@
 <p align="center">
   <a href="https://pixelforge-image-restoration.streamlit.app/"><img src="https://img.shields.io/badge/Live%20Demo-Try%20it-9b59b6?style=flat-square&logo=streamlit&logoColor=white" alt="Live Demo"></a>
   <a href="https://doi.org/10.20944/preprints202611.0550.v1"><img src="https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-1f6feb?style=flat-square" alt="DOI"></a>
+  <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <img src="https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python 3.11">
   <img src="https://img.shields.io/badge/PyTorch-2.x-EE4C2C?style=flat-square&logo=pytorch&logoColor=white" alt="PyTorch">
-  <a href="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml"><img src="https://github.com/ElijahZhao/pixelforge-image-restoration-/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/ElijahZhao/pixelforge-image-restoration-?style=flat-square" alt="License"></a>
 </p>
 
 <p align="center">
-  <b>PixelForge</b>：端到端图像复原流水线<br/>
-  用自训 PyTorch 模型做单图超分辨率与低光增强，从数据、训练、评测到部署全链路自建。
+  <b>PixelForge</b> —— 一条克隆下来就能跑通的端到端图像复原管线。<br/>
+  三个全自训 PyTorch 模型，覆盖 ×2/×4 单图超分与低光增强，从数据、训练、评测一直到部署。零外部推理 API。
 </p>
 
 <p align="center">
-  <a href="https://pixelforge-image-restoration.streamlit.app/"><b>在线体验</b></a> &nbsp;·&nbsp;
+  <a href="https://pixelforge-image-restoration.streamlit.app/"><b>在线 Demo</b></a> &nbsp;·&nbsp;
   <a href="#-快速开始">快速开始</a> &nbsp;·&nbsp;
   <a href="#-评测结果">评测结果</a> &nbsp;·&nbsp;
+  <a href="#-论文与引用">论文</a> &nbsp;·&nbsp;
   <a href="README.md">English</a>
 </p>
 
@@ -27,363 +28,224 @@
 
 ## 🎯 这是什么
 
-PixelForge 是一条**完整、可复现**、全链路从零自建的视觉流水线：
+一条从零写起、可复现的视觉管线：
 
 ```
-数据 → 训练 → 评测 → 模型导出（TorchScript）→ 后端推理 → 前端展示
+数据 → 训练 → 评测 → 导出（TorchScript）→ FastAPI 服务 → 网页前端
 ```
 
-每一环都是自己写的、能跑的。**三个**自训权重（`sr_generator_scale4.pt`、`sr_generator_scale2.pt`、`lowlight.pt`）随仓库分发，克隆即可运行——Demo 与测试都不需要 GPU。
+三个推理权重随仓库发布（4.9 + 3.2 + 2.3 MB），克隆即可在 CPU 上跑起来——Demo、API 和整套测试都不需要 GPU。下文每个数字都用同一验证集、同一套指标实现测得，且口径是写明的，不是默认的。
 
 ## ✨ 核心亮点
 
-- **真实建模能力**：从零实现 SRCNN、带 PixelShuffle 与残差块的 SRResNet 生成器、带跳跃连接的低光 U-Net。
-- **完整训练闭环**：数据加载、Adam + 余弦退火 + AMP 混合精度 + 可选 VGG 感知损失、PSNR/SSIM 评测、TorchScript 导出。
-- **三个已发布权重**：超分 ×4（PSNR 27.47）、超分 ×2（PSNR 32.35）、低光（PSNR 18.32）——各自都打赢经典基线；权重缺失时经典方法自动兜底。
-- **量化对比**：用标准指标在同一批验证图上对比「经典基线 vs 自训模型」，脚本与逐 epoch 日志均可复算。
-- 工程配套：CI 三作业（测试 + 覆盖率 + 依赖审计 + 前端构建）、Docker 非 root 镜像、IP 限流、API 文档。
+- **三个模型，全部自写**：SRCNN（0.069 M，用于种子方差研究）、SRResNet 生成器（×4 1.22 M，×2 0.78 M）、低光 U-Net（0.565 M）。唯一的预训练组件是训练期感知项用的 VGG16，它不参与推理。
+- **三个任务都赢过经典基线**：超分 ×4 +0.77 dB、×2 +1.31 dB（对 bicubic），低光 +10.55 dB（对 No-op）——用的就是本仓库发布的权重。
+- **可复现是结构性的**：126 个逐图 PSNR/SSIM CSV 支撑 126 个报告单元，`scripts/verify_public_release.py` 重新求平均并逐格核对矩阵。
+- **交付的是产品，不是 notebook**：FastAPI（per-IP 限流 + 上传守卫）、中英双语 Streamlit Demo、Next.js 前端、非 root Docker 镜像。
+- **CI 把关**：81 项测试 + 75% 覆盖率门禁、依赖审计、前端类型检查与构建，以及一个重新生成全部表格、重编译论文的论文作业。
 
-## 🖼️ 效果演示
+## 🖼️ 效果预览
 
-> 下方为 CPU 上用本仓库真实权重跑出的输出。前两张为并排对比图（左：低质量输入 / 经典基线，右：PixelForge 自训模型），最后三张为公开 Demo 的线上实跑截图，每个任务各一张。
+| 超分 ×4 | 低光增强 |
+|:---:|:---:|
+| ![SR ×4：bicubic 与 PixelForge 对比](assets/compare_sr_4x.png) | ![低光：adaptive gamma 与 PixelForge 对比](assets/compare_lowlight.png) |
+| Bicubic 26.69 dB / 0.754 → **27.47 / 0.780** | No-op 7.77 / 0.192 → **18.32 / 0.746** |
 
-**超分辨率 4×：Bicubic 基线 vs 自训 SRResNet**
+两张图都由 `scripts/make_compare.py` 在 CPU 上用发布的权重现场生成。
 
-![SR 4x comparison](assets/compare_sr_4x.png)
+**线上实况**——公开 Demo 的三栏视图（你的上传、模型实际看到的输入、输出）。同一页面带暗/亮主题切换与中英文切换。
 
-> 自训 SRResNet 的 PSNR/SSIM 高于 bicubic（+0.77 dB），且**并不更柔**：实测输出梯度均值（luma，平均绝对差）为 **1.92 vs 1.45**，即模型反而更锐，且在 9 张被测图上全部更锐。本说明的早期版本曾写相反结论（"更柔/更灰，1.39 vs 1.45"）并将其归因于感知损失——这两半说法都是错的。PSNR 优势也并非由感知损失换来。
+![线上 Demo：低光三栏视图](assets/demo_live_lowlight_1.png)
 
-**低光增强：暗光输入 → 自适应伽马基线 vs 自训 U-Net**
+<details>
+<summary>更多截图（超分 ×4 / ×2，暗色与亮色主题）</summary>
 
-![LowLight comparison](assets/compare_lowlight.png)
+![线上 Demo：超分 ×4 三栏视图](assets/demo_live_sr4.png)
 
-> 自训 U-Net 在同口径下 PSNR 提升 +10.55 dB、SSIM +0.553，亮度恢复与结构保留均明显优于伽马基线。
+![线上 Demo：超分 ×2 三栏视图](assets/demo_live_sr2.png)
 
-> 对比图由 `scripts/make_demo.py` + `scripts/make_compare.py` 用仓库内真实权重生成，运行即可复现。
-
-**线上实跑** —— 公开 Demo 界面，低光任务处理真实照片。从左到右：你的输入、自适应伽马经典基线、自训 U-Net。服务自动选用 ML 引擎，在 CPU 上跑的真实权重。截图为 Demo 暗色主题。
-
-![线上 Demo 低光三栏对比 (1/2)](assets/demo_live_lowlight_1.png)
-
-![线上 Demo 低光三栏对比 (2/2)](assets/demo_live_lowlight_2.png)
-
-> Demo 地址：<https://pixelforge-image-restoration.streamlit.app/>。带中英双语界面、暗/亮主题切换，以及上图这个三栏视图——让模型**实际看到的低分辨率输入**也可见，而不是藏起来。
-
-**线上实跑·超分 4×** —— 同一个 Demo 的亮色主题。从左到右：你的上传、模型输入（LR 111×170，仅展示时放大）、自训 SRResNet 的真实 4× 输出。侧边栏保留了训练出处信息。
-
-![线上 Demo 超分 4× 三栏对比](assets/demo_live_sr4.png)
-
-**线上实跑·超分 2×** —— ×2 槽位跑的是自训 SRResNet 生成器（同口径 PSNR 32.35，胜 bicubic 基线 31.04）。先看 Demo 界面，再通过 Demo 暴露的下载入口拿到 ×2 案例的三张原图：原始上传、模型输入（LR 223×341）、×2 输出（446×682）。
-
-![线上 Demo 超分 2× 三栏对比](assets/demo_live_sr2.png)
-
-| 原始上传 (446×683) | 模型输入（LR 223×341） | PixelForge ×2 输出 (446×682) |
+| 原始上传（446×683） | 模型输入（223×341） | PixelForge ×2 输出（446×682） |
 |:---:|:---:|:---:|
-| ![SR ×2 原图](assets/demo_sr2_original.png) | ![SR ×2 模型输入](assets/demo_sr2_model_input.png) | ![SR ×2 输出](assets/demo_sr2_output.png) |
+| ![×2 原图](assets/demo_sr2_original.png) | ![×2 模型输入](assets/demo_sr2_model_input.png) | ![×2 输出](assets/demo_sr2_output.png) |
+
+</details>
 
 ## 📊 评测结果
 
-> 数字由 [`scripts/eval_baseline.py`](scripts/eval_baseline.py) 在同一批验证图、同一套 PSNR/SSIM 实现下测得（唯一变量是方法本身）；逐 epoch 日志见 [`results/`](results/)。
-
-| 任务 | 基线 | 自训模型 | 增益 |
+| 任务 | 经典基线 | PixelForge | 增益 |
 |---|---|---|---|
-| **超分 ×4** | Bicubic：PSNR 26.69 / SSIM 0.754 | **PSNR 27.47 / SSIM 0.780** | **+0.77 dB / +0.026** |
-| **超分 ×2** | Bicubic：PSNR 31.04 / SSIM 0.894 | **PSNR 32.35 / SSIM 0.917** | **+1.31 dB / +0.023** |
-| **低光增强** | 不处理：PSNR 7.77 / SSIM 0.192 | **PSNR 18.32 / SSIM 0.746** | **+10.55 dB / +0.553** |
+| **超分 ×4** | Bicubic 26.69 dB / 0.754 | **27.47 / 0.780** | **+0.77 dB / +0.026** |
+| **超分 ×2** | Bicubic 31.04 / 0.894 | **32.35 / 0.917** | **+1.31 dB / +0.023** |
+| **低光增强** | No-op 7.77 / 0.192 | **18.32 / 0.746** | **+10.55 dB / +0.553** |
 
-**口径说明（重要）**：上表三行均在全图验证集、同一套协议下测得——这套协议也正是挑选部署权重的协议。训练日志里的是「随机裁剪」口径，二者**不可直接比较**；完整解释与复现命令见 [`results/README.md`](results/README.md)。
+三行口径一致：全图验证（DIV2K val 100 张、LOL 15 对）、RGB PSNR/SSIM、逐图求平均、LR 由 PIL 双三次下采样生成——与挑选部署权重时同一个协议。超分两行若用 `scripts/protocol_matrix.py` 按 **P8**（全图、RGB、逐图平均）重测，读数为 **27.4977 / 32.4243 dB**。
 
-本表**不**声称达到 SOTA：SR ×4 的 27.47 dB 高于 bicubic 基线，但远低于大数据集学术 SOTA（30+ dB）——训练集与模型容量都偏小。低光的增益是相对「不处理」基线，而非相对其他已发表方法。
+写明协议是必要的，但不充分——名字并不能固定住测量。同样权重、同样 100 张图：
 
-**这些数字的代价**：上表每一个数都来自 Kaggle 免费额度上的 T4 内核，且过程被逐次记了账——**34 次内核运行、29.05 小时机器墙上时间**（GPU 21.72 h + CPU 7.33 h；对账内核刻意关 GPU 跑，因为它的意义就是「谁 clone 下来都能复现」，不花 GPU 配额），其中 **6.84 小时烧在 11 次失败或作废的运行上**，得重做。种子方差那组数字背后是 **2 500 个训练 epoch、15 次独立训练**（3 个任务 × 5 个种子）。逐次明细（含每一次为什么失败）见 [`results/compute_ledger.md`](results/compute_ledger.md)，可用 `scripts/kernel_ledger.py` 重新生成。
+| 改动 | Δ PSNR |
+|---|---|
+| PIL bicubic → torchvision bicubic + antialias，都在浮点上 | **0.012 dB**（27.4977 → 27.5098） |
+| 同一个 torchvision 调用，`antialias` 开 → 关 | **3.73 dB**（28.95 → 25.21） |
+| 同一算子，但 LR 经过一次 8-bit 往返 | **1.96 dB**（27.51 → 25.55） |
 
-**种子方差，实测 3 个任务 × 5 次独立训练**（训练内验证口径：中心裁剪、per-image mean）——**不能**与上表的全图数字相减：
+第三行不是假设：那是本项目某个内核在“torchvision bicubic + antialias”标签下真实记录到的结果。`to_pil_image` 会 clamp 到 [0, 1]，而双三次下采样必然过冲，携带边缘能量的振铃就这样被截掉了。
 
-| 任务 | final-epoch PSNR（均值 ± std，n=5） | 95% CI | best-of-N |
-|---|---|---|---|
-| SR ×2（SRCNN，100 轮） | 30.686 ± 0.069 | [30.601, 30.771] | 30.686（与 final 相同） |
-| SR ×4（SRResNet，200 轮） | 26.422 ± 0.036 | [26.378, 26.466] | 26.422（与 final 相同） |
-| 低光 ×2（U-Net，200 轮） | 18.032 ± 0.104 | [17.903, 18.161] | 18.510（仅作上界） |
+<details>
+<summary>种子方差、算力台账，以及<b>不</b>声称的内容</summary>
 
-换种子只让结果动 0.04–0.10 dB；单独把 `antialias` 关掉就动 3.7 dB——差约 40 倍。
-**决定数字的不是种子，是协议标签。** 逐轮日志见 [`results/seeds/`](results/seeds/)，
-读法与陷阱见 [`results/seeds/README.md`](results/seeds/README.md)。
+**种子方差**——训练内验证口径（随机裁块、逐图平均），**不可**与上表的全图数字相减。每任务 5 次独立训练：
+
+| 任务 | 末轮 PSNR（均值 ± 标准差，n=5） | 95% CI |
+|---|---|---|
+| 超分 ×2（SRCNN，100 轮） | 30.686 ± 0.069 | [30.601, 30.771] |
+| 超分 ×4（SRResNet，200 轮） | 26.422 ± 0.036 | [26.378, 26.466] |
+| 低光（U-Net，200 轮） | 18.032 ± 0.104 | [17.903, 18.161] |
+
+种子只把结果推动 0.04–0.10 dB，而 `antialias` 一个开关就推动 3.73 dB。**决定数字的不是种子，是协议标签。**日志见 [`results/seeds/`](results/seeds/)。
+
+**测量成本**：上述数字全部来自 Kaggle 免费 T4 内核，逐次记账——34 次内核、29.05 h 机器墙钟时间（GPU 21.72 h、CPU 7.33 h），其中 6.84 h 耗在 11 次失败或作废的运行上；种子方差背后是 15 次训练（3 任务 × 5 种子）、2 500 个 epoch。明细见 [`results/compute_ledger.md`](results/compute_ledger.md)。
+
+**不声称**：不是 SOTA。超分 ×4 的 27.47 dB 高于 bicubic，但低于大数据集的学术结果（30+ dB）——训练集与网络容量都是刻意压小的。低光增益是相对 No-op 基线，不是相对已发表方法。
+
+</details>
 
 ## 🚀 快速开始
 
-> 公开 Demo 无需安装；本地一切在 CPU 上即可运行——经典基线开箱即跑，仓库自带的权重会让 Demo 自动切到 ML 引擎。
+**A. 公开 Demo —— 不用装任何东西**
 
-**A. 公开 Demo（无需安装）**
-
-直接打开 <https://pixelforge-image-restoration.streamlit.app/>。免费档会休眠，首访可能需等几秒唤醒。
+<https://pixelforge-image-restoration.streamlit.app/> —— 免费档会休眠，首次访问可能要等几秒唤醒。
 
 **B. 本地跑同一个 Demo**
 
 ```bash
-pip install -r deploy/streamlit/requirements.txt   # CPU-only torch，为免费档锁版本
+pip install -r deploy/streamlit/requirements.txt   # CPU 版 torch，按免费档固定
 streamlit run deploy/streamlit/streamlit_app.py
 ```
 
-**C. 自托管 FastAPI 后端 + Next.js 前端**
+**C. 自托管 API 与前端**
 
 ```bash
-# 后端
-pip install -r requirements.txt          # 本文件不含 torch——需另行安装：
-pip install torch torchvision            # 开发用 CPU 版；GPU 机器用 CUDA 版
+# 后端 —— requirements.txt 不锁 torch，按机器自行安装
+pip install -r requirements.txt
+pip install torch torchvision                      # 开发机装 CPU 版；GPU 机器装 CUDA 版
 uvicorn serve.app:app --reload --port 8000
 
 # 前端（另一个终端）
 cd web
-cp .env.local.example .env.local         # 默认指向 http://localhost:8000
+cp .env.local.example .env.local                   # 默认指向 http://localhost:8000
 pnpm install
-pnpm dev
+pnpm dev                                           # http://localhost:3000
 ```
 
-打开 http://localhost:3000，上传图片、选任务、点 Enhance，拖动滑块对比。
-
-**Docker**（仅后端）
+**D. Docker（仅后端）**
 
 ```bash
 docker build -t pixelforge-serve .
 docker run -p 8000:8000 pixelforge-serve
 ```
 
-镜像内含自训权重，启动即 ML 模式。前端是另一个构建目标，不在这个镜像里。
-
-## 🏗️ 系统架构
-
-```mermaid
-flowchart LR
-    A[用户上传图片] --> B{入口}
-    B -->|公开 Demo| C[Streamlit<br/>deploy/streamlit/]
-    B -->|自托管| D[Next.js 前端 web/]
-    C --> E[自训权重 + 经典基线<br/>CPU，跑在 Community Cloud]
-    D -->|POST /api/predict| F(FastAPI 服务 serve/app.py)
-    F --> G{serve/models/<br/>有训练权重?}
-    G -->|是| H[PyTorch 模型<br/>SRResNet / SRCNN / U-Net]
-    G -->|否| I[经典方法<br/>Bicubic / 自适应伽马]
-    E --> J[复原后图像]
-    H --> J
-    I --> J
-    J --> A
-```
-
-线上部署的是 Streamlit Demo（`deploy/streamlit/streamlit_app.py`，跑在 Community Cloud）——这才是真正上线的产物。FastAPI 后端（`serve/app.py`）与 Next.js 前端（`web/`）同属本仓库代码，可自托管：`web/` 向 `serve/app.py` 发请求，后者在某任务/档位加载了权重时走 ML 引擎，否则走经典基线。`GET /api/health` 可查当前引擎。完整接口见 [`docs/API.md`](docs/API.md)。
-
-## 🧩 功能特性
-
-- **超分 4×**：自训 SRResNet 生成器（含感知损失），PSNR 27.47 / SSIM 0.780，胜 bicubic。
-- **超分 2×**：自训 SRResNet 生成器，PSNR 32.35 / SSIM 0.917，胜 bicubic——不再是经典兜底。
-- **低光增强**：自训低光 U-Net（PSNR 18.32 / SSIM 0.746）；另带自适应伽马经典兜底，并对「暗但不是欠曝照片」的输入做了曝光门控。
-- **前后对比**：Streamlit Demo 并列展示；Next.js 前端用可拖动滑块对比。
-- **三个训练权重随仓库分发**，位于 `serve/models/`（Demo 用副本在 `deploy/streamlit/models/`）；权重缺失时经典方法自动兜底。
-
-## 📄 论文与预印本
-
-**预印本已发布 — DOI：[10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)**
-
-[![DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-blue)](https://doi.org/10.20944/preprints202611.0550.v1)
-
-本仓库的方法写成了一篇预印本：
-
-- **标题**：*The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
-- **作者**：Yulin Zhao（又名 Elijah Zhao）—— **独立研究者（Independent Researcher）**
-- **平台**：[Preprints.org](https://www.preprints.org/)，稿件类型 **Article**，**2026 年 11 月 5 日发布**（未经同行评审；许可 **CC BY 4.0**；学科分类：Computer Science and Mathematics → Artificial Intelligence and Machine Learning）
-- **DOI**：[10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
-- **文件**：正式发布版（平台排版、每页带 DOI）在 [`preprint/published/`](preprint/published/)；投稿 PDF、LaTeX 源码 zip、图形摘要在 [`preprint/submission/`](preprint/submission/)；LaTeX 正文在 [`paper/`](paper/)。
-- **引用**：见 [CITATION.cff](CITATION.cff)。
-
-若本文对你的工作有帮助，可按下列格式引用：
-
-```bibtex
-@article{zhao2026protocol,
-  title  = {The Protocol is the Result: How Evaluation Choices Flip the Verdict
-            on Lightweight Image Restoration},
-  author = {Zhao, Yulin},
-  journal = {Preprints},
-  year   = {2026},
-  doi    = {10.20944/preprints202611.0550.v1},
-  note   = {Preprint, not peer-reviewed}
-}
-```
-
-论文的核心论点——**你点名哪套评测协议（以及如何测量），能让"胜过基线 / 没胜过基线"的判定相差好几 dB**——正是本仓库在代码层面强制贯彻的纪律：同一批 100 张 DIV2K 验证图、PIL bicubic 下采样、全图 RGB PSNR，这也正是挑选部署权重所用的一套协议。
-
-## 🧪 本地测试
-
-```bash
-# 单元测试 + API 冒烟 + 真实权重集成测试（CPU 可跑）
-python -m pytest
-
-# 带覆盖率（阈值 75%，配置见 pyproject.toml）
-python -m pytest --cov --cov-report=term-missing
-
-# 前端单元测试 + 类型检查
-cd web && pnpm install && pnpm test
-cd web && pnpm exec tsc --noEmit
-```
-
-预期 `81 passed, 1 skipped`（69 个训练单元测试 + 9 个 API 冒烟测试 + 3 个真实权重集成测试；skip 的是 E2E 脚本）。集成测试加载 `serve/models/` 真实权重跑通完整推理链路，确认部署的是 ML 引擎而非静默降级。
-
-E2E 浏览器测试需真实浏览器与两个服务，默认在 pytest 下跳过；要运行：
-
-```bash
-pip install playwright && playwright install chromium
-python tests/e2e/test_e2e.py          # 或设 PIXELFORGE_RUN_E2E=1 经 pytest 运行
-```
-
-CI（`.github/workflows/ci.yml`）跑四个作业：带覆盖率门槛的 pytest、针对 lock 文件的 `pip-audit`、前端的类型检查 + 测试 + 构建，以及一个论文作业——它从结果 CSV 重新生成所有表格并与 `FACTS.md` 逐数对账、重新构建并编译 LaTeX 正文、跑版面检查，并审计参考文献（24 条 arXiv + 2 条 DOI）的有效性。
-
-## 🧰 训练真实模型
-
-> 原始训练在单卡 GPU 上完成，本仓库权重已随仓库分发。重新训练需 GPU。
-
-```bash
-# 准备数据：建目录 + 打印下载地址（不自动下大文件）
-bash scripts/download_data.sh
-pip install -r requirements.txt
-pip install torch torchvision            # 开发用 CPU 版；GPU 机器用 CUDA 版
-
-# 超分（4×，启用感知损失）
-python train/train.py --task sr --model generator --scale 4 \
-    --data_root data --epochs 200 --batch_size 8 --lr 1e-4 --perceptual
-
-# 超分（2×，SRResNet 生成器）
-python train/train.py --task sr --model generator --scale 2 \
-    --data_root data --epochs 200 --batch_size 8 --lr 1e-4
-
-# 低光（U-Net，无感知损失）
-python train/train.py --task lowlight --data_root data \
-    --epochs 200 --batch_size 8 --lr 2e-4
-
-# 导出为 TorchScript 供服务 / Demo 使用
-python train/export.py --checkpoint models/sr_generator_scale4_best.pth \
-    --out serve/models/sr_generator_scale4.pt --task sr --scale 4
-python train/export.py --checkpoint models/sr_generator_scale2_best.pth \
-    --out serve/models/sr_generator_scale2.pt --task sr --scale 2
-python train/export.py --checkpoint models/lowlight_srcnn_scale2_best.pth \
-    --out serve/models/lowlight.pt --task lowlight --scale 2
-```
-
-把导出的 `.pt` 放进 `serve/models/`（Demo 用副本放 `deploy/streamlit/models/`），服务重启即自动加载。
-
-## 🔬 方法说明
-
-- **超分辨率**
-  - `SRCNN`：经典三卷积超分网络，结构简洁、易解释，适合作为基线。
-  - `SRResNet`（生成器）：更深的残差网络，用 PixelShuffle 上采样与残差学习，可选 VGG 感知损失。
-  - 训练时用 Bicubic 从 HR 合成 LR，与推理下采样逻辑一致。
-- **低光增强**
-  - `U-Net`：编码-解码 + 跳跃连接 + 残差学习，从低光图直接学到正常光图（LOL 上训练）。
-  - 经典基线用自适应伽马校正：暗图自动提亮、正常图基本不变。
-- **评测**：在 Y 通道（或 RGB）上计算 PSNR 与 SSIM，SSIM 用高斯窗实现以减少边界偏差。
-
-英文方法说明（含模型架构、训练细节、相关工作）见 `web/app/method/page.tsx`，站点上渲染于 `/method`。
+镜像自带权重并以非 root 用户（uid 10001）启动，默认走 ML 引擎。前端是独立构建目标，不在此镜像内。
 
 ## 📁 项目结构
 
 ```
 pixelforge-image-restoration/
-├── assets/            # 封面图、真实 demo 对比图
-├── data/              # 数据集（含下载说明；数据本身不入库）
-├── results/           # 训练日志 + 量化对比表
-├── train/             # 训练侧核心代码
-│   ├── models.py      # SRCNN / SRResNet / 低光 U-Net
-│   ├── datasets.py    # DIV2K / LOL 数据加载
-│   ├── metrics.py     # PSNR / SSIM
-│   ├── train.py       # 训练脚本
-│   ├── export.py      # 导出 TorchScript
-│   └── tests/         # 单元测试（CPU 可跑）
-├── serve/             # 推理侧（FastAPI）
-│   ├── app.py         # FastAPI 服务（限流 + 资源守卫）
-│   ├── classical.py   # 经典方法兜底
-│   ├── model_loader.py# 权重加载与 U-Net 尺寸适配
-│   └── models/        # 自训 TorchScript 权重（随仓库分发）
-├── deploy/            # 部署包：streamlit/（已上线）
-├── web/               # 前端（Next.js + Tailwind）
-├── paper/             # 预印本正文（LaTeX）、FACTS.md、refs.bib
-├── preprint/          # Preprints.org 投稿文件（正文 PDF、源码 zip、图形摘要）
-├── scripts/           # 辅助脚本（生成 demo 图、评测、准备数据、论文门禁）
-├── tests/             # API 冒烟 + 真实权重集成测试 + E2E
-├── docs/              # API.md（接口参考）
-├── Dockerfile         # 推理服务镜像
-├── DEPLOY.md          # 部署指南
-├── CHANGELOG.md       # 版本变更记录
-├── CONTRIBUTING.md    # 贡献指南
-├── CITATION.cff       # 引用元数据
-└── README.md          # English README
+├── assets/              # banner 与真实对比图 / 演示截图
+├── data/                # 数据集说明（数据本身不入库）
+├── models/              # 训练检查点（每轮最优）
+├── results/             # 协议矩阵、逐图 CSV、种子日志、算力台账
+├── train/               # models.py / datasets.py / metrics.py / train.py / export.py / tests/
+├── serve/               # FastAPI、经典回退、权重加载、models/*.pt
+├── deploy/streamlit/    # 公开 Demo（自包含，纯 CPU）
+├── web/                 # Next.js 14 + Tailwind 前端
+├── paper/               # LaTeX 原稿、FACTS.md、refs.bib、tables/
+├── preprint/            # 平台版与投稿版 PDF、源码包、图形摘要
+├── scripts/             # 评测、协议矩阵、出图与论文门禁
+├── tests/               # API 冒烟、真实权重集成、E2E 浏览器流程
+├── docs/API.md          # HTTP 接口参考
+├── Dockerfile           # 推理服务镜像
+└── DEPLOY.md            # 部署指南
 ```
 
 ## 🛠️ 技术栈
 
 | 层 | 技术 |
 |---|---|
-| 深度学习 | PyTorch 2.x、TorchVision、TorchScript |
-| 训练 | Adam、CosineAnnealingLR、AMP 混合精度、可选 VGG 感知损失 |
-| 评测 | PSNR、SSIM（含高斯窗实现） |
-| 推理后端 | FastAPI / Uvicorn、Pillow |
-| 前端 | Next.js 14、React 18、Tailwind CSS、TypeScript |
-| 部署 | Streamlit Community Cloud（公开 Demo）、Docker、Vercel（可选） |
+| 建模 | PyTorch 2.x、TorchVision、TorchScript |
+| 训练 | Adam、余弦退火、AMP、Charbonnier 损失、可选 VGG 感知项 |
+| 指标 | PSNR、SSIM（11×11 高斯窗，σ = 1.5） |
+| 后端 | FastAPI / Uvicorn、Pillow |
+| 前端 | Next.js 14、React 18、TypeScript、Tailwind CSS |
+| 部署 | Streamlit Community Cloud、Docker、Vercel（可选） |
+
+## 🧪 测试
+
+```bash
+python -m pytest                                    # 81 passed, 1 skipped（跳过的是 E2E 模块）
+python -m pytest --cov --cov-report=term-missing    # 覆盖率门禁 75%
+cd web && pnpm test && pnpm exec tsc --noEmit
+```
+
+被跳过的是 `tests/e2e/test_e2e.py`，它驱动真实 Chromium 走完整上传流程；可直接运行，或设 `PIXELFORGE_RUN_E2E=1`。CI 跑四个作业：测试 + 覆盖率门禁、锁文件 `pip-audit`、前端类型检查 + 测试 + 构建，以及一个重新生成全部表格、重编译论文、检查版面、独立复算头条数字、审计 27 条参考文献（83 项核验）的论文作业。
 
 ## ❓ 常见问题
 
 **需要 GPU 吗？**
-不需要。公开 Demo、本地 Demo、整套测试都在 CPU 上跑。（重新）训练才需要 GPU。
+不需要。公开 Demo、本地 Demo、API 和整套测试都在 CPU 上跑，只有训练需要 GPU。
 
-**哪些任务有训练权重？**
-三个都有：超分 ×4（27.47 dB）、超分 ×2（32.35 dB）、低光（18.32 dB），各自都胜经典基线。权重文件缺失时经典方法会自动兜底。
+**哪些任务有训练好的权重？**
+三个都有：超分 ×4、×2 与低光。万一某个权重文件缺失，服务会对该槽位回退到经典方法而不是报错——`GET /api/health` 会报告每个槽位当前用的是哪个引擎。
 
-**SR ×4 结果比 bicubic 还柔，是坏了吗？**
-不是，而且它并不更柔。本说明早期版本曾称其「更柔」，梯度均值 1.39 vs 1.45；后在 9 张图上用四种梯度定义复测，模型在 9/9 情况下都**比 bicubic 更锐**（luma 梯度均值 1.92 vs 1.45）。同一组消融也排除了感知损失是 PSNR 提升的原因：开 `--perceptual` 得 **27.61 / 0.7835**，关掉得 **27.60 / 0.7836**（DIV2K valid 100、200 epoch、同种子同数据顺序）——差 0.01 dB，就是噪声。本仓库权重的 VGG 项（w_percep=0.006）基本是惰性的；PSNR 增益来自架构与 charbonnier 目标，而非感知项。感知项真正影响的是「脆弱性」：它曾有两个实现 bug（缺 ImageNet 归一化、0.01 系数抹掉像素项），让 SR ×4 一度掉到 17.20 dB、低于 bicubic，直到两个 bug 都修好。
+**超分 ×4 曾被说成“比 bicubic 更软”，是真的吗？**
+不是，而且它也并不更软。在 9 张图上用四种梯度定义重测，模型在 **9/9** 张上都比 bicubic 更锐（亮度梯度均值 **1.92 vs 1.45**）。PSNR 也不是感知项换来的：带 `--perceptual` 训练得 27.61 / 0.7835，不带得 27.60 / 0.7836，差 0.01 dB。本 README 早前的版本写过相反结论（1.39 vs 1.45），两半都错，已撤回。
 
-**公开 Demo 很慢或显示唤醒页？**
-免费 Streamlit 档位空闲会休眠，暂停后的首访需几秒启动。推理本身在 CPU 上跑，普通照片通常很快。
+**为什么 Demo 第一次打开很慢？**
+Streamlit 免费档空闲即休眠，首次访问要等它唤醒。推理本身在 CPU 上，普通照片很快。
 
-**受限网络跑不了怎么办？**
-可以——见 [DEPLOY.md](DEPLOY.md)，用镜像通道推送镜像即可绕过直连 GitHub 的限制。
+**网络受限的环境能跑吗？**
+可以——见 [DEPLOY.md](DEPLOY.md)，GitHub 不可直连时可用镜像推镜像。
 
-## ☁️ 部署
+## 📄 论文与引用
 
-**公开 Demo（已上线）**：Streamlit Community Cloud 直接从仓库部署，入口 `deploy/streamlit/streamlit_app.py`（自包含）。步骤见 [`deploy/streamlit/DEPLOY_STREAMLIT.md`](deploy/streamlit/DEPLOY_STREAMLIT.md)。
+本仓库在代码里执行的评测纪律，已写成一篇预印本：
 
-**自托管**：后端 `serve/app.py` 可跑在 VPS；前端 `web/` 可直接部署到 Vercel，设 `NEXT_PUBLIC_API_URL` 指向后端。详见 [DEPLOY.md](DEPLOY.md)。
+- **题目**：*The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
+- **作者**：Yulin Zhao（Elijah Zhao）—— 独立研究者
+- **出处**：Preprints.org，Article，2026-11-05 发布（未经同行评审，CC BY 4.0）
+- **DOI**：[10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
+- **文件**：15 页平台版在 [`preprint/published/`](preprint/published/)，投稿版与源码在 [`preprint/submission/`](preprint/submission/)，LaTeX 在 [`paper/`](paper/)
 
-## 🗺️ 路线图
+<details>
+<summary>BibTeX</summary>
 
-工程已竣工并上线，剩余为可选扩展项：
+```bibtex
+@article{zhao2026protocol,
+  title   = {The Protocol Is the Result: How Evaluation Choices Flip the Verdict
+             on Lightweight Image Restoration},
+  author  = {Zhao, Yulin},
+  journal = {Preprints},
+  year    = {2026},
+  doi     = {10.20944/preprints202611.0550.v1},
+  note    = {Preprint, not peer-reviewed}
+}
+```
 
-- 延伸材料：英文项目报告 / 答辩幻灯片。
-- （×2 SRResNet 槽位已训练并随仓库分发，无需再做。）
+</details>
 
-## 📝 变更记录
+## 📝 更新日志
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)。近期：
 
-- **1.12.0** — 预印本正式发布，DOI [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)。新增平台排版后的正式版 `preprint/published/`，两份 README 与 Streamlit 侧栏均接入 DOI 链接，`CITATION.cff` 增加 `preferred-citation`。
-- **1.11.3** — 修正两份 README 中过期的算力代价数据（现为 34 次内核运行 / 29.05 小时，对齐 `results/compute_ledger.md`）；把种子方差表低光行的标签从「SRCNN」更正为「U-Net」（架构实为 U-Net，已核对权重确认）；CI 描述更新为四个作业（新增论文作业）。
-- **1.11.2** — Streamlit 在线 Demo 新增可折叠「关于本项目」区块（中英双语），向非专业访客讲清项目做了什么、核心观点与意义；并修正训练出处措辞、新增隐私说明。
-- **1.11.1** — 修正中文 README 一处过期结论（SR×4 观感），统一中英表述。
-- **1.11.0** — 作者改为独立研究者；论文提交 Preprints.org；新增「论文与预印本」章节；过程文档迁移至内部资料库。
-- **1.10.0** — 全部 27 条参考文献外部全量核验（83 项检查）、Preprints.org 合规（COPE 要求的 AI 使用声明）、预印本文件归档至 `preprint/`。
-- **1.9.0** — 三个任务的种子方差矩阵补齐到 n=5。
+- **1.12.0** —— 预印本发布，DOI 写进两份 README、Streamlit 侧栏与 `CITATION.cff`。
+- **1.11.3** —— 算力数字对齐台账（34 次内核 / 29.05 h），种子表低光行标签由 SRCNN 更正为 U-Net，CI 描述更正为四个作业。
+- **1.11.0** —— 作者改为独立研究者；新增论文章节；过程文档移出公开目录。
 
-## 📄 许可与引用
+## ⚖️ 许可
 
-- 开源协议：本项目基于 [MIT License](LICENSE) 开源。
-- 贡献指南：开发环境、测试与 PR 约定见 [CONTRIBUTING.md](CONTRIBUTING.md)。
-- 版本变更：见 [CHANGELOG.md](CHANGELOG.md)。
-- 引用信息：见 [CITATION.cff](CITATION.cff)。
-
-## 🙏 致谢与参考
-
-- [DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/) — 超分辨率数据集
-- [LOL Dataset](https://github.com/weichen582/RetinexNet) — 低光增强数据集（Retinex-Net 仓库）
-- Dong et al., *Image Super-Resolution Using Deep Convolutional Networks*（SRCNN）
-- Ledig et al., *Photo-Realistic Single Image Super-Resolution Using a GAN*（SRResNet / SRGAN）
-- Ronneberger et al., *U-Net: Convolutional Networks for Biomedical Image Segmentation*
+MIT，见 [LICENSE](LICENSE)。接口参考 [`docs/API.md`](docs/API.md)，部署说明 [DEPLOY.md](DEPLOY.md)，贡献指南 [CONTRIBUTING.md](CONTRIBUTING.md)，引用元数据 [CITATION.cff](CITATION.cff)。数据集（[DIV2K](https://data.vision.ee.ethz.ch/cvl/DIV2K/)、[LOL](https://github.com/weichen582/RetinexNet)）不随仓库分发，请从原始来源获取。
 
 ---
 
 <p align="center">
-  <sub>PixelForge · 端到端图像复原流水线 &nbsp;·&nbsp; <a href="https://pixelforge-image-restoration.streamlit.app/">Live Demo</a></sub>
+  <sub>PixelForge · 端到端图像复原 &nbsp;·&nbsp; <a href="https://pixelforge-image-restoration.streamlit.app/">在线 Demo</a></sub>
 </p>
