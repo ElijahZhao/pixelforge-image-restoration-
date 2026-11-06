@@ -1,12 +1,20 @@
 # Preprints.org 相关文件
 
-本目录集中存放投稿到 [Preprints.org](https://www.preprints.org/) 所需的全部文件。
+**状态：已发布（2026-11-05）。**
+正式版本 DOI：[**10.20944/preprints202611.0550.v1**](https://doi.org/10.20944/preprints202611.0550.v1)
+（全文见 [`published/preprints202611.0550.v1.pdf`](published/preprints202611.0550.v1.pdf)）
+
+本目录集中存放投稿到 [Preprints.org](https://www.preprints.org/) 的文件与已发布版本。
 元数据填写稿见[资料库存档](https://www.workbuddy.cn/space/d/AOJqt6VN9mLDKH2u788uH5)（字段逐字稿，已逐条核实官方 Instructions）。
 
-- 目标期刊平台：Preprints.org（MDPI 运营），稿件类型 **Article**
+- 平台：Preprints.org（MDPI 运营），稿件类型 **Article**（**未经同行评审**）
 - 学科分类：**Computer Science and Mathematics** → **Artificial Intelligence and Machine Learning**
 - 许可：CC BY 4.0（作者保留版权）
 - 数据可得性是硬性要求，本项目已满足（见下文"数据链接"）
+
+> **引用格式**：Zhao, Y. The Protocol Is the Result: How Evaluation Choices Flip the
+> Verdict on Lightweight Image Restoration. *Preprints* **2026**.
+> https://doi.org/10.20944/preprints202611.0550.v1
 
 ---
 
@@ -62,13 +70,22 @@
 
 ```
 preprint/
-├── README.md                      ← 本文件
-├── submission/                    ← 要上传的 3 个文件（+ 归档件）
-│   ├── manuscript.pdf             上传项 1：PDF 稿件
-│   ├── preprints_submission.zip   上传项 2：LaTeX 源码包
-│   └── graphical_abstract.jpg     上传项 3：图形摘要
-└── archive/                       ← 版本归档（投稿后放带 DOI 的版本）
+├── README.md                                   ← 本文件
+├── submission/                                 ← 投稿上传的 3 个文件
+│   ├── manuscript.pdf                          上传项 1：PDF 稿件
+│   ├── preprints_submission.zip                上传项 2：LaTeX 源码包
+│   └── graphical_abstract.jpg                  上传项 3：图形摘要
+└── published/                                  ← 平台排版后的正式发布版
+    └── preprints202611.0550.v1.pdf             带 DOI 的版本（v1，15 页 A4）
 ```
+
+### `published/` 与 `submission/` 的区别
+
+`submission/manuscript.pdf` 是**我们提交的原始 PDF**（12 页，我们自己的版式）；
+`published/preprints202611.0550.v1.pdf` 是 **Preprints.org 排版后正式上线的版本**（15 页 A4，
+每页页脚带 DOI 与 "NOT PEER-REVIEWED | Posted: 5 November 2026"）。
+两者**正文内容一致**（摘要逐字相同，AI 声明、数据可得性、全部关键数字均在），
+差异仅来自平台重新排版。引用与存档应以 `published/` 为准。
 
 ### `submission/` 里各文件的来源
 
@@ -117,12 +134,12 @@ Lucic 的 "no consistent advantage over the non-saturating GAN"、Bouthillier �
 
 ---
 
-## 五、投稿前剩余的本人操作
+## 五、投稿与发布记录
 
-1. 注册 MDPI 账号并登录
-2. 上传 §二 的 3 个文件
-3. 按 §2.2 填表单字段（含数据链接，**提交后无法自补**）
-4. 粘贴 §2.3 的 Data Availability Statement
-5. 确认合作者知情同意 OA 发布；确认后续目标期刊接受预印本
+| 时间 | 事件 |
+|---|---|
+| 2026-11-04 | 完成投稿：上传 `manuscript.pdf`、`preprints_submission.zip`、`graphical_abstract.jpg`，按 §2.2 填表、粘贴 §2.3 数据可得性声明 |
+| 2026-11-05 | **正式发布**，分配 DOI [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)，版本 v1 已归档至 `published/` |
 
-> **不可撤回**：平台原文 "preprints cannot be completely removed once online"，上线前请确认。
+> 平台原文 "preprints cannot be completely removed once online"——该版本已永久在线，
+> 后续若有修订应发布为新版本（v2），并在文中注明 supersedes 关系。

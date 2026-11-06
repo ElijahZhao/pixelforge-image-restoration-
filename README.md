@@ -211,14 +211,32 @@ classical baseline. `GET /api/health` reports which engine each slot is using. F
 
 ## 📄 Paper & Preprint
 
-The methods behind this repo are written up as a peer-review preprint:
+**Published preprint — DOI: [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)**
+
+[![DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-blue)](https://doi.org/10.20944/preprints202611.0550.v1)
+
+The methods behind this repo are written up as a preprint:
 
 - **Title**: *The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
 - **Author**: Yulin Zhao (also known as Elijah Zhao) — **Independent Researcher**
-- **Venue**: submitted to [Preprints.org](https://www.preprints.org/) as an **Article** (license **CC BY 4.0**; subject area: Computer Science and Mathematics → Artificial Intelligence and Machine Learning)
-- **Status**: submitted, awaiting screening (upload completed)
-- **Files**: the submitted PDF, the LaTeX source zip, and the graphical abstract live in [`preprint/`](preprint/); the LaTeX manuscript lives in [`paper/`](paper/).
+- **Venue**: [Preprints.org](https://www.preprints.org/), **Article**, posted **5 November 2026** (not peer-reviewed; license **CC BY 4.0**; subject area: Computer Science and Mathematics → Artificial Intelligence and Machine Learning)
+- **DOI**: [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
+- **Files**: the published version (platform typeset, with DOI on every page) is at [`preprint/published/`](preprint/published/); the submitted PDF, LaTeX source zip and graphical abstract are at [`preprint/submission/`](preprint/submission/); the LaTeX manuscript lives in [`paper/`](paper/).
 - **Cite**: see [CITATION.cff](CITATION.cff).
+
+If you use this work, please cite:
+
+```bibtex
+@article{zhao2026protocol,
+  title  = {The Protocol Is the Result: How Evaluation Choices Flip the Verdict
+            on Lightweight Image Restoration},
+  author = {Zhao, Yulin},
+  journal = {Preprints},
+  year   = {2026},
+  doi    = {10.20944/preprints202611.0550.v1},
+  note   = {Preprint, not peer-reviewed}
+}
+```
 
 The paper's thesis — that *which* evaluation protocol you name (and how you measure it) can flip a "beats baseline / doesn't" verdict by several dB — is exactly the discipline this repo enforces in code: the same 100-image DIV2K validation set, PIL bicubic downsampling, full-image RGB PSNR, as used to pick the shipped weights.
 
@@ -377,6 +395,7 @@ The engineering is complete and live; the remaining items are optional extension
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
+- **1.12.0** — The preprint is published: DOI [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1). Added the platform-typeset version under `preprint/published/`, linked the DOI from both READMEs and the Streamlit sidebar, and added a `preferred-citation` to `CITATION.cff`.
 - **1.11.3** — Fixed stale cost figures in both READMEs (now 34 kernel runs / 29.05 h, matching `results/compute_ledger.md`); corrected the seed-variance table's low-light label from "SRCNN" to "U-Net" (the architecture is a U-Net, confirmed from the checkpoint); and updated the CI description to four jobs (added the paper job).
 - **1.11.2** — Streamlit demo adds a collapsible "About this project" section (bilingual) summarising what the project does, the key idea, and its significance for non-expert visitors; also clarifies training-provenance wording and adds a privacy note.
 - **1.11.1** — Fixed a stale Chinese README claim about SR ×4 sharpness; restored zh/en parity.

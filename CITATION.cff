@@ -24,5 +24,21 @@ keywords:
   - image-restoration
   - pytorch
   - computer-vision
-version: 1.11.3
-date-released: "2026-11-04"
+version: 1.12.0
+date-released: "2026-11-05"
+
+# 本仓库对应的论文（预印本，已发布）。引用学术成果请用这一条。
+preferred-citation:
+  type: article
+  title: "The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration"
+  authors:
+    - family-names: "Zhao"
+      given-names: "Yulin"
+      alias: "Elijah Zhao"
+      orcid: "https://orcid.org/0009-0005-4623-8465"
+  year: 2026
+  month: 11
+  journal: "Preprints"
+  doi: "10.20944/preprints202611.0550.v1"
+  url: "https://doi.org/10.20944/preprints202611.0550.v1"
+  notes: "Preprint, not peer-reviewed."

@@ -82,8 +82,10 @@ TEXTS = {
             "📄 **Paper**<br>"
             "“The Protocol Is the Result: How Evaluation Choices Flip the "
             "Verdict on Lightweight Image Restoration”<br>"
-            "Submitted to Preprints.org (independent researcher). "
-            "Code &amp; preprint: "
+            "Published on Preprints.org (independent researcher), 5 Nov 2026.<br>"
+            "**DOI:** [10.20944/preprints202611.0550.v1]"
+            "(https://doi.org/10.20944/preprints202611.0550.v1)<br>"
+            "Code: "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "about_title": "ℹ️ About this project",
@@ -110,8 +112,9 @@ TEXTS = {
             "<b>Significance:</b> a small, honest benchmark showing that for "
             "lightweight restoration, the evaluation protocol — not just the "
             "model — is the result.<br><br>"
-            "Paper: submitted to Preprints.org (independent researcher). "
-            "Code &amp; preprint: "
+            "Paper: published on Preprints.org (independent researcher) — "
+            "[DOI: 10.20944/preprints202611.0550.v1]"
+            "(https://doi.org/10.20944/preprints202611.0550.v1). Code: "
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "privacy_note": "🔒 Your image is processed in memory on the server and is not saved.",
@@ -208,7 +211,10 @@ TEXTS = {
         "paper_block": (
             "📄 **论文**<br>"
             "《评测协议即结论：评估选择如何翻转轻量图像复原的胜负判定》<br>"
-            "已投稿 Preprints.org（独立研究者）。代码与预印本见 "
+            "已于 2026 年 11 月 5 日由 Preprints.org 发布（独立研究者）。<br>"
+            "**DOI：**[10.20944/preprints202611.0550.v1]"
+            "(https://doi.org/10.20944/preprints202611.0550.v1)<br>"
+            "代码："
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "about_title": "ℹ️ 关于本项目",
@@ -227,7 +233,9 @@ TEXTS = {
             "• 全程可复现：训练日志、逐图 CSV、代码全部公开。<br><br>"
             "<b>意义：</b>一个小而诚实的基准——说明在轻量图像复原里，"
             "「评测协议」本身往往就是「结论」。<br><br>"
-            "论文：已投稿 Preprints.org（独立研究者）。代码与预印本见 "
+            "论文：已由 Preprints.org 发布（独立研究者），"
+            "[DOI: 10.20944/preprints202611.0550.v1]"
+            "(https://doi.org/10.20944/preprints202611.0550.v1)。代码："
             "[GitHub](https://github.com/ElijahZhao/pixelforge-image-restoration-)"
         ),
         "privacy_note": "🔒 图片在服务器内存中处理，不会被保存。",

@@ -179,14 +179,32 @@ flowchart LR
 
 ## 📄 论文与预印本
 
-本仓库的方法写成了一篇送审预印本：
+**预印本已发布 — DOI：[10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)**
+
+[![DOI](https://img.shields.io/badge/DOI-10.20944%2Fpreprints202611.0550.v1-blue)](https://doi.org/10.20944/preprints202611.0550.v1)
+
+本仓库的方法写成了一篇预印本：
 
 - **标题**：*The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration*
 - **作者**：Yulin Zhao（又名 Elijah Zhao）—— **独立研究者（Independent Researcher）**
-- **投稿平台**：[Preprints.org](https://www.preprints.org/)，稿件类型 **Article**（许可 **CC BY 4.0**；学科分类：Computer Science and Mathematics → Artificial Intelligence and Machine Learning）
-- **状态**：已提交，等待平台初审（上传已完成）
-- **文件**：投稿 PDF、LaTeX 源码 zip、图形摘要位于 [`preprint/`](preprint/)；LaTeX 正文位于 [`paper/`](paper/)。
+- **平台**：[Preprints.org](https://www.preprints.org/)，稿件类型 **Article**，**2026 年 11 月 5 日发布**（未经同行评审；许可 **CC BY 4.0**；学科分类：Computer Science and Mathematics → Artificial Intelligence and Machine Learning）
+- **DOI**：[10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)
+- **文件**：正式发布版（平台排版、每页带 DOI）在 [`preprint/published/`](preprint/published/)；投稿 PDF、LaTeX 源码 zip、图形摘要在 [`preprint/submission/`](preprint/submission/)；LaTeX 正文在 [`paper/`](paper/)。
 - **引用**：见 [CITATION.cff](CITATION.cff)。
+
+若本文对你的工作有帮助，可按下列格式引用：
+
+```bibtex
+@article{zhao2026protocol,
+  title  = {The Protocol is the Result: How Evaluation Choices Flip the Verdict
+            on Lightweight Image Restoration},
+  author = {Zhao, Yulin},
+  journal = {Preprints},
+  year   = {2026},
+  doi    = {10.20944/preprints202611.0550.v1},
+  note   = {Preprint, not peer-reviewed}
+}
+```
 
 论文的核心论点——**你点名哪套评测协议（以及如何测量），能让"胜过基线 / 没胜过基线"的判定相差好几 dB**——正是本仓库在代码层面强制贯彻的纪律：同一批 100 张 DIV2K 验证图、PIL bicubic 下采样、全图 RGB PSNR，这也正是挑选部署权重所用的一套协议。
 
@@ -340,6 +358,7 @@ pixelforge-image-restoration/
 
 完整历史见 [CHANGELOG.md](CHANGELOG.md)。近期：
 
+- **1.12.0** — 预印本正式发布，DOI [10.20944/preprints202611.0550.v1](https://doi.org/10.20944/preprints202611.0550.v1)。新增平台排版后的正式版 `preprint/published/`，两份 README 与 Streamlit 侧栏均接入 DOI 链接，`CITATION.cff` 增加 `preferred-citation`。
 - **1.11.3** — 修正两份 README 中过期的算力代价数据（现为 34 次内核运行 / 29.05 小时，对齐 `results/compute_ledger.md`）；把种子方差表低光行的标签从「SRCNN」更正为「U-Net」（架构实为 U-Net，已核对权重确认）；CI 描述更新为四个作业（新增论文作业）。
 - **1.11.2** — Streamlit 在线 Demo 新增可折叠「关于本项目」区块（中英双语），向非专业访客讲清项目做了什么、核心观点与意义；并修正训练出处措辞、新增隐私说明。
 - **1.11.1** — 修正中文 README 一处过期结论（SR×4 观感），统一中英表述。

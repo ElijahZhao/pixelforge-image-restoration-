@@ -949,3 +949,18 @@ print('Y =',y,'/ 未说明 =',c['未说明'],'/ n =',len(r))   # Y = 22 / 未说
 - **参考文献**：27 条已生成 `paper/refs.bib`，由脚本从 arXiv API 抓取。**2026-11-04 全量外部审计通过**：24 条带 arXiv 号的逐条比对 `<title>`（API 11 条 + abs 页 9 条 + 前轮 4 条）、3 条非 arXiv（NTIRE/SSIM 走 Crossref、Cawley 走 jmlr.org/papers/v11/cawley10a），**27/27 标题与出处吻合，无一处与外部源不符**。LapSRN 的 "Fast" 期刊版标题与 TPAMI 归属也在本次复核中再次确认。
 - **NTIRE 官方协议**：原以为要用它支撑"Y+shave 惯例"，但 shave 一侧无人写（§10-E29），**这个缺口根本不该存在**，关闭。
 - **全部数值**：§5–§7 共 61 个表格数字已与 CSV 逐位对齐；派生量全部可脚本复算。
+
+---
+
+## 13. 发表记录
+
+| 项目 | 值 |
+|---|---|
+| 平台 | Preprints.org（MDPI 运营），稿件类型 **Article**，**未经同行评审**（NOT PEER-REVIEWED） |
+| DOI | `10.20944/preprints202611.0550.v1` |
+| 发布日期 | 2026-11-05（PDF 页脚："Posted: 5 November 2026"） |
+| 正式发布版 | `preprint/published/preprints202611.0550.v1.pdf`（15 页 A4，平台排版，每页带 DOI） |
+| 投稿版 | `preprint/submission/manuscript.pdf`（12 页，我方版式） |
+| 版本关系 | v1 与投稿版**正文一致**：摘要逐字相同，`Use of Artificial Intelligence`、`Data Availability Statement`、全部关键数字（3.889 / 19.794 / 0.782 / −1.753 dB 等）均在；页数差异仅由平台重新排版产生 |
+| 引用格式 | Zhao, Y. The Protocol Is the Result: How Evaluation Choices Flip the Verdict on Lightweight Image Restoration. *Preprints* **2026**. https://doi.org/10.20944/preprints202611.0550.v1 |
+| 不可撤回 | 平台原文 "preprints cannot be completely removed once online"；后续修订应发布 v2，并在文中注明 supersedes 关系 |

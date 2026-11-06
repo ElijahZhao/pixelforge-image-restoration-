@@ -5,6 +5,19 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.12.0] - 2026-11-05
+
+**预印本正式发布，DOI 上线**。
+
+### Added
+- 预印本已由 Preprints.org 发布（2026-11-05），DOI **10.20944/preprints202611.0550.v1**。
+- 新增 `preprint/published/preprints202611.0550.v1.pdf`——平台排版后的正式发布版（15 页 A4，每页页脚带 DOI 与 "NOT PEER-REVIEWED"）。`preprint/submission/` 仍保留我们提交的原始版（12 页），二者正文一致，差异仅来自平台排版。
+
+### Changed
+- 两份 README 的「论文与预印本」章节：状态改为**已发布**，加入 DOI 徽章、DOI 链接与 BibTeX 引用格式；文件路径区分 `published/`（正式版）与 `submission/`（投稿版）。
+- Streamlit 侧边栏「论文」区块（中英双语）：把"已投稿"改为"已于 2026-11-05 发布"，并直接给出 **DOI 链接**（此前只能链到 GitHub）。
+- `CITATION.cff`：版本升至 1.12.0；新增 `preferred-citation` 指向该论文（含 DOI、期刊名 `Preprints`、年份月份），学术引用可直接取用。
+
 ## [1.11.3] - 2026-11-04
 
 **文档准确性修复（README + Streamlit）**。
