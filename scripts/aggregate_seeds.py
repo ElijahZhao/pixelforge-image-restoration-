@@ -222,8 +222,8 @@ def main(argv=None):
     print()
     print("口径: 训练内验证（中心裁剪 / per-image mean / 训练侧退化算子），"
           "不是全图 Y+shave 文献口径；主表由阶段 5 用 P1–P6 重评这些 checkpoint。")
-    print(f"best-of-N: 每个 run 的 best 是 --epochs 内按 val_psnr 挑的最大值，"
-          f"均值只能作为上界报告，headline 用 final-epoch 均值。")
+    print("best-of-N: 每个 run 的 best 是 --epochs 内按 val_psnr 挑的最大值，"
+          "均值只能作为上界报告，headline 用 final-epoch 均值。")
     if problems:
         print("\n注意:")
         for p in problems:

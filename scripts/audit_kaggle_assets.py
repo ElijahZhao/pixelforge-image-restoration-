@@ -114,7 +114,7 @@ def main() -> int:
             for fut in futs:
                 pass
             for fut, (k, v) in futs.items():
-                ref, err = fut.result()
+                _ref, err = fut.result()
                 key = f"{k}/v{v}"
                 results[key] = err
                 print(f"  {key}: {'✗ ' + err[:80] if err else '✓ 下载完成'}", flush=True)

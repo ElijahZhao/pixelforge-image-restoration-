@@ -34,11 +34,13 @@ from PIL import Image
 import torchvision.transforms.functional as TF
 
 from degradation import DEFAULT_MODE, build_lr
+from models import LOWLIGHT_ALIGN
 
 # Default training patch size per task. These are constraints, not tastes:
 # an SR HR patch must be divisible by the scale factor (2 or 4) or the LR patch
-# loses pixels to integer truncation, and the low-light U-Net downsamples by 32
-# five times, so its patch must be a multiple of 32. They live in one dict so
+# loses pixels to integer truncation, and the low-light U-Net's patch must be a
+# multiple of 32 (the network's own minimum is 8 -- see models.LOWLIGHT_ALIGN --
+# and 32 is the multiple the rest of the project uses). They live in one dict so
 # that the class defaults, `get_dataloader` and `train.py`'s --crop_size help
 # text cannot disagree about what "the default" is.
 DEFAULT_CROP = {"sr": 96, "lowlight": 128}
@@ -115,6 +117,25 @@ class SuperResolutionDataset(Dataset):
             # evaluations afterwards (best-of-200 adds +1.59 dB by itself).
             # Centre cropping removes the noise at the source and keeps the patch
             # size (and therefore the compute) identical.
+            #
+            # The centre crop must be taken from an image that is AT LEAST as
+            # large as the patch. `TF.crop` does not complain when it is not: it
+            # silently pads the out-of-bounds area with black. Measured on a
+            # 64x64 validation image with crop_size=96, the result was a 96x96
+            # patch of which 55.6% was filler black -- so the validation PSNR
+            # was measured against a picture that is mostly black, and the
+            # number was wrong without any error being raised. The training
+            # branch above already resizes such an image first, and the
+            # low-light evaluation branch does the same; only this branch was
+            # missing the guard, which is why it went unnoticed for so long.
+            #
+            # The resize is uniform (aspect ratio preserved) and only ever
+            # touches images smaller than the patch, so images that already
+            # fit are loaded bit-for-bit as before.
+            if min(w, h) < self.crop_size:
+                ratio = self.crop_size / min(w, h)
+                img = TF.resize(img, [round(h * ratio), round(w * ratio)])
+                w, h = img.size
             img = TF.crop(img, (h - self.crop_size) // 2, (w - self.crop_size) // 2,
                           self.crop_size, self.crop_size)
         return img
@@ -148,15 +169,24 @@ class LowLightDataset(Dataset):
     def __init__(self, root: str, split: str = "train",
                  crop_size: int = DEFAULT_CROP["lowlight"], augment: bool = True):
         self.crop_size = crop_size
-        # Training crops go through the U-Net, which downsamples by 32 several
-        # times; a patch whose side is not a multiple of 32 makes the decoder's
-        # skip concatenation fail with "Sizes of tensors must match" on the FIRST
-        # batch (verified: 100x100 and 127x127 both raise). That message points
-        # at the network, not at the real cause, so reject the size up front.
+        # Training crops go through the U-Net, whose encoder halves the
+        # resolution three times, so a patch whose side is not a multiple of 8
+        # makes the decoder's skip concatenation fail with "Sizes of tensors
+        # must match" on the FIRST batch (verified: 100x100 and 127x127 both
+        # raise). That message points at the network, not at the real cause,
+        # so reject the size up front.
+        #
+        # The requirement is 8 (`models.LOWLIGHT_ALIGN`); 32 is required here
+        # because it is the multiple the rest of the project already uses --
+        # the service and the Streamlit app pad to 32 (`_pad_to_multiple`),
+        # and the exported TorchScript was traced on a 64x64 input -- so a
+        # training patch and a served image stay on the same grid. 32 is a
+        # multiple of 8, so it satisfies the network's actual constraint.
         if crop_size % 32 != 0:
             raise ValueError(
                 f"crop_size={crop_size} must be a multiple of 32 for the low-light "
-                f"U-Net (its downsampling stages need matching decoder sizes)."
+                f"U-Net (its downsampling stages need matching decoder sizes; the "
+                f"network's own minimum is {LOWLIGHT_ALIGN})."
             )
         self.crop_size = crop_size
         self.augment = augment and split == "train"

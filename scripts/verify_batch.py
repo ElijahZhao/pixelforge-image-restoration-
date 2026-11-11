@@ -90,7 +90,7 @@ def main() -> int:
             if field not in r:
                 problems.append(f"seed {seed}: status.json 缺字段 {field}")
         # 1) 四件套
-        csvs = glob.glob(os.path.join(args.batch_dir, "**", f"train_log_*.csv"), recursive=True)
+        csvs = glob.glob(os.path.join(args.batch_dir, "**", "train_log_*.csv"), recursive=True)
         cfgs = glob.glob(os.path.join(args.batch_dir, "**", "config_*.json"), recursive=True)
         pths = glob.glob(os.path.join(args.batch_dir, "**", "*_best.pth"), recursive=True)
         logs = glob.glob(os.path.join(args.batch_dir, "**", "stdout.log"), recursive=True)

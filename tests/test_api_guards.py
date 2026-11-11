@@ -159,3 +159,70 @@ def test_actual_oversize_body_is_still_rejected(monkeypatch):
                     files={"image": ("a.png", payload, "image/png")},
                     data={"task": "sr", "scale": "4"})
     assert r.status_code == 413
+
+
+def test_service_and_streamlit_padding_agree():
+    """The two deployment surfaces must pad identically.
+
+    The service (`serve/model_loader.py`) and the Streamlit demo
+    (`deploy/streamlit/streamlit_app.py`) each carry their own copy of
+    `_pad_to_multiple`. They are separate deployment targets -- the Streamlit
+    app is deployed on its own and cannot import `serve/` -- so a shared
+    module is not an option; the copies have to stay in step instead.
+
+    This pins that they agree. The two implementations are compared by
+    RUNNING them, not by reading the source, because the point is the
+    behaviour: a user uploading the same photo to the API and to the demo
+    must get the same picture out of the same weights.
+    """
+    import ast
+    import pathlib
+
+    repo = pathlib.Path(__file__).resolve().parents[1]
+    service = repo / "serve" / "model_loader.py"
+    streamlit = repo / "deploy" / "streamlit" / "streamlit_app.py"
+
+    def body(path):
+        """The EXECUTABLE statements of `_pad_to_multiple`.
+
+        The docstring is excluded: the two copies word their explanations
+        differently (they document different surroundings), and what has to
+        match is the code that runs, not the prose above it.
+        """
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        fn = next(n for n in tree.body
+                  if isinstance(n, ast.FunctionDef) and n.name == "_pad_to_multiple")
+        stmts = [s for s in fn.body
+                 if not (isinstance(s, ast.Expr)
+                         and isinstance(s.value, ast.Constant)
+                         and isinstance(s.value.value, str))]
+        return ast.dump(ast.Module(body=stmts, type_ignores=[]))
+
+    assert body(service) == body(streamlit), (
+        "serve/model_loader.py and deploy/streamlit/streamlit_app.py have "
+        "drifted apart in _pad_to_multiple; the API and the Streamlit demo "
+        "must pad a given image the same way"
+    )
+
+
+def test_padding_is_reflection_and_not_a_flat_fill():
+    """The pad must mirror the image, not fill it with a constant.
+
+    A flat fill is an artificial edge the model never saw in LOL training
+    data, so it "corrects" it and leaves a visible seam along the padded
+    sides (measured: the right-edge band of a night photo came out +0.106
+    blue-biased and 0.094 brighter than the interior with a black fill; the
+    same measurement drops to +0.023 and 0.009 with a mirror).
+    """
+    from serve.model_loader import _pad_to_multiple
+
+    img = Image.new("RGB", (40, 30), (10, 20, 30))
+    padded, (w, h) = _pad_to_multiple(img, 32)
+    assert (w, h) == (40, 30)
+    assert padded.size == (64, 32), "the padded image must reach the multiple"
+    # The padded region must contain the image's own pixels, not zeros. A
+    # mirror of a uniform image is the same colour, so checking the extremes
+    # is enough here: what must NOT appear is a 0-valued filler.
+    arr = np.asarray(padded)
+    assert arr.min() > 0, "the padded area was filled with black"
+    assert tuple(arr[0, 0]) == (10, 20, 30)

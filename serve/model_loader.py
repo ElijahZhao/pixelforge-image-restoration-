@@ -118,10 +118,11 @@ def predict_sr(img: Image.Image, scale: int) -> Image.Image:
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
     """Pad right/bottom so both sides are multiples of ``m``, by REFLECTION.
 
-    The low-light U-Net downsamples by 2 several times, so it requires input
-    sides divisible by 32; otherwise the decoder concatenation fails with
-    "Sizes of tensors must match". We pad, run, then crop back to the original
-    size so any user-supplied image works.
+    The low-light U-Net halves the resolution three times, so it requires
+    input sides divisible by 8; otherwise the decoder concatenation fails with
+    "Sizes of tensors must match". We pad to 32 -- a multiple of 8, and the
+    same multiple the training-side crop uses -- then run, then crop back to
+    the original size so any user-supplied image works.
 
     Why reflection and not a constant fill: a flat fill (we used 0/black) is an
     artificial edge the model has never seen in LOL training data, so it

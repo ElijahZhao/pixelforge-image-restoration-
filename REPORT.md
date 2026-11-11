@@ -84,7 +84,7 @@ streamlit run deploy/streamlit/streamlit_app.py
 
 Retraining needs a GPU — I retrained all three slots on a rented RTX 4090 (200 epochs, batch 16,
 one run per slot, then kept whichever weight had the higher full-image number) and ran the 15-seed
-evaluation matrix on a free Kaggle T4. The test suite is 88 tests plus one browser E2E that only runs
+evaluation matrix on a free Kaggle T4. The test suite is 101 tests plus one browser E2E that only runs
 on request, and everything runs on CPU, so you don't need a GPU to confirm the code works.
 
 ## What I'd do with more time

@@ -13,7 +13,6 @@ paper's reproducibility section to show what "our environment" means.
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import sys
 

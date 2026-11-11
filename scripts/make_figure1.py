@@ -87,6 +87,11 @@ def style() -> None:
 
 
 def panel_top(ax, task, title, ref_name, wide, gain, show_ylabel, show_xlabel):
+    # `ref_name` names the baseline this task is measured against ("bicubic" for
+    # SR, "identity (do nothing)" for low-light). It is part of the call
+    # signature for documentation, but the published figure labels the
+    # baseline line with the generic "same-protocol baseline", so the value is
+    # not drawn. See the note where the baseline series is built.
     rows = [r for r in wide if r["task"] == task]
     protos = [r["protocol"] for r in rows]
     xs = list(range(len(protos)))
@@ -100,7 +105,11 @@ def panel_top(ax, task, title, ref_name, wide, gain, show_ylabel, show_xlabel):
         g = gain.get((task, p))
         base.append(float(g["reference_psnr"]) if g and g["reference_psnr"] else float("nan"))
 
-    base_label = "bicubic" if ref_name == "bicubic" else "identity (do nothing)"
+    # The baseline identity differs per task -- "bicubic" for SR, "identity (do
+    # nothing)" for low-light -- but the published figure labels the dashed
+    # line with one generic caption, "same-protocol baseline", which covers
+    # both. The task-specific name was computed here and never drawn; the
+    # caption is what the preprint carries, so it is what stays.
 
     # P1 is off-scale by construction (see module docstring). Drawing it on the
     # same axis would (a) squash the 0.8 dB effect the figure exists to show and

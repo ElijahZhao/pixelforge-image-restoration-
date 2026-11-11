@@ -256,7 +256,11 @@ def panel_flip(ax, d):
     flip = d["flip"]
 
     ax.axhline(0, color=C_INK, lw=1.1, zorder=4)
-    for x, v, lab, col, sub in (
+    # `lab` and `sub` name each bar ("antialias ON" / "OFF") and its protocol
+    # ("P5" / "P6"). They are unpacked for readability next to the value, but
+    # the labels themselves are drawn on the x axis below, where they read
+    # better than as annotations on top of the bars.
+    for x, v, _lab, col, _sub in (
             (0, flip["p5"], "antialias ON", C_MODEL, "P5"),
             (1, flip["p6"], "antialias OFF", C_BASE, "P6")):
         ax.bar([x], [v], width=0.44, color=col, edgecolor="none", zorder=3)
@@ -294,6 +298,10 @@ def panel_gap(ax, d):
     """Panel 3: how often the deciding settings are reported."""
     ax.set_facecolor(C_PANEL)
     rates = d["rates"]
+    # The sample size the rates below are fractions of. It is asserted to be 63
+    # by the caller's checks (see `verify`), so the panel title below can be
+    # built from it instead of repeating the number in two places -- a title
+    # that disagreed with the audited count would misstate the sample.
     n = d["n"]
     ys = list(range(len(rates)))[::-1]
 
@@ -315,7 +323,7 @@ def panel_gap(ax, d):
     ax.set_xlim(0, 1)
     ax.set_ylim(-0.7, len(rates) - 0.3)
     ax.set_xticks([])
-    ax.set_title("What 63 recent papers report",
+    ax.set_title(f"What {n} recent papers report",
                  fontsize=11.5, fontweight="bold", color=C_INK, pad=9, loc="left")
     ax.grid(False)
     for s in ("top", "right", "bottom", "left"):

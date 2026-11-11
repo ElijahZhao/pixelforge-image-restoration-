@@ -96,6 +96,78 @@ class SRGenerator(nn.Module):
 # 2. Low-Light Image Enhancement (LLIE)
 # ---------------------------------------------------------------------------
 
+#: Both sides of a low-light U-Net input must be a multiple of this number.
+#:
+#: The encoder halves the resolution three times (``enc1``/``enc2``/``enc3``),
+#: and the decoder upsamples three times with ``scale_factor=2``. A side that
+#: is not a multiple of 8 therefore lands on a different pixel grid in the
+#: encoder and in the decoder, the skip connections no longer line up, and
+#: ``torch.cat`` raises "Sizes of tensors must match". Measured: 8/16/24/32/
+#: 40/64/96/128 px inputs all work; 100 px and 127 px fail.
+#:
+#: This is the number the input has to be padded to. It was previously
+#: described as 32 ("downsamples by 32 five times"), which is wrong on both
+#: counts: the factor is 8, not 32, and there are three downsampling stages,
+#: not five.
+LOWLIGHT_ALIGN = 8
+
+
+def pad_to_align(x: torch.Tensor, m: int = LOWLIGHT_ALIGN):
+    """Pad a low-light U-Net input up to a multiple of ``m``; return the size.
+
+    Returns ``(padded, (h, w))`` where ``(h, w)`` is the ORIGINAL size, so the
+    caller can crop the model's output back to it and measure the metric on
+    exactly the original pixels.
+
+    Why this lives here rather than in the caller: the alignment rule is a
+    property of the NETWORK, so every code path that feeds the U-Net has to
+    apply it identically. The training validation loop (``train/train.py``)
+    and the protocol-matrix script (``scripts/protocol_matrix.py --align``)
+    both need it, and a private copy in each of them is exactly how those two
+    drift apart.
+
+    The serving code does NOT import this: ``serve/`` runs inside a Docker
+    image that does not put ``train/`` on the import path, and the service
+    must not depend on the training package. It keeps its own
+    ``_pad_to_multiple`` in ``serve/model_loader.py`` (a numpy
+    implementation, padding to 32), mirrored in the Streamlit app. The two
+    are equivalent where it matters -- numpy's "reflect" and torch's
+    "reflect" produce bit-identical results when the pad is narrower than
+    the side being padded -- and a test in ``tests/test_api_guards.py`` pins
+    that the two copies have not drifted apart.
+
+    The padding is reflection, which continues the scene instead of smearing
+    the edge row outwards; a flat fill leaves a visible seam because the
+    network "corrects" an edge it never saw in training. Reflection needs the
+    pad to be NARROWER than the side it pads ("Padding size should be less
+    than the corresponding input dimension"), so for an image smaller than
+    ``m`` it falls back to replicate, which has no such limit. The two are
+    identical when the pad is zero-width, i.e. for every size the network
+    already accepted.
+    """
+    h, w = x.shape[-2:]
+    ph, pw = (-h) % m, (-w) % m
+    if not (ph or pw):
+        return x, (h, w)
+    mode = "reflect" if (ph < h and pw < w) else "replicate"
+    return F.pad(x, (0, pw, 0, ph), mode=mode), (h, w)
+
+
+def forward_lowlight(model: nn.Module, x: torch.Tensor) -> torch.Tensor:
+    """Run the low-light U-Net on ``x``, handling the alignment internally.
+
+    The output keeps ``x``'s original size: the input is padded up to the
+    alignment multiple, the forward pass runs on the padded tensor, and the
+    result is cropped back. A size that is already a multiple of 8 takes the
+    zero-padding path and is returned bit-for-bit unchanged.
+    """
+    padded, (h, w) = pad_to_align(x)
+    out = model(padded).clamp(0, 1)
+    if out.shape[-2:] != (h, w):
+        out = out[..., :h, :w]
+    return out
+
+
 class LowLightUNet(nn.Module):
     """A small U-Net style network for low-light image enhancement.
 

@@ -157,6 +157,80 @@ def test_sr_lr_uses_antialias_true():
         )
 
 
+# --------------------------------------------------------------------------- #
+# 4. The protocol-matrix script must default to a usable alignment.
+# --------------------------------------------------------------------------- #
+def test_protocol_matrix_align_default_is_usable_per_task():
+    """``protocol_matrix.py --align`` must default to 8 for the low-light U-Net.
+
+    The low-light U-Net halves the resolution three times, so its skip
+    connections need both sides to be a multiple of 8. The script's default
+    used to be 1 for every task, which meant running it on the low-light
+    model -- the task it exists for -- crashed with "Sizes of tensors must
+    match" unless the caller happened to know to pass ``--align 8``. LOL-v1
+    is 400x600, a multiple of 8, so the crash only shows up on any other
+    dataset.
+
+    SR is unaffected: conv + pixel shuffle needs no alignment, so its default
+    stays 1.
+    """
+    import importlib.util
+    import pathlib
+
+    # Absolute path from this file, not from the CWD: a test that only works
+    # when pytest is started in the repository root is a test that fails for
+    # the wrong reason somewhere else.
+    script = (pathlib.Path(__file__).resolve().parents[2]
+              / "scripts" / "protocol_matrix.py")
+    spec = importlib.util.spec_from_file_location("protocol_matrix", script)
+    pm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pm)
+
+    seen = []
+    original_run = pm.run
+    pm.run = lambda a: seen.append((a.task, a.align)) or 0
+    try:
+        for argv, expected in ((["--task", "lowlight"], 8),
+                               (["--task", "sr"], 1),
+                               (["--task", "lowlight", "--align", "16"], 16)):
+            seen.clear()
+            pm.main(argv)
+            assert seen, f"no arguments were parsed for {argv}"
+            assert seen[0][1] == expected, (
+                f"{argv} -> align={seen[0][1]}, expected {expected}")
+    finally:
+        pm.run = original_run
+
+
+def test_protocol_matrix_lowlight_forward_survives_non_multiple_of_8():
+    """The protocol-matrix forward pass must handle a size that is not a
+    multiple of 8, which is the case the alignment default exists for."""
+    import importlib.util
+    import pathlib
+
+    script = (pathlib.Path(__file__).resolve().parents[2]
+              / "scripts" / "protocol_matrix.py")
+    spec = importlib.util.spec_from_file_location("protocol_matrix", script)
+    pm = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(pm)
+
+    from models import LowLightUNet
+
+    model = LowLightUNet().eval()
+    rng = torch.Generator().manual_seed(0)
+    hr_pil = Image.fromarray(
+        (torch.rand(605, 403, 3, generator=rng).numpy() * 255).astype("uint8"))
+    lr_pil = Image.fromarray(
+        (torch.rand(605, 403, 3, generator=rng).numpy() * 255).astype("uint8"))
+    try:
+        out, _ = pm._forward(model, hr_pil, (0, 0, 605, 403), 1, "bicubic",
+                             False, 8, lr_pil)
+    except RuntimeError as exc:
+        raise AssertionError(
+            f"the paired low-light forward pass must not crash: {exc}")
+    assert tuple(out.shape[-2:]) == (605, 403)
+
+
 if __name__ == "__main__":
     failed = []
     tests = [v for k, v in list(globals().items()) if k.startswith("test_")]

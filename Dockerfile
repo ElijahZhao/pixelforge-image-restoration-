@@ -35,6 +35,12 @@ RUN pip install --no-cache-dir --upgrade pip \
 # are missing. Shipping them means the container starts in ML mode, not
 # fallback mode.
 COPY serve/ ./serve/
+# `train/` is not imported by the service at runtime (verified: serve/ imports
+# only fastapi, torch, torchvision, numpy, PIL and the stdlib), so this copy
+# is not needed to serve requests. It is kept so that `train/export.py` can be
+# run inside the container to produce a fresh TorchScript weight into
+# serve/models/ -- the weights shipped above were produced by exactly that
+# script. It costs ~600 KB and is the only reason it is here.
 COPY train/ ./train/
 
 # Run as a non-root user. The service only reads weights and writes nothing

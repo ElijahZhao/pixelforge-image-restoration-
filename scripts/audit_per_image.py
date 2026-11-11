@@ -14,7 +14,6 @@ import glob
 import math
 import os
 import statistics as st
-from collections import defaultdict
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PI = os.path.join(ROOT, "results", "per_image")

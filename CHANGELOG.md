@@ -5,6 +5,37 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.12.2] - 2026-11-11
+
+**训练侧数据管道的两处静默缺陷修复**。两处都不报错、不告警，只是让验证数字悄悄失真；均经复现确认，并补了回归测试。
+
+### Fixed
+- **SR 验证的中心裁剪会读出图像边界之外**（`train/datasets.py`）：验证分支直接 `TF.crop` 到 `crop_size`，没有先检查图够不够大。`TF.crop` 对越界的框不报错，而是**用纯黑填满**。实测：一张 64×64 的验证图裁成 96×96 后，**55.6% 的像素是填充的黑边**——验证 PSNR 是在一张"大部分是黑"的图上量的，数字完全不对，且没有任何症状。训练分支本来就有"图太小先 resize"的保护，低光分支也有，只有 SR 验证分支漏了。现补上同样的保护（等比缩放，长宽比不变），且只影响小于 patch 的图：100 张真实 DIV2K 验证图逐像素比对，**新旧结果完全一致**，已发布数字零影响。
+- **低光验证遇到非 8 倍数尺寸的图会直接崩溃**（`train/train.py`）：低光验证按设计保留图像**原生尺寸**（`full_native` 口径，须与独立评测脚本 `scripts/eval_baseline.py` 量的是同一批像素），而 U-Net 的编码器把分辨率减半 3 次，跳连要求两侧都是 **8 的倍数**。原生尺寸不是 8 的倍数时，前向直接抛 `RuntimeError: Sizes of tensors must match`。LOL-v1 是 400×600，恰好是 8 的倍数，所以**已发布数字从未受影响**——但换任何别的数据集，第一个验证 epoch 就崩。现在把输入反射 padding 到 8 的倍数、输出裁回原尺寸，指标仍在原始像素上量。对 8 倍数尺寸，padding 宽度为 0，实测**新旧输出逐位相同**。
+  - **口径说明（重要）**：训练侧现在 pad 到 **8**（网络实际需要的倍数），而服务端与 Streamlit 的 `_pad_to_multiple` pad 到 **32**（沿用全项目既有的整数）。二者对**同一张图**给出的输出并不相同——实测 400×600 图（发布权重）上 mean\|diff\| = 0.002、PSNR(pad8, pad32) = 40.3 dB（换权重/换图约 39 dB），即约 0.03–0.1 dB 的数值漂移。因此"训练侧验证值"与"服务端/独立评测脚本的输出"并非逐位相同，跨脚本核对时须按此容差理解。此前这里写的是"三条路径就此一致"，**该说法不成立，已删除**。已发布数字不受影响：LOL-v1 的 400×600 是 8 的倍数，pad8 宽度为 0，与修复前完全相同。
+  - padding 逻辑已从调用方抽到 `models.pad_to_align` / `models.forward_lowlight`（**训练验证循环、`scripts/protocol_matrix.py` 共用同一个实现**），避免各写一份再次漂移。
+- **`scripts/protocol_matrix.py --align` 的默认值让低光任务必崩**（`scripts/protocol_matrix.py`）：该参数默认值是 `1`，而帮助文本里写着 "U-Net=8"。低光 U-Net 把分辨率减半 3 次，跳连要求两侧是 8 的倍数，因此**不带 `--align 8` 跑低光协议矩阵（本脚本存在的理由）必然抛 `RuntimeError: Sizes of tensors must match`**。LOL-v1 是 400×600，恰好是 8 的倍数，所以这个坑只在别的数据集上现形。现在默认值改为按任务自动取：低光 8、SR 1（conv + pixel shuffle 无对齐约束），显式传 `--align` 仍然生效。
+- **`scripts/protocol_matrix.py` 的反射 padding 没有 replicate 兜底**（`scripts/protocol_matrix.py`）：反射 padding 要求 pad 宽度**窄于**被 pad 的那条边，因此边长小于对齐倍数时必然抛 `Padding size should be less than the corresponding input dimension`。现在统一走 `models.pad_to_align`，与训练侧同一实现、同样带 replicate 兜底。SR 分支的 padding 行为经逐项比对与改动前完全一致（96×96 / 100×100 / 97×95 / 64×64 / 300×200 五种尺寸，新旧输出逐位相同）。
+- 顺带订正了注释里一处**事实错误**：多处写着 U-Net"按 32 下采样 5 次"，实测是**按 2 下采样 3 次（倍数 8）**。新增 `models.LOWLIGHT_ALIGN = 8` 作为唯一事实来源；训练 patch 仍要求 32 的倍数（那是全项目通用的整数，32 本身也是 8 的倍数），服务端与 Streamlit 仍 pad 到 32，行为不变。
+
+### Added
+- 新增 5 项回归测试（`train/tests/test_correctness.py`）：SR 验证裁剪不得含黑边填充、SR 验证裁剪对"够大的图"必须与旧路径逐像素一致、低光验证前向必须能处理非 8 倍数尺寸、低光验证在 8 倍数尺寸下必须与旧路径逐位一致、低光验证前向必须能处理比倍数还小的图（反射 padding 要求 pad 窄于被 pad 的边，故在极小图上退回 replicate 模式）。在修复前的代码上，前两项会失败；修复后全部通过。
+- **教训（来自一次独立复核）**：这批低光测试最初是**在测试文件里自己复刻了一遍 padding 逻辑**，从不调用生产代码——于是把生产代码里的修复整个删掉，这几项测试依然全绿。**带着自己那份逻辑副本的测试，测不出生产代码的回归。**现已改为直接调用 `models.forward_lowlight` / `models.pad_to_align`，并用变异测试验证：删掉生产代码里的 padding → 测试失败；把 padding 宽度改成 32 → "已发布数字不变"这条断言失败。另有一项原本是**恒真断言**（拿同一个表达式的两次调用互比），已改为与**修复前**的 `model(x)` 比对。
+- 新增 2 项回归测试（`train/tests/test_protocol.py`）：`scripts/protocol_matrix.py --align` 必须按任务取默认值（低光 U-Net 用 8，SR 用 1），且低光 paired 前向必须能处理非 8 倍数尺寸。
+- 新增 5 项回归测试（第二轮独立复核后补上）：
+  - `train/train.py` 的验证循环改用可导入的 `validation_forward(...)`，测试直接调用它——**这正是崩溃现场所在的调用点**。第一轮只测了 helper，变异测试证实把 `train.py` 里的调用改回 `model(lr)` 仍然全绿；现在有测试断言训练循环确实走这条路径，且 `validation_forward` 确实把低光任务交给 `forward_lowlight`。
+  - 服务端与 Streamlit 的 `_pad_to_multiple` 必须逐语句一致（用 AST 比对可执行语句，忽略 docstring），且填充必须是**镜像而非纯色**。这两个部署目标是各自独立的（Streamlit 独立部署，import 不到 `serve/`），无法共用模块，只能靠测试守住不漂移。
+  - `pad_to_align` 对 8 的倍数必须是**零改动**（直接断言张量未被触碰）。
+- 测试总数由 88 增至 **101 passed, 1 skipped**（`train/tests/` 80 项 + `tests/` 21 项）。
+
+### Changed
+- **测试不再依赖当前工作目录**：4 处按相对路径加载模块（`train/train.py`、`serve/model_loader.py`、`scripts/protocol_matrix.py`）改为按 `__file__` 推导的绝对路径。此前从仓库根之外运行 pytest 会有测试因"找不到文件"而失败——这与被测行为无关，是纯粹的路径脆弱点；现在从任何目录运行结果一致（101 passed）。
+- **`scripts/protocol_matrix.py` 的 `sys.path` 改为基于脚本自身位置**，此前是 `os.path.abspath("train")`（相对 CWD 解析），导致从其他目录直接运行该脚本必然 `ModuleNotFoundError`。
+- 清理一批确认无害的死代码：4 处未使用的局部变量、10 处未使用的 import、1 处恒等条件（`None if model is None else None`）、3 处解包即弃的变量。未使用的变量中，**两处本意未落地，已改为真正生效**：`build_public_release.py` 的每 job 文件计数原先算了却没写进 README，现已写出；`make_graphical_abstract.py` 的样本量 `n` 原先与标题里硬编码的 "63" 各写一份，现改为由 `n` 生成标题，两处不再可能失同步。
+- `scripts/make_figure1.py` 删除未使用的 `base_label`：已发布图的图例是通用文案 "same-protocol baseline"，而预印本 PDF 不可更改，故**不动图**，只删死变量。复验：重新生成的 PNG 与仓库版本**逐字节一致**，PDF 仅 8 字节不同且全部是 `CreationDate` 时间戳。
+- `scripts/make_graphical_abstract.py` 同样由 `n` 生成标题后，复验 PNG/JPG **逐字节一致**，PDF 差异仅为时间戳。
+- `Dockerfile` 补注说明 `COPY train/` 的保留理由：实测 `serve/` 运行时**不导入 `train/`**（只依赖 fastapi/torch/torchvision/numpy/PIL 与标准库），这一层拷贝并非服务所需，保留它是为了能在容器内跑 `train/export.py` 导出新权重，成本约 600 KB。
+
 ## [1.12.1] - 2026-11-11
 
 **服务层守卫加固：三处经复现确认的缺陷修复**。

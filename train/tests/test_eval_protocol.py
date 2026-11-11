@@ -22,7 +22,7 @@ import pytest
 import torch
 
 sys.path.insert(0, "./train")
-from eval_protocol import evaluate_y, psnr_y, rgb_to_y, shave, ssim_y  # noqa: E402
+from eval_protocol import evaluate_y, psnr_y, rgb_to_y, shave  # noqa: E402
 from metrics import psnr_per_image  # noqa: E402
 
 

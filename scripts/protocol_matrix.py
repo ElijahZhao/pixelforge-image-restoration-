@@ -76,11 +76,17 @@ import torch
 import torchvision.transforms.functional as TF
 from PIL import Image
 
-sys.path.insert(0, os.path.abspath("train"))
-from degradation import MODES, build_lr, describe  # noqa: E402
+# The repository's `train/` directory holds the shared modules (degradation,
+# eval_protocol, metrics, models). The path is derived from THIS FILE, not
+# from the current working directory, so the script works when it is invoked
+# from elsewhere -- a relative "train" only resolves when the CWD happens to
+# be the repository root.
+sys.path.insert(0, os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "train"))
+from degradation import build_lr, describe  # noqa: E402
 from eval_protocol import psnr_y, ssim_y, shave  # noqa: E402
 from metrics import psnr_per_image, ssim_per_image  # noqa: E402
-from models import build_model  # noqa: E402
+from models import build_model, pad_to_align  # noqa: E402
 
 # `_measure` converts a grad-tracking tensor to float. That is harmless here
 # (nothing calls backward) and it emits one UserWarning per image, so the exact
@@ -238,6 +244,12 @@ def _forward(model, hr_pil, box, scale, degrade, baseline, align=1, lr_pil=None)
     evaluation region. Plain conv+shuffle SR models need no padding (align=1),
     and 96px crops already satisfy align<=32, so nothing about the SR numbers
     depends on this flag.
+
+    The padding itself comes from ``models.pad_to_align``, the same helper the
+    training validation loop uses, so the two cannot drift apart. It falls
+    back from reflection to replication for an image smaller than the
+    multiple (reflection requires the pad to be narrower than the side it
+    pads).
     """
     top, left, ch, cw = box
     patch = hr_pil.crop((left, top, left + cw, top + ch))
@@ -250,16 +262,10 @@ def _forward(model, hr_pil, box, scale, degrade, baseline, align=1, lr_pil=None)
         lr = TF.to_tensor(lr_pil.crop((left, top, left + cw, top + ch)))
         lr = lr.unsqueeze(0).to(DEVICE)
         if align > 1 and not baseline:
-            ph, pw = (-ch) % align, (-cw) % align
-            if ph or pw:
-                lr = torch.nn.functional.pad(lr, (0, pw, 0, ph), mode="reflect")
+            lr, _ = pad_to_align(lr, align)
     else:
         if align > 1 and not baseline:
-            need = scale * align
-            ph, pw = (-ch) % need, (-cw) % need
-            if ph or pw:
-                # reflect needs pad < input size; 600x400 vs 8 is never close.
-                hr = torch.nn.functional.pad(hr, (0, pw, 0, ph), mode="reflect")
+            hr, _ = pad_to_align(hr, scale * align)
         # `.to(DEVICE)` is not redundant: the `pil_bicubic` branch of build_lr
         # goes through PIL, which is a CPU library, and re-stacks per-image
         # results back on the CPU. On GPU that produced "Input type (FloatTensor)
@@ -340,7 +346,12 @@ def score_image(model, hr_pil, wanted, scale, border, crop, n_random, rng,
         groups.setdefault(key, []).append(p)
 
     out = {}
-    for (degrade, sampling), plist in groups.items():
+    # The group key is (degrade, sampling): protocols that share both forward
+    # pass once and are measured several ways. Only `degrade` is needed here,
+    # because the crop boxes come from `proto0` (the first protocol in the
+    # group, which carries the group's sampling); `sampling` is unpacked to
+    # make the key's meaning explicit at the point of use.
+    for (degrade, _sampling), plist in groups.items():
         proto0 = PROTOCOLS[plist[0]]
         boxes = _boxes_for(proto0, h, w, crop, n_random, rng)
         got = []
@@ -471,7 +482,13 @@ def _score_dataset(args, ds_name, ds_dir, ckpts, wanted, border, files, tag_pref
         seed = meta.get("seed")
         tag = f"seed={seed}" if seed else meta.get("source")
         print(f"\n=== {ds_name} | {name} ({tag}) ===", flush=True)
-        rec = {"path": None if model is None else None, "meta": meta,
+        # The "path" field is part of the JSON schema the archived runs use
+        # (14 archived protocol_matrix.json files carry it), so it stays --
+        # but it is always null there too: the checkpoint's location is in
+        # `meta`, and `path` records nothing. The previous expression was
+        # `None if model is None else None`, i.e. a condition with no effect
+        # on the result; writing the constant says what it actually means.
+        rec = {"path": None, "meta": meta,
                "protocols": {}, "dataset": ds_name}
 
         # per protocol: list of per-image values, filled by whichever path runs
@@ -688,14 +705,27 @@ def main(argv=None):
     ap.add_argument("--baseline", action="store_true",
                     help="skip the network, report bicubic-upsampled LR instead; "
                          "gives Figure 1 the reference line it needs")
-    ap.add_argument("--align", type=int, default=1,
-                    help="network downsampling stride multiple (U-Net=8); HR is "
+    ap.add_argument("--align", type=int, default=None,
+                        help="network downsampling stride multiple (U-Net=8); HR is "
                          "reflect-padded to align*scale before the forward pass "
-                         "and cropped back, so metrics stay on original pixels")
+                         "and cropped back, so metrics stay on original pixels. "
+                         "Defaults to 8 for the low-light U-Net (which halves "
+                         "the resolution three times and so needs sides that "
+                         "are a multiple of 8) and 1 for SR (conv + pixel "
+                         "shuffle, no alignment constraint).")
     ap.add_argument("--legacy", action="store_true",
                     help="old per-protocol loop, for bit-exact equivalence tests only")
     ap.add_argument("--out", default="results/protocol_matrix")
     a = ap.parse_args(argv)
+    if a.align is None:
+        # The low-light U-Net halves the resolution three times, so its skip
+        # connections need both sides to be a multiple of 8. The default used
+        # to be 1 for every task, which meant running this script on the
+        # low-light model -- its whole purpose -- crashed with "Sizes of
+        # tensors must match" unless the caller happened to pass --align 8.
+        # LOL-v1 is 400x600, a multiple of 8, so the crash only shows up on
+        # any other dataset.
+        a.align = 8 if a.task == "lowlight" else 1
     if not a.protocols:
         a.protocols = ("P1,P2,P3,P4,P5" if a.task == "lowlight"
                        else ",".join(PROTOCOLS))

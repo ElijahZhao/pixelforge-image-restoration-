@@ -49,7 +49,7 @@ from torch.cuda.amp import autocast, GradScaler
 from torchvision import models
 from torchvision.models import VGG16_Weights
 
-from models import build_model
+from models import build_model, forward_lowlight
 from datasets import DEFAULT_CROP, get_dataloader
 from metrics import aggregate, evaluate_batch
 from runenv import dumps as json_dumps, env_snapshot
@@ -66,10 +66,11 @@ DEFAULT_SEED = 42
 SEED = DEFAULT_SEED
 
 # Training patch size per task, mirroring the dataset classes' own defaults
-# (SR crops the HR image to 96 px; the low-light U-Net downsamples by 32 five
-# times, so its patch must be a multiple of 32 -> 128). Imported rather than
-# restated: the loader, the class signature and --crop_size's help text all read
-# from `datasets.DEFAULT_CROP`, so they cannot drift apart.
+# (SR crops the HR image to 96 px; the low-light U-Net halves the resolution
+# three times, so its patch must be a multiple of 32 -> 128; see
+# models.LOWLIGHT_ALIGN for the network's own minimum of 8). Imported rather
+# than restated: the loader, the class signature and --crop_size's help text
+# all read from `datasets.DEFAULT_CROP`, so they cannot drift apart.
 TASK_CROP_DEFAULT = DEFAULT_CROP
 
 
@@ -152,6 +153,35 @@ class VGGPerceptualLoss(nn.Module):
 def l1_charbonnier(pred: torch.Tensor, target: torch.Tensor, eps: float = 1e-3):
     diff = pred - target
     return torch.mean(torch.sqrt(diff * diff + eps * eps))
+
+
+def validation_forward(model: nn.Module, x: torch.Tensor, task: str) -> torch.Tensor:
+    """The forward pass used to score a validation image.
+
+    Split out of the training loop so that a test can call the SAME code the
+    training run calls. The low-light branch goes through
+    ``models.forward_lowlight``, which pads the input up to the network's
+    alignment multiple and crops the output back: the low-light validation
+    split keeps every image at its native size, and a native size that is
+    not a multiple of 8 made the raw forward pass raise "Sizes of tensors
+    must match". LOL-v1 is 400x600, so the published numbers were never
+    affected, but any other dataset crashed on the first validation epoch.
+
+    The pad width differs from the serving path on purpose: the training side
+    pads to 8 (what the network needs) while the service and the Streamlit app
+    pad to 32 (the multiple the project uses everywhere else). The two do NOT
+    give identical output on the same image -- measured on a 400x600 photo
+    with the released weights, mean|diff| = 0.002 and PSNR(pad8, pad32) =
+    40.3 dB; the exact figure depends on the weights and the picture (other
+    combinations land around 39 dB), so treat it as "about 0.03-0.1 dB of
+    drift". A training-side validation number and one from
+    scripts/eval_baseline.py therefore agree to within that, not
+    bit-for-bit. For LOL-v1 the pad is zero-width, so the published numbers
+    are unchanged either way.
+    """
+    if task == "lowlight":
+        return forward_lowlight(model, x)
+    return model(x)
 
 
 def _atomic_save(obj, path: str) -> None:
@@ -375,7 +405,7 @@ def train(args):
                     f"--resume: no checkpoint at {resume_path}. "
                     f"Check --task/--model/--scale, or drop --resume to start fresh."
                 )
-            print(f"[auto-resume] 无断点，从头开始训练")
+            print("[auto-resume] 无断点，从头开始训练")
         else:
             # A resume point can be TRUNCATED: `torch.save` writes in place, so a
             # kill (instance reclaimed / OOM / Ctrl-C) mid-write leaves a partial
@@ -515,7 +545,11 @@ def train(args):
         with torch.no_grad():
             for lr, hr in val_loader:
                 lr, hr = lr.to(DEVICE), hr.to(DEVICE)
-                out = model(lr)
+                # `validation_forward` is the same function the tests call, so
+                # the fix it carries (padding the low-light input up to the
+                # network's alignment multiple and cropping the output back)
+                # cannot silently be reverted here: the test would go with it.
+                out = validation_forward(model, lr, args.task)
                 m = evaluate_batch(out.cpu(), hr.cpu(), per_image=True)
                 psnrs.extend(m["psnr_per_image"])
                 ssims.extend(m["ssim_per_image"])

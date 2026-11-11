@@ -24,7 +24,7 @@ keywords:
   - image-restoration
   - pytorch
   - computer-vision
-version: 1.12.1
+version: 1.12.2
 date-released: "2026-11-05"
 
 # 本仓库对应的论文（预印本，已发布）。引用学术成果请用这一条。

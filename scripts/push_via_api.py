@@ -21,7 +21,6 @@ from __future__ import annotations
 import argparse
 import base64
 import json
-import os
 import re
 import subprocess
 import sys
@@ -88,10 +87,9 @@ def main() -> int:
     args = ap.parse_args()
 
     local_head = git("rev-parse", "HEAD")
-    parent = git("rev-parse", "HEAD~1")
     tree = git("rev-parse", "HEAD^{tree}")
 
-    status, ref = api(f"/git/ref/{args.ref_short}")
+    _status, ref = api(f"/git/ref/{args.ref_short}")
     remote_sha = ref["object"]["sha"]
     print(f"local HEAD : {local_head}")
     print(f"local tree : {tree}")
@@ -221,7 +219,7 @@ def main() -> int:
                 sha = create_tree(sha)
             entries.append({"path": path, "mode": mode, "type": otype,
                             "sha": sha})
-        st, res = api("/git/trees", {"tree": entries}, method="POST")
+        _st, res = api("/git/trees", {"tree": entries}, method="POST")
         return res["sha"]
 
     new_tree = create_tree(tree)

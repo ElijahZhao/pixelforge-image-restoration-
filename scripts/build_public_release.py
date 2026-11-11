@@ -37,7 +37,6 @@ from verify_per_image_mapping import (  # noqa: E402
     classify,
     csv_mean_psnr,
     load_matrix_index,
-    parse_cell_from_name,
 )
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -171,7 +170,7 @@ def main() -> int:
         )
         for job, label in JOB_LABELS.items():
             count = sum(1 for n in release if n.startswith(job + "__"))
-            handle.write(f"\n- `{job}/` -- {label}\n")
+            handle.write(f"\n- `{job}/` -- {label} ({count} file(s))\n")
         handle.write(
             "\n## File naming\n"
             "\n    <job>__<checkpoint>__<protocol>.csv\n"

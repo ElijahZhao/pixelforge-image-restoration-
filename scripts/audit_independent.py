@@ -10,7 +10,6 @@ Usage:
     python scripts/audit_independent.py --json     # machine-readable
 """
 import argparse
-import glob
 import json
 import os
 import statistics as st

@@ -32,12 +32,10 @@ from __future__ import annotations
 
 import argparse
 import csv
-import json
 import math
 import os
 import re
 import sys
-from collections import Counter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)

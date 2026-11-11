@@ -387,9 +387,10 @@ def _load_lowlight(path_str: str):
 def _pad_to_multiple(img: Image.Image, m: int = 32) -> tuple[Image.Image, tuple[int, int]]:
     """Pad right/bottom so both sides are multiples of ``m``, by REFLECTION.
 
-    The low-light U-Net downsamples by 2 several times, so input sides must be
-    divisible by 32; otherwise the decoder concatenation fails. We pad, run,
-    then crop back so any user-supplied image size works.
+    The low-light U-Net halves the resolution three times, so input sides must
+    be divisible by 8; otherwise the decoder concatenation fails. We pad to 32
+    -- a multiple of 8, and the same multiple the training-side crop uses --
+    then run, then crop back so any user-supplied image size works.
 
     Why reflection and not a constant fill: a flat fill (we used 0/black) is an
     artificial edge the model never saw in LOL training data, so it "corrects"
