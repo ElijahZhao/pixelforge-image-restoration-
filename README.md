@@ -46,7 +46,7 @@ named rather than implied.
 - **Every task beats its classical baseline.** +0.77 dB (×4) and +1.31 dB (×2) over bicubic, +10.55 dB over a no-op baseline on low light — with the very weights shipped in this repo.
 - **Reproducible by construction.** 126 per-image PSNR/SSIM CSVs back the 126 reported protocol cells; `scripts/verify_public_release.py` re-averages them and checks every cell against the matrix.
 - **Ships as a product.** FastAPI with per-IP rate limiting and upload guards, a bilingual Streamlit demo, a Next.js frontend, and a non-root Docker image.
-- **Guarded by CI.** 81 tests behind a 75% coverage gate, a dependency audit, a frontend type-check and build, and a paper job that regenerates every table and re-checks the manuscript.
+- **Guarded by CI.** 88 tests behind a 75% coverage gate, a dependency audit, a frontend type-check and build, and a paper job that regenerates every table and re-checks the manuscript.
 
 ## 🖼️ Showcase
 
@@ -201,13 +201,15 @@ pixelforge-image-restoration/
 ## 🧪 Tests
 
 ```bash
-python -m pytest                                    # 81 passed, 1 skipped (the E2E module)
+python -m pytest                                    # 88 passed, 1 skipped (the E2E module)
 python -m pytest --cov --cov-report=term-missing    # coverage gate: 75%
 cd web && pnpm test && pnpm exec tsc --noEmit
 ```
 
 The skip is `tests/e2e/test_e2e.py`, which drives a real Chromium through the upload flow; run it
-directly or set `PIXELFORGE_RUN_E2E=1`. CI runs four jobs — tests with the coverage gate,
+directly or set `PIXELFORGE_RUN_E2E=1`. The preprint quotes 81 tests — that was the count when it was
+published; the seven service-guard tests added afterwards are why the repo now reports 88. CI runs
+four jobs — tests with the coverage gate,
 `pip-audit` over the lock file, the frontend type-check + tests + build, and a paper job that
 regenerates every table, rebuilds the manuscript, checks its layout, re-derives the headline
 numbers independently and audits 27 references (83 checks).
@@ -268,6 +270,7 @@ The evaluation discipline this repo enforces in code is written up as a preprint
 
 Full history in [CHANGELOG.md](CHANGELOG.md). Recent:
 
+- **1.12.1** — Service-layer hardening: the per-IP rate limiter can no longer be switched off with a spoofed `X-Forwarded-For`, oversized uploads are refused before the body is buffered, and the classical low-light baseline no longer divides by zero on white images.
 - **1.12.0** — Preprint published; DOI added to both READMEs, the Streamlit sidebar and `CITATION.cff`.
 - **1.11.3** — Corrected the compute figures to match the ledger (34 kernel runs / 29.05 h), the seed table's low-light label (U-Net, not SRCNN) and the CI description (four jobs).
 - **1.11.0** — Author set to Independent Researcher; paper section added; process notes moved out of the public tree.

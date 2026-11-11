@@ -332,7 +332,14 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
     arr = _to_array(img)
     lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
     mean_lum = float(lum.mean())
-    gamma = float(np.clip(np.log(0.5) / np.log(max(mean_lum, 1e-3)), 0.3, 1.0))
+    # Same guard as serve/classical.py: log(1.0) == 0, so a pure-white image
+    # divided by zero and the clip turned -inf into 0.3 (instead of the
+    # intended 1.0 = "leave it alone"). For mean_lum >= 0.5 the clip always
+    # yielded 1.0, so branching here is behaviour-preserving.
+    if mean_lum >= 0.5:
+        gamma = 1.0
+    else:
+        gamma = float(np.clip(np.log(0.5) / np.log(max(mean_lum, 1e-3)), 0.3, 1.0))
     out = arr ** gamma
     return _to_image((out - 0.5) * 1.1 + 0.5)
 

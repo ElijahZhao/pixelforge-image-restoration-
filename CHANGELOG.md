@@ -5,6 +5,20 @@
 格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [1.12.1] - 2026-11-11
+
+**服务层守卫加固：三处经复现确认的缺陷修复**。
+
+### Fixed
+- **限流器可被客户端自己关掉**（`serve/app.py`）：`_client_ip()` 无条件信任请求头 `X-Forwarded-For`，而这个头客户端可以随便填。实测：同一 IP 连发 40 次得到 30×200 + 10×429；把 `X-Forwarded-For` 每次换一个新值，同样 40 次**全部 200**，限流形同虚设。现在只在对端属于 `TRUSTED_PROXY_IPS`（新增，默认空）时才采信该头，否则一律用 socket 对端地址。附带修掉桶字典无界增长：闲置桶会被清理，且总量有上限。
+- **上传体积上限是在整个 body 收完之后才检查的**（`serve/app.py`）：`await image.read()` 先把请求体读进内存，`MAX_UPLOAD_BYTES` 的判断在其后，等于只拦住了"解码"没拦住"下载"。现在在读之前先看 `Content-Length`，超标直接 413；读完后的字节数检查保留，作为 chunked 上传的兜底。
+- **纯白图在经典基线里除零**（`serve/classical.py`、`deploy/streamlit/streamlit_app.py`）：gamma 公式 `log(0.5)/log(mean_lum)` 在 `mean_lum == 1.0`（整张纯白）时分母为 `log(1.0) == 0`，产生 `-inf`，再被 `clip` 变成 **0.3**——与"亮图不变暗"的本意正好相反，同时每次白图上传都抛 `RuntimeWarning: divide by zero`。改为：`mean_lum >= 0.5` 时直接取 `gamma = 1.0`。该分支与原先 `clip` 的结果完全等价（`mean_lum ≥ 0.5` 时 clip 本就返回 1.0），因此输出像素不变。
+- 新增 `tests/test_api_guards.py`（7 项）把这三处钉死：在修复前的代码上跑，4 项会失败；在修复后全部通过。测试数因此由 81 增至 88。
+
+### Changed
+- `DEPLOY.md` 补上此前完全没有文档的服务端环境变量表：`ALLOWED_ORIGINS`、`MAX_UPLOAD_BYTES`、`MAX_INPUT_PIXELS`、`RATE_LIMIT_CAPACITY`、`RATE_LIMIT_REFILL_PER_SEC`、新增的 `RATE_LIMIT_BUCKET_IDLE_SECONDS` 与 `TRUSTED_PROXY_IPS`，并写明反向代理场景下必须配置后者的原因。
+- 两份 README、`CONTRIBUTING.md`、`REPORT.md` 的测试数由 81 同步为 88。预印本正文里的 "81 tests" 是发布时的快照，未作改动（已发布的 PDF 不可更改），README 中已注明差异来由。
+
 ## [1.12.0] - 2026-11-05
 
 **预印本正式发布，DOI 上线**。

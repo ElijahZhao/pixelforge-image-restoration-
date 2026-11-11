@@ -83,16 +83,58 @@ app.add_middleware(
 RATE_LIMIT_CAPACITY = int(os.getenv("RATE_LIMIT_CAPACITY", "30"))
 RATE_LIMIT_REFILL_PER_SEC = float(os.getenv("RATE_LIMIT_REFILL_PER_SEC", "0.5"))
 
+# ---------------------------------------------------------------------------
+# Reverse-proxy trust.
+#
+# The limiter keys on the client IP, so the IP we derive must NOT be
+# client-controllable. `X-Forwarded-For` is trivially spoofable: a client can
+# send a different value on every request and land in a fresh bucket each
+# time, which defeats the throttle completely. Measured on this service:
+# 40 requests from one IP -> 30x200 then 10x429, while the same 40 requests
+# with a rotating `X-Forwarded-For` -> 40x200, no limit at all. A throttle
+# that any client can switch off is not a throttle.
+#
+# So the header is honoured ONLY when the direct peer is a proxy we control.
+# List those peers in TRUSTED_PROXY_IPS (comma-separated). When it is empty
+# -- the default -- the header is ignored and the socket peer is used.
+# ---------------------------------------------------------------------------
+TRUSTED_PROXY_IPS = {
+    ip.strip() for ip in os.getenv("TRUSTED_PROXY_IPS", "").split(",") if ip.strip()
+}
+
+# Buckets are keyed by IP, so an attacker who can vary the key could also
+# grow the dict without bound. Entries are swept once they have been idle
+# for a while, which bounds the memory a single client can pin.
+_BUCKET_IDLE_SECONDS = float(os.getenv("RATE_LIMIT_BUCKET_IDLE_SECONDS", "3600"))
+_MAX_BUCKETS = 10_000
+
 _rate_buckets: dict[str, tuple[float, float]] = {}  # ip -> (tokens, last_ts)
 
 
 def _client_ip(request) -> str:
-    # Trust X-Forwarded-For's first hop only when present (we may run behind a
-    # proxy); otherwise fall back to the socket peer.
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.client.host if request.client else "unknown"
+    # The socket peer is the only address we can trust by default.
+    peer = request.client.host if request.client else "unknown"
+    if TRUSTED_PROXY_IPS and peer in TRUSTED_PROXY_IPS:
+        # We are behind a proxy we control, so the first hop it added is the
+        # real client. Only the first entry is used: the rest of the chain is
+        # whatever the client sent.
+        fwd = request.headers.get("x-forwarded-for")
+        if fwd:
+            return fwd.split(",")[0].strip()
+    return peer
+
+
+def _sweep_buckets(now: float) -> None:
+    """Drop buckets that have been idle long enough to be re-created free."""
+    stale = [ip for ip, (_, last) in _rate_buckets.items()
+             if now - last > _BUCKET_IDLE_SECONDS]
+    for ip in stale:
+        _rate_buckets.pop(ip, None)
+    if len(_rate_buckets) > _MAX_BUCKETS:
+        # Still too many: drop the oldest ones first.
+        order = sorted(_rate_buckets.items(), key=lambda kv: kv[1][1])
+        for ip, _ in order[: len(_rate_buckets) - _MAX_BUCKETS]:
+            _rate_buckets.pop(ip, None)
 
 
 def _rate_limited(ip: str) -> bool:
@@ -104,6 +146,8 @@ def _rate_limited(ip: str) -> bool:
         _rate_buckets[ip] = (tokens, now)
         return True
     _rate_buckets[ip] = (tokens - 1.0, now)
+    if len(_rate_buckets) > _MAX_BUCKETS:
+        _sweep_buckets(now)
     return False
 
 
@@ -140,6 +184,22 @@ async def predict(
             content={"error": "too many requests; slow down"},
             headers={"Retry-After": "2"},
         )
+
+    # Reject an oversized body BEFORE reading it. `await image.read()` buffers
+    # the whole upload, so the byte check in `_predict_sync` only stopped the
+    # decode -- the download had already happened. Content-Length is advisory
+    # (a chunked request may omit it), so the real byte count is still checked
+    # afterwards; this is the cheap early exit for the common case.
+    declared = request.headers.get("content-length")
+    if declared is not None:
+        try:
+            if int(declared) > MAX_UPLOAD_BYTES:
+                return JSONResponse(
+                    status_code=413,
+                    content={"error": f"upload too large (>{MAX_UPLOAD_BYTES} bytes)"},
+                )
+        except ValueError:
+            pass  # malformed header: fall through to the post-read check
 
     # This handler is `async` only so it can `await image.read()`.
     # The inference below is CPU-bound and can take seconds; running it directly

@@ -46,6 +46,26 @@ cd web && pnpm install && pnpm dev
 - CORS is open (`*`) in `serve/app.py` for convenience — tighten it to your
   frontend domain before going public.
 
+### Environment variables
+
+All of them are optional; the defaults are what the service uses when nothing
+is set.
+
+| Variable | Default | What it does |
+|---|---|---|
+| `ALLOWED_ORIGINS` | `*` | Comma-separated CORS allow-list. Set it to your frontend origin before going public. |
+| `MAX_UPLOAD_BYTES` | `10485760` (10 MB) | Hard cap on the request body. Oversized requests are refused with 413 before they are decoded. |
+| `MAX_INPUT_PIXELS` | `4000000` (~4 MP) | Hard cap on the decoded pixel count, checked from the image header before decoding. |
+| `RATE_LIMIT_CAPACITY` | `30` | Token bucket size per client IP (burst). |
+| `RATE_LIMIT_REFILL_PER_SEC` | `0.5` | Token refill rate per second, i.e. ~30 requests/minute sustained. |
+| `RATE_LIMIT_BUCKET_IDLE_SECONDS` | `3600` | Idle buckets are swept after this long, so the limiter cannot pin memory. |
+| `TRUSTED_PROXY_IPS` | *(empty)* | Comma-separated IPs of reverse proxies you control. **Only when the direct peer is listed here is `X-Forwarded-For` honoured** — otherwise the header is ignored, because a client that can spoof it can also rotate it to dodge the rate limiter entirely. |
+
+> Running behind nginx/Cloudflare? Put the proxy's address in
+> `TRUSTED_PROXY_IPS` (e.g. `127.0.0.1` for a local nginx), otherwise every
+> request will look like it comes from the proxy and share one rate-limit
+> bucket.
+
 ## 4. Pushing to GitHub from a restricted network (e.g. an offline build box)
 When the environment cannot reach `github.com` directly (TLS reset / proxy
 whitelist), use a public GitHub mirror that the network *can* reach, e.g.

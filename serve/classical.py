@@ -48,7 +48,18 @@ def lowlight_classical(img: Image.Image) -> Image.Image:
     lum = 0.299 * arr[..., 0] + 0.587 * arr[..., 1] + 0.114 * arr[..., 2]
     mean_lum = float(lum.mean())
     # Target mid-grey 0.5; gamma < 1 brightens, gamma = 1 leaves alone.
-    gamma = float(np.clip(np.log(0.5) / np.log(max(mean_lum, 1e-3)), 0.3, 1.0))
+    #
+    # The formula is log(0.5)/log(mean_lum), clipped to [0.3, 1.0] so a
+    # well-lit image is never darkened. It must NOT be evaluated when
+    # mean_lum >= 0.5: log(1.0) is exactly 0, so a pure-white image
+    # (mean_lum == 1.0) divided by zero and produced -inf, which the clip
+    # turned into 0.3 -- the opposite of the intended "leave it alone",
+    # plus a RuntimeWarning on every white upload. For mean_lum >= 0.5 the
+    # clip always yielded 1.0 anyway, so branching is behaviour-preserving.
+    if mean_lum >= 0.5:
+        gamma = 1.0
+    else:
+        gamma = float(np.clip(np.log(0.5) / np.log(max(mean_lum, 1e-3)), 0.3, 1.0))
     out = arr ** gamma
     # Mild contrast stretch to recover punch after brightening.
     out = np.clip((out - 0.5) * 1.1 + 0.5, 0.0, 1.0)
